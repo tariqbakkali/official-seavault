@@ -13,7 +13,7 @@ import {
   setStorageItem,
   getStorageItem
 } from './cache';
-import { CachedCatalog, CachedUserData, PendingOperation, Creature, Category, DiveSite } from '@/types/database';
+import { CachedCatalog, CachedUserData, PendingOperation, Creature, Category, DiveSite, Sighting, Wishlist, Profile } from '@/types/database';
 
 export class SyncService {
   private static instance: SyncService;
@@ -117,18 +117,19 @@ export class SyncService {
       const achievements = achievementsResult.data || [];
 
       // Calculate stats
-      const uniqueCreatures = new Set(sightings.map(s => s.creature_id)).size;
+      const uniqueCreatures = new Set(sightings.map((s: Sighting) => s.creature_id)).size;
       
       // Get catalog for points calculation
       const catalog = await loadCatalogCache();
-      const totalPoints = sightings.reduce((total, sighting) => {
+      const totalPoints = sightings.reduce((total: number, sighting: Sighting) => {
         // Award points only for first sighting of each creature
-        const isFirstSighting = sightings
-          .filter(s => s.creature_id === sighting.creature_id)
-          .sort((a, b) => a.created_at.localeCompare(b.created_at))[0]?.id === sighting.id;
+        const sameSightings = sightings.filter((s: Sighting) => s.creature_id === sighting.creature_id);
+        const sortedSightings = sameSightings.sort((a: Sighting, b: Sighting) => a.created_at.localeCompare(b.created_at));
+        const firstSighting = sortedSightings.length > 0 ? sortedSightings[0] : null;
+        const isFirstSighting = (firstSighting as Sighting | null)?.id === sighting.id;
         
         if (isFirstSighting && catalog) {
-          const creature = catalog.creatures.find(c => c.id === sighting.creature_id);
+          const creature = catalog.creatures.find((c: Creature) => c.id === sighting.creature_id);
           return total + (creature?.points || 50);
         }
         return total;
@@ -152,8 +153,8 @@ export class SyncService {
         }, {} as Record<string, { name: string; total: number; seenCreatures: Set<string> }>);
 
         // Count unique seen creatures per category
-        sightings.forEach(sighting => {
-          const creature = catalog.creatures.find(c => c.id === sighting.creature_id);
+        sightings.forEach((sighting: Sighting) => {
+          const creature = catalog.creatures.find((c: Creature) => c.id === sighting.creature_id);
           if (creature && categoryGroups[creature.category_id]) {
             categoryGroups[creature.category_id].seenCreatures.add(creature.id);
           }
@@ -241,61 +242,61 @@ export class SyncService {
     }
   }
 
-  private async executeSightingOperation(op: string, payload: any): Promise<void> {
+  private async executeSightingOperation(op: string, payload: Partial<Sighting>): Promise<void> {
     switch (op) {
       case 'insert':
         // Ensure no id field is included in the payload
         const { id, ...insertPayload } = payload;
         const { data, error: insertError } = await supabase
           .from('sightings')
-          .insert(insertPayload)
+          .insert(insertPayload as any)
           .select()
           .single();
         if (insertError) throw insertError;
-        console.log('Sighting inserted with server-generated ID:', data?.id);
+        console.log('Sighting inserted with server-generated ID:', (data as any)?.id);
         break;
       case 'update':
-        const { error: updateError } = await supabase
+        const { error: updateError } = await (supabase as any)
           .from('sightings')
           .update(payload)
-          .eq('id', payload.id);
+          .eq('id', payload.id!);
         if (updateError) throw updateError;
         break;
       case 'delete':
         const { error: deleteError } = await supabase
           .from('sightings')
           .delete()
-          .eq('id', payload.id);
+          .eq('id', payload.id!);
         if (deleteError) throw deleteError;
         break;
     }
   }
 
-  private async executeWishlistOperation(op: string, payload: any): Promise<void> {
+  private async executeWishlistOperation(op: string, payload: Partial<Wishlist>): Promise<void> {
     switch (op) {
       case 'insert':
         const { error: insertError } = await supabase
           .from('wishlists')
-          .upsert(payload, { onConflict: 'id' });
+          .upsert(payload as any, { onConflict: 'id' });
         if (insertError) throw insertError;
         break;
       case 'delete':
         const { error: deleteError } = await supabase
           .from('wishlists')
           .delete()
-          .eq('id', payload.id);
+          .eq('id', payload.id!);
         if (deleteError) throw deleteError;
         break;
     }
   }
 
-  private async executeProfileOperation(op: string, payload: any): Promise<void> {
+  private async executeProfileOperation(op: string, payload: Partial<Profile>): Promise<void> {
     switch (op) {
       case 'update':
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('profiles')
           .update(payload)
-          .eq('id', payload.id);
+          .eq('id', payload.id!);
         if (error) throw error;
         break;
     }

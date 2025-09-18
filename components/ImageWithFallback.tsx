@@ -3,7 +3,7 @@ import { Image, View, StyleSheet, ImageStyle, ViewStyle } from 'react-native';
 import LoadingShimmer from './LoadingShimmer';
 
 interface ImageWithFallbackProps {
-  uri: string | null;
+  uri: string | null | undefined;
   style?: ImageStyle;
   containerStyle?: ViewStyle;
   fallbackColor?: string;
@@ -28,7 +28,7 @@ export default function ImageWithFallback({
     <View style={containerStyle}>
       {loading && (
         <LoadingShimmer 
-          style={[StyleSheet.absoluteFill, style]}
+          style={StyleSheet.absoluteFill as ViewStyle}
         />
       )}
       <Image

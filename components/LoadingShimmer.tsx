@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, StyleSheet, Animated, ViewStyle, DimensionValue } from 'react-native';
 
 interface LoadingShimmerProps {
-  width?: number | string;
+  width?: DimensionValue;
   height?: number;
   borderRadius?: number;
   style?: ViewStyle;

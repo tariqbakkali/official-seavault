@@ -3,7 +3,9 @@ import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { CachedCatalog, CachedUserData, PendingOperation } from '@/types/database';
 
-const CACHE_DIR = Platform.OS !== 'web' && FileSystem?.documentDirectory ? FileSystem.documentDirectory + 'cache/' : null;
+// Check if documentDirectory exists on the FileSystem object
+const documentDirectory = (FileSystem as any).documentDirectory;
+const CACHE_DIR = Platform.OS !== 'web' && documentDirectory ? documentDirectory + 'cache/' : null;
 const QUEUE_DIR = CACHE_DIR ? CACHE_DIR + 'queue/' : null;
 
 // Platform-specific cache implementation

@@ -2,8 +2,24 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "baseUrl": ".",
+    "jsx": "react-jsx",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/components": ["./components"],
+      "@/components/*": ["./components/*"],
+      "@/constants": ["./constants"],
+      "@/constants/*": ["./constants/*"],
+      "@/utils": ["./utils"],
+      "@/utils/*": ["./utils/*"],
+      "@/services": ["./services"],
+      "@/services/*": ["./services/*"],
+      "@/hooks": ["./hooks"],
+      "@/hooks/*": ["./hooks/*"],
+      "@/types": ["./types"],
+      "@/types/*": ["./types/*"],
+      "@/styles": ["./styles"],
+      "@/styles/*": ["./styles/*"]
     }
   },
   "include": [

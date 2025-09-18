@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet } from 'react-native';
 import { supabase } from '@/services/supabase';
 import { syncService } from '@/services/syncService';
 import { ensureCacheDirectories } from '@/services/cache';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
-import { View, Text, StyleSheet } from 'react-native';
+import { STACK_CONFIG } from '@/constants';
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -64,8 +66,8 @@ export default function RootLayout() {
   }
 
   return (
-    <>
-      <Stack screenOptions={{ headerShown: false }}>
+    <SafeAreaProvider>
+      <Stack screenOptions={STACK_CONFIG.DEFAULT_SCREEN_OPTIONS}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="categories/[id]" />
@@ -77,7 +79,7 @@ export default function RootLayout() {
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="light" />
-    </>
+    </SafeAreaProvider>
   );
 }
 

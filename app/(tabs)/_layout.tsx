@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Fish, Grid3x3, Plus, User } from 'lucide-react-native';
 import { View, Text, StyleSheet } from 'react-native';
+import { TAB_CONFIG, COLORS, DIMENSIONS } from '@/constants';
 
 export default function TabLayout() {
   return (
@@ -8,43 +9,43 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: '#666',
+        tabBarActiveTintColor: COLORS.PRIMARY,
+        tabBarInactiveTintColor: COLORS.TEXT_DISABLED,
         tabBarShowLabel: true,
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
       <Tabs.Screen
-        name="index"
+        name={TAB_CONFIG.HOME.name}
         options={{
-          title: 'Home',
+          title: TAB_CONFIG.HOME.title,
           tabBarIcon: ({ color, size }) => (
             <Fish size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="categories"
+        name={TAB_CONFIG.CATEGORIES.name}
         options={{
-          title: 'Categories',
+          title: TAB_CONFIG.CATEGORIES.title,
           tabBarIcon: ({ color, size }) => (
             <Grid3x3 size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="log-dive"
+        name={TAB_CONFIG.LOG_DIVE.name}
         options={{
-          title: 'Log a Dive',
+          title: TAB_CONFIG.LOG_DIVE.title,
           tabBarIcon: ({ color, size }) => (
             <Plus size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name={TAB_CONFIG.PROFILE.name}
         options={{
-          title: 'Profile',
+          title: TAB_CONFIG.PROFILE.title,
           tabBarIcon: ({ color, size }) => (
             <User size={size} color={color} />
           ),
@@ -56,15 +57,15 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#1a1a1a',
-    borderTopColor: '#333',
+    backgroundColor: COLORS.SURFACE,
+    borderTopColor: COLORS.BORDER_PRIMARY,
     borderTopWidth: 1,
-    height: 88,
-    paddingBottom: 24,
-    paddingTop: 8,
+    height: DIMENSIONS.TAB_BAR_HEIGHT,
+    paddingBottom: DIMENSIONS.SPACE_XXL,
+    paddingTop: DIMENSIONS.SPACE_SM,
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: DIMENSIONS.SPACE_SM + 2,
     fontWeight: '500',
   },
 });
