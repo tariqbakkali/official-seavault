@@ -111,7 +111,117 @@ export class SyncService {
         supabase.from('achievements').select('*')
       ]);
 
-      const profile = profileResult.data;
+      // Handle case where profile doesn't exist yet
+      let profile = profileResult.data;
+      if (!profile) {
+        // Try to create profile if it doesn't exist
+        console.log('Profile not found for user, attempting to create one');
+        console.log('User ID:', user?.id);
+        
+        // Try multiple approaches to create the profile
+        let profileCreated = false;
+        let lastError: any = null;
+        
+        // Approach 1: Try with full data
+        try {
+          const fullProfilePayload: any = {
+            id: user.id,
+            email: user.email || null,
+            full_name: null,
+            avatar_url: null,
+            membership_tier: null,
+            is_premium: null,
+            has_seen_onboarding: false,
+          };
+          
+          console.log('Attempting full profile creation in syncService:', fullProfilePayload);
+          
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert([fullProfilePayload])
+            .select()
+            .single();
+
+          console.log('Full profile creation result in syncService:', { newProfile, insertError });
+
+          if (insertError) {
+            throw insertError;
+          } else {
+            profile = newProfile;
+            profileCreated = true;
+            console.log('Full profile created successfully in syncService');
+          }
+        } catch (error: any) {
+          console.error('Full profile creation failed in syncService:', error);
+          lastError = error;
+        }
+        
+        // Approach 2: Try with minimal data if full approach failed
+        if (!profileCreated) {
+          try {
+            const minimalProfilePayload: any = {
+              id: user.id,
+              email: user.email || null,
+            };
+            
+            console.log('Attempting minimal profile creation in syncService:', minimalProfilePayload);
+            
+            const { data: newProfile, error: insertError } = await supabase
+              .from('profiles')
+              .insert([minimalProfilePayload])
+              .select()
+              .single();
+
+            console.log('Minimal profile creation result in syncService:', { newProfile, insertError });
+
+            if (insertError) {
+              throw insertError;
+            } else {
+              profile = newProfile;
+              profileCreated = true;
+              console.log('Minimal profile created successfully in syncService');
+              
+              // Now try to update with full data
+              try {
+                const fullProfilePayload: any = {
+                  full_name: null,
+                  avatar_url: null,
+                  membership_tier: null,
+                  is_premium: null,
+                  has_seen_onboarding: false,
+                };
+                
+                const { data: updateData, error: updateError } = await supabase
+                  .from('profiles')
+                  .update(fullProfilePayload)
+                  .eq('id', user.id)
+                  .select()
+                  .single();
+                  
+                console.log('Full profile update result in syncService:', { updateData, updateError });
+                
+                if (updateError) {
+                  console.error('Failed to update profile with full data in syncService:', updateError);
+                } else {
+                  profile = updateData;
+                  console.log('Profile updated with full data in syncService');
+                }
+              } catch (updateError: any) {
+                console.error('Failed to update profile with full data in syncService:', updateError);
+              }
+            }
+          } catch (error: any) {
+            console.error('Minimal profile creation failed in syncService:', error);
+            lastError = error;
+          }
+        }
+        
+        // Log error if all approaches failed
+        if (!profileCreated && lastError) {
+          console.error('All profile creation approaches failed in syncService:', lastError);
+        }
+      }
+
       const sightings = sightingsResult.data || [];
       const wishlists = wishlistsResult.data || [];
       const achievements = achievementsResult.data || [];
@@ -127,7 +237,7 @@ export class SyncService {
         const sortedSightings = sameSightings.sort((a: Sighting, b: Sighting) => a.created_at.localeCompare(b.created_at));
         const firstSighting = sortedSightings.length > 0 ? sortedSightings[0] : null;
         const isFirstSighting = (firstSighting as Sighting | null)?.id === sighting.id;
-        
+      
         if (isFirstSighting && catalog) {
           const creature = catalog.creatures.find((c: Creature) => c.id === sighting.creature_id);
           return total + (creature?.points || 50);
@@ -345,6 +455,45 @@ export class SyncService {
       ts: Date.now()
     };
     await queueOperation(operation);
+  }
+
+  // Add a public method to manually create a profile
+  async createProfileForCurrentUser(): Promise<boolean> {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('Error getting user:', userError);
+        return false;
+      }
+      
+      if (!user) {
+        console.log('No user found');
+        return false;
+      }
+
+      console.log('Manually creating profile for user:', user.id);
+      
+      // Try to create profile with minimal data first
+      const minimalProfilePayload: any = {
+        id: user.id,
+        email: user.email || null,
+      };
+      
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([minimalProfilePayload]);
+
+      if (insertError) {
+        console.error('Failed to create profile:', insertError);
+        return false;
+      } else {
+        console.log('Profile created successfully');
+        return true;
+      }
+    } catch (error: any) {
+      console.error('Error creating profile:', error);
+      return false;
+    }
   }
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,29 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Calendar, Clock, MapPin, Camera, Check } from 'lucide-react-native';
-import { DiveSite } from '@/types/database';
+import { DiveSite, Creature } from '@/types/database';
 import ImageWithFallback from '@/components/ImageWithFallback';
 
 const { width } = Dimensions.get('window');
 const creatureCardWidth = (width - 60) / 3;
 
+interface SelectedCreature {
+  creature: Creature;
+  notes?: string;
+  imageUri?: string;
+}
+
+interface DiveFormData {
+  date: string;
+  timeOfDay: string;
+  depth: string;
+  diveType: string;
+  diveNotes: string;
+}
+
 interface LogDiveFormProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: DiveFormData;
+  setFormData: (data: DiveFormData) => void;
   diveSites: DiveSite[];
   selectedDiveSite: DiveSite | null;
   setSelectedDiveSite: (site: DiveSite | null) => void;
@@ -28,7 +42,7 @@ interface LogDiveFormProps {
   filteredDiveSites: DiveSite[];
   handleDiveSiteSelect: (site: DiveSite) => void;
   diveTypes: string[];
-  selectedCreatures: any[];
+  selectedCreatures: SelectedCreature[];
   setShowCreatureSelection: (show: boolean) => void;
   saving: boolean;
   handleSaveDive: () => void;
@@ -53,8 +67,26 @@ const LogDiveForm: React.FC<LogDiveFormProps> = ({
   saving,
   handleSaveDive,
   clearFormData,
+}: {
+  formData: LogDiveFormProps['formData'],
+  setFormData: LogDiveFormProps['setFormData'],
+  diveSites: LogDiveFormProps['diveSites'],
+  selectedDiveSite: LogDiveFormProps['selectedDiveSite'],
+  setSelectedDiveSite: LogDiveFormProps['setSelectedDiveSite'],
+  showDiveSiteDropdown: LogDiveFormProps['showDiveSiteDropdown'],
+  setShowDiveSiteDropdown: LogDiveFormProps['setShowDiveSiteDropdown'],
+  diveSiteSearch: LogDiveFormProps['diveSiteSearch'],
+  setDiveSiteSearch: LogDiveFormProps['setDiveSiteSearch'],
+  filteredDiveSites: LogDiveFormProps['filteredDiveSites'],
+  handleDiveSiteSelect: LogDiveFormProps['handleDiveSiteSelect'],
+  diveTypes: LogDiveFormProps['diveTypes'],
+  selectedCreatures: LogDiveFormProps['selectedCreatures'],
+  setShowCreatureSelection: LogDiveFormProps['setShowCreatureSelection'],
+  saving: LogDiveFormProps['saving'],
+  handleSaveDive: LogDiveFormProps['handleSaveDive'],
+  clearFormData: LogDiveFormProps['clearFormData']
 }) => {
-  const [showDiveTypeDropdown, setShowDiveTypeDropdown] = useState(false);
+  const [showDiveTypeDropdown, setShowDiveTypeDropdown] = React.useState(false);
 
   return (
     <View style={styles.container}>
@@ -117,7 +149,7 @@ const LogDiveForm: React.FC<LogDiveFormProps> = ({
                 value={diveSiteSearch}
                 onChangeText={setDiveSiteSearch}
               />
-              {filteredDiveSites.map(site => (
+              {filteredDiveSites.map((site: DiveSite) => (
                 <TouchableOpacity
                   key={site.id}
                   style={styles.dropdownItem}
@@ -155,7 +187,7 @@ const LogDiveForm: React.FC<LogDiveFormProps> = ({
           
           {showDiveTypeDropdown && (
             <View style={styles.dropdown}>
-              {diveTypes.map(type => (
+              {diveTypes.map((type: string) => (
                 <TouchableOpacity
                   key={type}
                   style={styles.dropdownItem}
@@ -185,7 +217,7 @@ const LogDiveForm: React.FC<LogDiveFormProps> = ({
         
         {selectedCreatures.length > 0 ? (
           <View style={styles.creaturesGrid}>
-            {selectedCreatures.map((selectedCreature, index) => (
+            {selectedCreatures.map((selectedCreature: SelectedCreature, index: number) => (
               <View key={index} style={styles.creatureCard}>
                 <ImageWithFallback
                   uri={selectedCreature.creature.image_url}

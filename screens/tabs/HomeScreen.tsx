@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -34,9 +34,9 @@ interface LeaderboardEntry {
 }
 
 export default function HomeScreen() {
-  const [userData, setUserData] = useState<CachedUserData | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = React.useState<CachedUserData | null>(null);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
 
   const loadData = async () => {
@@ -66,13 +66,13 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadData();
   }, []);
 
   // Reload data when screen comes into focus
   useFocusEffect(
-    useCallback(() => {
+    React.useCallback(() => {
       loadData();
     }, [])
   );

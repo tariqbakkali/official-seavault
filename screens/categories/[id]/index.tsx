@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -6,26 +6,29 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Check } from 'lucide-react-native';
+import { ArrowLeft, Check, Search } from 'lucide-react-native';
 import { Creature, CachedCatalog, CachedUserData } from '@/types/database';
 import { loadCatalogCache, loadUserDataCache } from '@/services/cache';
 import ImageWithFallback from '@/components/ImageWithFallback';
+import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 60) / 2;
 
 export default function CategoryCreaturesScreen() {
   const { id } = useLocalSearchParams();
-  const [creatures, setCreatures] = useState<Creature[]>([]);
-  const [categoryName, setCategoryName] = useState('');
-  const [seenCreatures, setSeenCreatures] = useState<Set<string>>(new Set<string>());
-  const [loading, setLoading] = useState(true);
+  const [creatures, setCreatures] = React.useState<Creature[]>([]);
+  const [categoryName, setCategoryName] = React.useState('');
+  const [seenCreatures, setSeenCreatures] = React.useState<Set<string>>(new Set<string>());
+  const [loading, setLoading] = React.useState(true);
+  const [searchQuery, setSearchQuery] = React.useState('');
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadData();
   }, [id]);
 
@@ -36,15 +39,11 @@ export default function CategoryCreaturesScreen() {
         loadUserDataCache()
       ]);
 
-      console.log('Category screen - catalog:', catalog?.creatures?.length, 'creatures');
-      console.log('Category screen - category id:', id);
-
       if (catalog && userData) {
         const category = catalog.categories.find(c => c.id === id);
         setCategoryName(category?.name || 'Category');
 
         const categoryCreatures = catalog.creatures.filter(c => c.category_id === id);
-        console.log('Category creatures found:', categoryCreatures.length);
         setCreatures(categoryCreatures);
 
         const seen: Set<string> = new Set(userData.sightings.map(s => s.creature_id));
@@ -56,6 +55,20 @@ export default function CategoryCreaturesScreen() {
       setLoading(false);
     }
   };
+
+  // Filter creatures based on search query
+  const filteredCreatures = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return creatures;
+    }
+    
+    const query = searchQuery.toLowerCase().trim();
+    return creatures.filter(creature => 
+      creature.name.toLowerCase().includes(query) ||
+      (creature.scientific_name && creature.scientific_name.toLowerCase().includes(query)) ||
+      (creature.description && creature.description.toLowerCase().includes(query))
+    );
+  }, [creatures, searchQuery]);
 
   const renderCreature = ({ item }: { item: Creature }) => {
     const isSeen = seenCreatures.has(item.id);
@@ -117,15 +130,46 @@ export default function CategoryCreaturesScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <FlatList
-        data={creatures}
-        keyExtractor={(item) => item.id}
-        renderItem={renderCreature}
-        numColumns={2}
-        contentContainerStyle={styles.listContainer}
-        columnWrapperStyle={styles.row}
-        showsVerticalScrollIndicator={false}
-      />
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
+          <Search size={20} color={COLORS.TEXT_TERTIARY} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search creatures..."
+            placeholderTextColor={COLORS.TEXT_TERTIARY}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+      </View>
+
+      {/* Results Count */}
+      <View style={styles.resultsHeader}>
+        <Text style={styles.resultsCount}>
+          {filteredCreatures.length} of {creatures.length} {filteredCreatures.length === 1 ? 'creature' : 'creatures'}
+        </Text>
+      </View>
+
+      {filteredCreatures.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Search size={48} color={COLORS.TEXT_TERTIARY} />
+          <Text style={styles.emptyTitle}>No creatures found</Text>
+          <Text style={styles.emptySubtitle}>
+            Try adjusting your search query
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredCreatures}
+          keyExtractor={(item) => item.id}
+          renderItem={renderCreature}
+          numColumns={2}
+          contentContainerStyle={styles.listContainer}
+          columnWrapperStyle={styles.row}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   );
 }
@@ -133,13 +177,13 @@ export default function CategoryCreaturesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: COLORS.BACKGROUND,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
     paddingTop: 16,
     paddingBottom: 16,
   },
@@ -147,20 +191,69 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: COLORS.SURFACE,
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: TYPOGRAPHY.SIZE_TITLE,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD as any,
+    color: COLORS.TEXT_PRIMARY,
   },
   placeholder: {
     width: 40,
   },
+  searchContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
+    marginBottom: 16,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingHorizontal: 16,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    color: COLORS.TEXT_PRIMARY,
+    paddingVertical: 16,
+  },
+  resultsHeader: {
+    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
+    marginBottom: 8,
+  },
+  resultsCount: {
+    fontSize: TYPOGRAPHY.SIZE_SM,
+    color: COLORS.TEXT_TERTIARY,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyTitle: {
+    fontSize: TYPOGRAPHY.SIZE_LG,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD as any,
+    color: COLORS.TEXT_PRIMARY,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    color: COLORS.TEXT_TERTIARY,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
   listContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
     paddingBottom: 100,
   },
   row: {
@@ -168,9 +261,9 @@ const styles = StyleSheet.create({
   },
   creatureCard: {
     width: cardWidth,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    marginBottom: 20,
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    marginBottom: DIMENSIONS.SPACE_LG,
     overflow: 'hidden',
   },
   imageContainer: {
@@ -189,35 +282,35 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#34C759',
+    backgroundColor: COLORS.SUCCESS,
     justifyContent: 'center',
     alignItems: 'center',
   },
   creatureInfo: {
-    padding: 12,
+    padding: DIMENSIONS.SPACE_MD,
   },
   creatureName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD as any,
+    color: COLORS.TEXT_PRIMARY,
     marginBottom: 4,
   },
   scientificName: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: TYPOGRAPHY.SIZE_SM,
+    color: COLORS.TEXT_TERTIARY,
     fontStyle: 'italic',
     marginBottom: 8,
   },
   pointsBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    backgroundColor: COLORS.PRIMARY,
+    paddingHorizontal: DIMENSIONS.SPACE_SM,
+    paddingVertical: DIMENSIONS.SPACE_XS,
+    borderRadius: DIMENSIONS.RADIUS_SM,
   },
   pointsText: {
-    fontSize: 10,
-    color: '#fff',
-    fontWeight: '600',
+    fontSize: TYPOGRAPHY.SIZE_XS,
+    color: COLORS.TEXT_PRIMARY,
+    fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD as any,
   },
 });

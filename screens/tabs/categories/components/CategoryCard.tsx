@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import ImageWithFallback from '@/components/ImageWithFallback';
@@ -17,7 +17,7 @@ interface CategoryCardProps {
   onPress: () => void;
 }
 
-const CategoryCard: React.FC<CategoryCardProps> = ({ category, onPress }) => {
+const CategoryCard: React.FC<CategoryCardProps> = ({ category, onPress }: { category: CategoryCardProps['category'], onPress: CategoryCardProps['onPress'] }) => {
   return (
     <TouchableOpacity
       style={styles.categoryCard}

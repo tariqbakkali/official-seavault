@@ -1,15 +1,28 @@
-import { Link, Stack } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Link, Stack, router } from 'expo-router';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NotFoundScreen() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <View style={styles.container}>
-        <Text style={styles.text}>This screen doesn't exist.</Text>
-        <Link href="/" style={styles.link}>
-          <Text>Go to home screen!</Text>
-        </Link>
+      <Stack.Screen options={{ title: 'Page Not Found' }} />
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <Text style={styles.title}>Page Not Found</Text>
+        <Text style={styles.text}>Sorry, the page you're looking for doesn't exist or the link is invalid.</Text>
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={() => router.replace('/')}
+        >
+          <Text style={styles.buttonText}>Go to Home Screen</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.button, styles.secondaryButton]}
+          onPress={() => router.goBack()}
+        >
+          <Text style={styles.secondaryButtonText}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     </>
   );
@@ -21,13 +34,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    backgroundColor: '#000',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 16,
   },
   text: {
-    fontSize: 20,
-    fontWeight: 600,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
   },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
+  button: {
+    backgroundColor: '#007AFF',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    marginBottom: 16,
+    minWidth: 200,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  secondaryButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

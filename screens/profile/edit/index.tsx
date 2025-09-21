@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -7,29 +7,46 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ArrowLeft, Camera, User, Lock, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Camera, User, Lock, Trash2, AlertCircle, Mail, AtSign } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Linking from 'expo-linking';
 import { supabase, uploadImage } from '@/services/supabase';
 import { syncService } from '@/services/syncService';
-import { loadUserDataCache } from '@/services/cache';
+import { 
+  saveCatalogCache,
+  saveUserDataCache,
+  saveDiveSitesCache,
+  setStorageItem,
+  getStorageItem,
+  saveJson,
+  loadJson,
+  queueOperation,
+  getQueuedOperations,
+  removeQueuedOperation,
+  loadUserDataCache
+} from '@/services/cache';
 import { Profile } from '@/types/database';
 import ImageWithFallback from '@/components/ImageWithFallback';
+import { AuthError } from '@supabase/auth-js';
 
 export default function EditProfileScreen() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [fullName, setFullName] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = React.useState<Profile | null>(null);
+  const [fullName, setFullName] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [currentPassword, setCurrentPassword] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [avatarUri, setAvatarUri] = React.useState<string | null>(null);
+  const [avatarUploadError, setAvatarUploadError] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadProfileData();
   }, []);
 
@@ -39,13 +56,21 @@ export default function EditProfileScreen() {
       if (userData?.profile) {
         setProfile(userData.profile);
         setFullName(userData.profile.full_name || '');
+        setEmail(userData.profile.email || '');
         setAvatarUri(userData.profile.avatar_url);
+        setAvatarUploadError(false); // Reset error state when loading
       }
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Add email validation function
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   const handlePickImage = async () => {
@@ -66,6 +91,7 @@ export default function EditProfileScreen() {
 
       if (!result.canceled) {
         setAvatarUri(result.assets[0].uri);
+        setAvatarUploadError(false); // Reset error state when selecting new image
         console.log('Image selected, URI:', result.assets[0].uri);
       }
     } catch (error) {
@@ -76,6 +102,12 @@ export default function EditProfileScreen() {
 
   const handleSaveProfile = async () => {
     if (!profile) return;
+
+    // Validate email if it has been changed
+    if (email !== profile.email && !isValidEmail(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -95,9 +127,84 @@ export default function EditProfileScreen() {
         console.log('Upload result:', uploadedUrl);
         if (uploadedUrl) {
           avatarUrl = uploadedUrl;
+          setAvatarUploadError(false); // Clear error if upload succeeds
         } else {
           console.error('Failed to upload image');
-          Alert.alert('Warning', 'Failed to upload profile picture, but other changes were saved');
+          setAvatarUploadError(true); // Set error state
+          // Ask user if they want to continue without avatar
+          return new Promise<void>((resolve) => {
+            Alert.alert(
+              'Avatar Upload Failed',
+              'Failed to upload profile picture. Do you want to save your other changes without updating your avatar?',
+              [
+                {
+                  text: 'Cancel',
+                  style: 'cancel',
+                  onPress: () => resolve()
+                },
+                {
+                  text: 'Save Without Avatar',
+                  style: 'default',
+                  onPress: async () => {
+                    try {
+                      // Continue with profile update without avatar
+                      const updatedProfile = {
+                        id: user.id,
+                        full_name: fullName.trim(),
+                        email: email.trim(),
+                        avatar_url: profile.avatar_url, // Keep existing avatar
+                      };
+
+                      const { error } = await (supabase as any)
+                        .from('profiles')
+                        .update(updatedProfile)
+                        .eq('id', user.id);
+
+                      if (error) throw error;
+
+                      // If email has changed, update auth email as well
+                      if (email !== profile.email) {
+                        const { error: authError } = await supabase.auth.updateUser({
+                          email: email.trim()
+                        });
+
+                        if (authError) {
+                          console.error('Failed to update auth email:', authError);
+                          Alert.alert(
+                            'Warning', 
+                            'Profile updated but email update failed. You may need to verify your new email address.'
+                          );
+                        } else {
+                          Alert.alert(
+                            'Email Update Required', 
+                            'We have sent a confirmation email to your new address. Please check your email to confirm the change.'
+                          );
+                        }
+                      }
+
+                      // Sync data
+                      await syncService.pullUserData();
+
+                      // Force a full app reload to update all cached data
+                      await syncService.fullSync();
+                      Alert.alert('Success', 'Profile updated successfully (without avatar)', [
+                        { text: 'OK', onPress: () => router.back() }
+                      ]);
+                    } catch (error: any) {
+                      if (error instanceof AuthError) {
+                        Alert.alert('Error', error.message || 'Failed to update profile');
+                      } else {
+                        Alert.alert('Error', 'An unexpected error occurred');
+                      }
+                    } finally {
+                      setSaving(false);
+                      resolve();
+                    }
+                  }
+                }
+              ]
+            );
+          });
         }
       }
 
@@ -105,6 +212,7 @@ export default function EditProfileScreen() {
       const updatedProfile = {
         id: user.id,
         full_name: fullName.trim(),
+        email: email.trim(),
         avatar_url: avatarUrl,
       };
 
@@ -115,6 +223,26 @@ export default function EditProfileScreen() {
 
       if (error) throw error;
 
+      // If email has changed, update auth email as well
+      if (email !== profile.email) {
+        const { error: authError } = await supabase.auth.updateUser({
+          email: email.trim()
+        });
+
+        if (authError) {
+          console.error('Failed to update auth email:', authError);
+          Alert.alert(
+            'Warning', 
+            'Profile updated but email update failed. You may need to verify your new email address.'
+          );
+        } else {
+          Alert.alert(
+            'Email Update Required', 
+            'We have sent a confirmation email to your new address. Please check your email to confirm the change.'
+          );
+        }
+      }
+
       // Sync data
       await syncService.pullUserData();
 
@@ -124,14 +252,18 @@ export default function EditProfileScreen() {
         { text: 'OK', onPress: () => router.back() }
       ]);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update profile');
+      if (error instanceof AuthError) {
+        Alert.alert('Error', error.message || 'Failed to update profile');
+      } else {
+        Alert.alert('Error', 'An unexpected error occurred');
+      }
     } finally {
       setSaving(false);
     }
   };
 
   const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if (!newPassword || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all password fields');
       return;
     }
@@ -146,44 +278,97 @@ export default function EditProfileScreen() {
       return;
     }
 
-    setSaving(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) {
-        Alert.alert('Error', 'Unable to verify current user');
-        return;
+    // If current password is provided, verify it and update directly
+    if (currentPassword) {
+      setSaving(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.email) {
+          Alert.alert('Error', 'Unable to verify current user');
+          return;
+        }
+
+        // First verify current password by attempting to sign in with it
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: currentPassword
+        });
+
+        if (signInError) {
+          Alert.alert('Error', 'Current password is incorrect');
+          return;
+        }
+
+        // Update password
+        const { error } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+
+        if (error) throw error;
+
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+
+        Alert.alert('Success', 'Password updated successfully');
+        
+        // Reload user data after password change
+        await syncService.pullUserData();
+      } catch (error: any) {
+        if (error instanceof AuthError) {
+          Alert.alert('Error', error.message || 'Failed to update password');
+        } else {
+          Alert.alert('Error', 'An unexpected error occurred');
+        }
+      } finally {
+        setSaving(false);
       }
+    } else {
+      // If current password is not provided, offer to send password reset email
+      Alert.alert(
+        'Reset Password',
+        'Since you did not provide your current password, we will send a password reset email to your registered email address.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Send Reset Email',
+            onPress: async () => {
+              setSaving(true);
+              try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user?.email) {
+                  Alert.alert('Error', 'Unable to get your email address');
+                  return;
+                }
 
-      // First verify current password by attempting to sign in with it
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: currentPassword
-      });
+                const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+                  redirectTo: Linking.createURL('login'),
+                });
 
-      if (signInError) {
-        Alert.alert('Error', 'Current password is incorrect');
-        return;
-      }
+                if (error) throw error;
 
-      // Update password
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-
-      if (error) throw error;
-
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-
-      Alert.alert('Success', 'Password updated successfully');
-      
-      // Reload user data after password change
-      await syncService.pullUserData();
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update password');
-    } finally {
-      setSaving(false);
+                Alert.alert(
+                  'Password Reset Email Sent',
+                  'Check your email for instructions to reset your password.'
+                );
+                
+                // Clear password fields
+                setNewPassword('');
+                setConfirmPassword('');
+              } catch (error: any) {
+                if (error instanceof AuthError) {
+                  Alert.alert('Error', error.message);
+                } else {
+                  console.error('Unexpected error:', error);
+                  Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+                }
+              } finally {
+                setSaving(false);
+              }
+            }
+          }
+        ]
+      );
     }
   };
 
@@ -236,19 +421,57 @@ export default function EditProfileScreen() {
         // Continue with account deletion even if this fails
       }
 
-      // Delete the user account
-      const { error: deleteUserError } = await supabase.auth.admin.deleteUser(user.id);
-      
-      if (deleteUserError) {
-        // If admin delete fails, try regular sign out
-        console.error('Admin delete failed, signing out instead:', deleteUserError);
-        await supabase.auth.signOut();
-      }
+      // Sign out the user (this is the secure way to "delete" the account from the client side)
+      // The actual user deletion should be handled by a backend function or database trigger
+      await supabase.auth.signOut();
 
-      // Clear all local data
+      // Clear all local data comprehensively
       try {
+        // Clear AsyncStorage
         const AsyncStorage = require('@react-native-async-storage/async-storage').default;
         await AsyncStorage.clear();
+        
+        // Clear file system caches
+        // Note: In a production app, you might want to clear specific keys rather than everything
+        // For now, we'll just clear the cache files by saving empty data
+        await saveCatalogCache({
+          categories: [],
+          creatures: [],
+          lastSyncAt: new Date().toISOString()
+        });
+        
+        await saveUserDataCache({
+          profile: null,
+          sightings: [],
+          wishlists: [],
+          achievements: [],
+          stats: {
+            totalPoints: 0,
+            uniqueCreatures: 0,
+            overallCompletion: 0,
+            categoryStats: {},
+            categoryNames: {}
+          },
+          lastSyncAt: new Date().toISOString()
+        });
+        
+        await saveDiveSitesCache([]);
+        
+        // Clear any queued operations
+        const operations = await getQueuedOperations();
+        for (const operation of operations) {
+          await removeQueuedOperation(operation.clientId);
+        }
+        
+        // Clear storage items
+        await setStorageItem('isOffline', 'false');
+        await setStorageItem('lastCatalogSyncAt', '');
+        await setStorageItem('lastUserSyncAt', '');
+        
+        // Clear JSON files
+        await saveJson('catalog.json', null);
+        await saveJson('user-data.json', null);
+        await saveJson('dive_sites.json', null);
       } catch (clearError) {
         console.error('Error clearing local storage:', clearError);
       }
@@ -263,21 +486,45 @@ export default function EditProfileScreen() {
       );
     } catch (error: any) {
       console.error('Account deletion error:', error);
-      Alert.alert(
-        'Error', 
-        'Failed to delete account completely. Please contact support if you continue to have issues.',
-        [
-          { text: 'Sign Out Anyway', onPress: async () => {
-            try {
-              await supabase.auth.signOut();
-              router.replace('/(auth)/login');
-            } catch (error: any) {
-              console.error('Sign out error:', error);
-            }
-          }},
-          { text: 'Cancel', style: 'cancel' }
-        ]
-      );
+      if (error instanceof AuthError) {
+        Alert.alert(
+          'Error', 
+          error.message || 'Failed to delete account completely. Please contact support if you continue to have issues.',
+          [
+            { text: 'Sign Out Anyway', onPress: async () => {
+              try {
+                await supabase.auth.signOut();
+                router.replace('/(auth)/login');
+              } catch (error: any) {
+                console.error('Sign out error:', error);
+                if (error instanceof AuthError) {
+                  console.error('Sign out error:', error.message);
+                }
+              }
+            }},
+            { text: 'Cancel', style: 'cancel' }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Error', 
+          'An unexpected error occurred. Please contact support if you continue to have issues.',
+          [
+            { text: 'Sign Out Anyway', onPress: async () => {
+              try {
+                await supabase.auth.signOut();
+                router.replace('/(auth)/login');
+              } catch (error: any) {
+                console.error('Sign out error:', error);
+                if (error instanceof AuthError) {
+                  console.error('Sign out error:', error.message);
+                }
+              }
+            }},
+            { text: 'Cancel', style: 'cancel' }
+          ]
+        );
+      }
     } finally {
       setSaving(false);
     }
@@ -316,7 +563,18 @@ export default function EditProfileScreen() {
                 style={styles.avatar}
                 fallbackColor="#333"
               />
+              {avatarUploadError && (
+                <View style={styles.avatarErrorOverlay}>
+                  <AlertCircle size={24} color="#FF3B30" />
+                </View>
+              )}
             </View>
+            {avatarUploadError && (
+              <View style={styles.avatarErrorContainer}>
+                <AlertCircle size={16} color="#FF3B30" />
+                <Text style={styles.avatarErrorText}>Failed to upload avatar</Text>
+              </View>
+            )}
             <TouchableOpacity style={styles.changePhotoButton} onPress={handlePickImage}>
               <Camera size={16} color="#007AFF" />
               <Text style={styles.changePhotoText}>Change Photo</Text>
@@ -336,14 +594,28 @@ export default function EditProfileScreen() {
               onChangeText={setFullName}
             />
           </View>
+          <View style={styles.inputContainer}>
+            <AtSign size={20} color="#666" />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="#666"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
           <TouchableOpacity
             style={[styles.saveButton, saving && styles.saveButtonDisabled]}
             onPress={handleSaveProfile}
             disabled={saving}
           >
-            <Text style={styles.saveButtonText}>
-              {saving ? 'Saving...' : 'Save Profile'}
-            </Text>
+            {saving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.saveButtonText}>Save Profile</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -353,7 +625,7 @@ export default function EditProfileScreen() {
             <Lock size={20} color="#666" />
             <TextInput
               style={styles.input}
-              placeholder="Current Password"
+              placeholder="Current Password (optional)"
               placeholderTextColor="#666"
               value={currentPassword}
               onChangeText={setCurrentPassword}
@@ -387,10 +659,21 @@ export default function EditProfileScreen() {
             onPress={handleChangePassword}
             disabled={saving}
           >
-            <Text style={styles.saveButtonText}>
-              {saving ? 'Updating...' : 'Update Password'}
-            </Text>
+            {saving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.saveButtonText}>Update Password</Text>
+            )}
           </TouchableOpacity>
+          
+          {!currentPassword && (
+            <View style={styles.passwordResetInfo}>
+              <Mail size={16} color="#666" />
+              <Text style={styles.passwordResetInfoText}>
+                Leave current password blank to receive a password reset email
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -465,6 +748,28 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  avatarErrorOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 50,
+  },
+  avatarErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
+  avatarErrorText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    fontWeight: '500',
+  },
   changePhotoButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -507,6 +812,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  passwordResetInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  passwordResetInfoText: {
+    color: '#666',
+    fontSize: 14,
   },
   deleteButton: {
     flexDirection: 'row',

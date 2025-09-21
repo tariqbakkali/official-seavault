@@ -2,3 +2,6 @@
 // export { default as DateTimePicker } from './DateTimePicker';
 // export { default as SearchInput } from './SearchInput';
 // export { default as FormField } from './FormField';
+
+// Add empty export to make this a valid module
+export {};

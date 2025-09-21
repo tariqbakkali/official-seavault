@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -30,10 +30,10 @@ const { width } = Dimensions.get('window');
 const cardWidth = width - 40;
 
 export default function CategoriesScreen() {
-  const [categories, setCategories] = useState<CategoryWithStats[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [isOffline, setIsOffline] = useState(false);
+  const [categories, setCategories] = React.useState<CategoryWithStats[]>([]);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
+  const [isOffline, setIsOffline] = React.useState(false);
   const insets = useSafeAreaInsets();
 
   const loadData = async () => {
@@ -107,13 +107,13 @@ export default function CategoriesScreen() {
     setRefreshing(false);
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadData();
   }, []);
 
   // Reload data when screen comes into focus
   useFocusEffect(
-    useCallback(() => {
+    React.useCallback(() => {
       loadData();
     }, [])
   );

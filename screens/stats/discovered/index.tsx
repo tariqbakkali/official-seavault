@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -24,11 +24,11 @@ interface DiscoveredCreature {
 }
 
 export default function DiscoveredScreen() {
-  const [discoveredCreatures, setDiscoveredCreatures] = useState<DiscoveredCreature[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [discoveredCreatures, setDiscoveredCreatures] = React.useState<DiscoveredCreature[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadData();
   }, []);
 

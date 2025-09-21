@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -48,18 +48,18 @@ const diveTypes = [
 ];
 
 export default function LogDiveScreen() {
-  const [creatures, setCreatures] = useState<Creature[]>([]);
-  const [categories, setCategories] = useState<CategoryWithCreatures[]>([]);
-  const [diveSites, setDiveSites] = useState<DiveSite[]>([]);
-  const [selectedDiveSite, setSelectedDiveSite] = useState<DiveSite | null>(null);
-  const [selectedCreatures, setSelectedCreatures] = useState<SelectedCreature[]>([]);
-  const [showDiveTypeDropdown, setShowDiveTypeDropdown] = useState(false);
-  const [showCreatureSelection, setShowCreatureSelection] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryWithCreatures | null>(null);
-  const [creatureSearchQuery, setCreatureSearchQuery] = useState('');
+  const [creatures, setCreatures] = React.useState<Creature[]>([]);
+  const [categories, setCategories] = React.useState<CategoryWithCreatures[]>([]);
+  const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
+  const [selectedDiveSite, setSelectedDiveSite] = React.useState<DiveSite | null>(null);
+  const [selectedCreatures, setSelectedCreatures] = React.useState<SelectedCreature[]>([]);
+  const [showDiveTypeDropdown, setShowDiveTypeDropdown] = React.useState(false);
+  const [showCreatureSelection, setShowCreatureSelection] = React.useState(false);
+  const [selectedCategory, setSelectedCategory] = React.useState<CategoryWithCreatures | null>(null);
+  const [creatureSearchQuery, setCreatureSearchQuery] = React.useState('');
   const insets = useSafeAreaInsets();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = React.useState({
     date: new Date().toISOString().split('T')[0],
     timeOfDay: new Date().toTimeString().split(' ')[0].slice(0, 5),
     depth: '',
@@ -67,10 +67,10 @@ export default function LogDiveScreen() {
     diveNotes: '',
   });
   
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [showDiveSiteDropdown, setShowDiveSiteDropdown] = useState(false);
-  const [diveSiteSearch, setDiveSiteSearch] = useState('');
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [showDiveSiteDropdown, setShowDiveSiteDropdown] = React.useState(false);
+  const [diveSiteSearch, setDiveSiteSearch] = React.useState('');
 
   const clearFormData = () => {
     // Reset all form data to defaults
@@ -95,7 +95,7 @@ export default function LogDiveScreen() {
     site.name?.toLowerCase().includes(diveSiteSearch.toLowerCase())
   );
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadData();
   }, []);
 
@@ -310,7 +310,7 @@ export default function LogDiveScreen() {
             zoom: 8
           }}
           markers={markers}
-          onMarkerClick={(event: any) => {
+          onMarkerClick={(event: { id: string }) => {
             const site = sitesWithCoords.find(s => s.id === event.id);
             if (site) {
               handleMapMarkerPress(site);

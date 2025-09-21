@@ -1,11 +1,12 @@
-import React from 'react';
+import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { CachedUserData } from '@/types/database';
 
 interface StatsSectionProps {
-  stats: any;
+  stats: CachedUserData['stats'] | null | undefined;
 }
 
-const StatsSection: React.FC<StatsSectionProps> = ({ stats }) => {
+const StatsSection: React.FC<StatsSectionProps> = ({ stats }: { stats: StatsSectionProps['stats'] }) => {
   return (
     <View style={styles.statsContainer}>
       <View style={styles.statItem}>

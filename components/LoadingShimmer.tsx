@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import * as React from 'react';
 import { View, StyleSheet, Animated, ViewStyle, DimensionValue } from 'react-native';
 
 interface LoadingShimmerProps {
@@ -14,9 +14,9 @@ export default function LoadingShimmer({
   borderRadius = 8,
   style 
 }: LoadingShimmerProps) {
-  const shimmerAnimation = useRef(new Animated.Value(0)).current;
+  const shimmerAnimation = React.useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
+  React.useEffect(() => {
     const shimmer = Animated.loop(
       Animated.sequence([
         Animated.timing(shimmerAnimation, {

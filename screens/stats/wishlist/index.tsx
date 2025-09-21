@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -25,11 +25,11 @@ interface WishlistCreature {
 }
 
 export default function WishlistScreen() {
-  const [wishlistCreatures, setWishlistCreatures] = useState<WishlistCreature[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [wishlistCreatures, setWishlistCreatures] = React.useState<WishlistCreature[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadData();
   }, []);
 

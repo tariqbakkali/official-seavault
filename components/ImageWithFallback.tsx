@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import { Image, View, StyleSheet, ImageStyle, ViewStyle } from 'react-native';
 import LoadingShimmer from './LoadingShimmer';
 
@@ -15,8 +15,8 @@ export default function ImageWithFallback({
   containerStyle,
   fallbackColor = '#2a2a2a'
 }: ImageWithFallbackProps) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
 
   if (!uri || error) {
     return (

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -26,11 +26,11 @@ interface PointsEntry {
 }
 
 export default function PointsScreen() {
-  const [pointsHistory, setPointsHistory] = useState<PointsEntry[]>([]);
-  const [totalPoints, setTotalPoints] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [pointsHistory, setPointsHistory] = React.useState<PointsEntry[]>([]);
+  const [totalPoints, setTotalPoints] = React.useState(0);
+  const [loading, setLoading] = React.useState(true);
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadData();
   }, []);
 

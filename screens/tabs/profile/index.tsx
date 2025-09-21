@@ -1,17 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Alert,
+  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { supabase } from '@/services/supabase';
 import { syncService } from '@/services/syncService';
-import { CachedUserData } from '@/types/database';
+import { CachedUserData, Profile } from '@/types/database';
 import { loadUserDataCache } from '@/services/cache';
 import { achievementService } from '@/services/achievementService';
 import { ROUTES } from '@/constants';
@@ -21,8 +23,9 @@ import CategoryProgressSection from '@/screens/tabs/profile/components/CategoryP
 import SettingsSection from '@/screens/tabs/profile/components/SettingsSection';
 
 export default function ProfileScreen() {
-  const [userData, setUserData] = useState<CachedUserData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = React.useState<CachedUserData | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [syncLoading, setSyncLoading] = React.useState(false);
   const insets = useSafeAreaInsets();
 
   const loadData = async () => {
@@ -41,13 +44,61 @@ export default function ProfileScreen() {
     }
   };
 
-  useEffect(() => {
-    loadData();
+  // Simplified function to check if profile exists
+  const checkProfileExists = async () => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('Error getting user:', userError);
+        Alert.alert('Error', 'Failed to get user information. Please try signing out and back in.');
+        return false;
+      }
+      
+      if (!user) {
+        console.log('No user found');
+        return false;
+      }
+
+      // Check if profile exists
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      // If profile doesn't exist, show error (should be created by trigger)
+      if (profileError || !profileData) {
+        console.log('Profile does not exist for user:', user.id);
+        Alert.alert(
+          'Profile Error', 
+          'Your profile could not be found. This may be due to a system issue. Please try signing out and back in, or contact support if the problem persists.'
+        );
+        return false;
+      }
+      
+      console.log('Profile exists for user:', user.id);
+      return true;
+    } catch (error: any) {
+      console.error('Error checking profile:', error);
+      Alert.alert('Error', `Failed to check profile: ${error.message}. Please try again.`);
+      return false;
+    }
+  };
+
+  React.useEffect(() => {
+    // Just check if profile exists, don't try to create it
+    checkProfileExists().then((exists) => {
+      if (exists) {
+        loadData();
+      } else {
+        setLoading(false);
+      }
+    });
   }, []);
 
   // Reload data when screen comes into focus
   useFocusEffect(
-    useCallback(() => {
+    React.useCallback(() => {
       loadData();
     }, [])
   );
@@ -71,47 +122,29 @@ export default function ProfileScreen() {
   };
 
   const handleForceSync = async () => {
-    Alert.alert(
-      'Force Sync',
-      'This will sync all pending changes and download the latest data.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sync',
-          onPress: async () => {
-            try {
-              await syncService.fullSync();
-              await loadData();
-              Alert.alert('Success', 'Data synced successfully');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to sync data');
-            }
-          },
-        },
-      ]
-    );
+    setSyncLoading(true);
+    try {
+      await syncService.fullSync();
+      await loadData();
+      Alert.alert('Success', 'Data synced successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to sync data');
+    } finally {
+      setSyncLoading(false);
+    }
   };
 
   const handleDownloadCatalog = async () => {
-    Alert.alert(
-      'Download Catalog',
-      'This will download the latest creature catalog.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Download',
-          onPress: async () => {
-            try {
-              await syncService.pullCatalog();
-              await syncService.pullDiveSites();
-              Alert.alert('Success', 'Catalog downloaded successfully');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to download catalog');
-            }
-          },
-        },
-      ]
-    );
+    setSyncLoading(true);
+    try {
+      await syncService.pullCatalog();
+      await syncService.pullDiveSites();
+      Alert.alert('Success', 'Catalog downloaded successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to download catalog');
+    } finally {
+      setSyncLoading(false);
+    }
   };
 
   if (loading) {
@@ -119,6 +152,38 @@ export default function ProfileScreen() {
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      </View>
+    );
+  }
+
+  // Add a check for profile data
+  if (!userData?.profile) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Profile</Text>
+        </View>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>No profile data available</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={() => {
+              setLoading(true);
+              checkProfileExists().then((exists) => {
+                if (exists) {
+                  loadData();
+                } else {
+                  setLoading(false);
+                }
+              });
+            }}
+          >
+            <Text style={styles.retryButtonText}>Retry Profile Check</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -128,7 +193,7 @@ export default function ProfileScreen() {
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <ScrollView style={styles.scrollView}>
         <ProfileHeader 
-          profile={userData?.profile}
+          profile={userData.profile}
           onEditProfile={() => router.push(ROUTES.PROFILE.EDIT)}
         />
         <StatsSection stats={userData?.stats} />
@@ -137,8 +202,17 @@ export default function ProfileScreen() {
           onDownloadCatalog={handleDownloadCatalog}
           onForceSync={handleForceSync}
           onSignOut={handleSignOut}
+          loading={syncLoading}
         />
       </ScrollView>
+      {syncLoading && (
+        <View style={styles.overlay}>
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.loadingText}>Syncing...</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -161,5 +235,51 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingOverlay: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });

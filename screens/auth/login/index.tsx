@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -8,18 +8,43 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { supabase } from '@/services/supabase';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY, APP_CONFIG } from '@/constants';
+import { AuthError } from '@supabase/auth-js';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [isSignUp, setIsSignUp] = React.useState(false);
   const insets = useSafeAreaInsets();
+
+  React.useEffect(() => {
+    // Listen for auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event);
+      if (event === 'SIGNED_IN' && session) {
+        console.log('User signed in, navigating to main app');
+        router.replace(ROUTES.TABS.HOME);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Add email validation function
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -27,40 +52,100 @@ export default function LoginScreen() {
       return;
     }
 
+    // Validate email format
+    if (!isValidEmail(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
     setLoading(true);
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        // For Expo Go, we need to specify the redirectTo URL
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            // This will redirect back to the app after email confirmation
+            emailRedirectTo: Linking.createURL('home')
+          }
         });
-        
+      
         if (error) throw error;
-        
-        // Create profile
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { error: insertError } = await supabase.from('profiles').insert({
-            id: user.id,
-            email: user.email,
-            full_name: '',
-            has_seen_onboarding: false,
-          } as any);
+      
+        // Check if email confirmation is required
+        if (data.user && !data.user.confirmed_at) {
+          Alert.alert(
+            'Confirm Your Email',
+            'Please check your email to confirm your account. After confirmation, you can sign in.',
+            [
+              { text: 'OK' }
+            ]
+          );
+        } else if (data.user) {
+          // Profile creation is handled by the database trigger
+          Alert.alert('Success', 'Account created successfully!');
+          router.replace(ROUTES.TABS.HOME);
         }
-        
-        Alert.alert('Success', 'Account created successfully!');
-        router.replace(ROUTES.TABS.ROOT);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        
+      
         if (error) throw error;
-        router.replace(ROUTES.TABS.ROOT);
+        // Navigation will be handled by the auth state change listener
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      if (error instanceof AuthError) {
+        // Provide more specific error messages
+        if (error.message.includes('Invalid login credentials')) {
+          Alert.alert('Error', 'Invalid email or password');
+        } else if (error.message.includes('Email not confirmed')) {
+          Alert.alert('Error', 'Please confirm your email before signing in. Check your inbox for the confirmation email.');
+        } else {
+          Alert.alert('Error', error.message);
+        }
+      } else {
+        console.error('Unexpected error:', error);
+        Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add password reset function
+  const handlePasswordReset = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: Linking.createURL('login'),
+      });
+
+      if (error) throw error;
+
+      Alert.alert(
+        'Password Reset Email Sent',
+        'Check your email for instructions to reset your password.'
+      );
+    } catch (error: any) {
+      if (error instanceof AuthError) {
+        Alert.alert('Error', error.message);
+      } else {
+        console.error('Unexpected error:', error);
+        Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -72,7 +157,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <View style={styles.content}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
           <Text style={styles.title}>{APP_CONFIG.NAME}</Text>
           <Text style={styles.subtitle}>{APP_CONFIG.TAGLINE}</Text>
 
@@ -85,6 +170,7 @@ export default function LoginScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
             />
             
             <TextInput
@@ -94,6 +180,7 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              autoCorrect={false}
             />
 
             <TouchableOpacity
@@ -101,10 +188,24 @@ export default function LoginScreen() {
               onPress={handleAuth}
               disabled={loading}
             >
-              <Text style={styles.buttonText}>
-                {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>
+                  {isSignUp ? 'Sign Up' : 'Sign In'}
+                </Text>
+              )}
             </TouchableOpacity>
+
+            {!isSignUp && (
+              <TouchableOpacity
+                style={styles.forgotPasswordButton}
+                onPress={handlePasswordReset}
+                disabled={loading}
+              >
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={styles.switchButton}
@@ -115,7 +216,7 @@ export default function LoginScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -129,10 +230,11 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 24,
   },
   title: {
     fontSize: 48,
@@ -173,6 +275,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  forgotPasswordButton: {
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  forgotPasswordText: {
+    color: '#007AFF',
+    fontSize: 14,
   },
   switchButton: {
     alignItems: 'center',

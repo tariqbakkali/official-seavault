@@ -11,7 +11,6 @@ export const ROUTES = {
   
   // Main tab routes
   TABS: {
-    ROOT: '/(tabs)' as const,
     HOME: '/(tabs)' as const,
     CATEGORIES: '/(tabs)/categories' as const,
     LOG_DIVE: '/(tabs)/log-dive' as const,

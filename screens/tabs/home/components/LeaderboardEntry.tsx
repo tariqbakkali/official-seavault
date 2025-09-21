@@ -1,20 +1,22 @@
-import React from 'react';
+import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Trophy } from 'lucide-react-native';
 import { ImageWithFallback } from '@/components';
 
+interface LeaderboardEntryData {
+  name: string;
+  avatar: string;
+  creatures: number;
+  points: number;
+  isCurrentUser?: boolean;
+}
+
 interface LeaderboardEntryProps {
-  entry: {
-    name: string;
-    avatar: string;
-    creatures: number;
-    points: number;
-    isCurrentUser?: boolean;
-  };
+  entry: LeaderboardEntryData;
   rank: number;
 }
 
-const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({ entry, rank }) => {
+const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({ entry, rank }: { entry: LeaderboardEntryProps['entry'], rank: LeaderboardEntryProps['rank'] }) => {
   return (
     <View 
       style={[

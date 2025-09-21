@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -22,15 +22,15 @@ const { width } = Dimensions.get('window');
 
 export default function CreatureDetailScreen() {
   const { id } = useLocalSearchParams();
-  const [creature, setCreature] = useState<Creature | null>(null);
-  const [sightings, setSightings] = useState<Sighting[]>([]);
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [isSeen, setIsSeen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'about' | 'sightings'>('about');
-  const [loading, setLoading] = useState(true);
+  const [creature, setCreature] = React.useState<Creature | null>(null);
+  const [sightings, setSightings] = React.useState<Sighting[]>([]);
+  const [isWishlisted, setIsWishlisted] = React.useState(false);
+  const [isSeen, setIsSeen] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState<'about' | 'sightings'>('about');
+  const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadData();
   }, [id]);
 

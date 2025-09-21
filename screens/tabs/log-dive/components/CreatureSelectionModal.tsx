@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import {
   View,
   Text,
@@ -56,9 +56,21 @@ const CreatureSelectionModal: React.FC<CreatureSelectionModalProps> = ({
   handleCreatureToggle,
   handleCreatureImagePick,
   handleCreatureNotes,
+}: {
+  visible: CreatureSelectionModalProps['visible'],
+  onClose: CreatureSelectionModalProps['onClose'],
+  categories: CreatureSelectionModalProps['categories'],
+  selectedCategory: CreatureSelectionModalProps['selectedCategory'],
+  setSelectedCategory: CreatureSelectionModalProps['setSelectedCategory'],
+  creatureSearchQuery: CreatureSelectionModalProps['creatureSearchQuery'],
+  setCreatureSearchQuery: CreatureSelectionModalProps['setCreatureSearchQuery'],
+  selectedCreatures: CreatureSelectionModalProps['selectedCreatures'],
+  handleCreatureToggle: CreatureSelectionModalProps['handleCreatureToggle'],
+  handleCreatureImagePick: CreatureSelectionModalProps['handleCreatureImagePick'],
+  handleCreatureNotes: CreatureSelectionModalProps['handleCreatureNotes']
 }) => {
-  const [expandedCreature, setExpandedCreature] = useState<string | null>(null);
-  const [creatureNotes, setCreatureNotes] = useState('');
+  const [expandedCreature, setExpandedCreature] = React.useState<string | null>(null);
+  const [creatureNotes, setCreatureNotes] = React.useState('');
 
   const filteredCreatures = selectedCategory
     ? selectedCategory.creatures.filter(creature =>
@@ -71,11 +83,11 @@ const CreatureSelectionModal: React.FC<CreatureSelectionModalProps> = ({
       );
 
   const isCreatureSelected = (creatureId: string) => {
-    return selectedCreatures.some(sc => sc.creature.id === creatureId);
+    return selectedCreatures.some((sc: SelectedCreature) => sc.creature.id === creatureId);
   };
 
   const getSelectedCreature = (creatureId: string) => {
-    return selectedCreatures.find(sc => sc.creature.id === creatureId);
+    return selectedCreatures.find((sc: SelectedCreature) => sc.creature.id === creatureId);
   };
 
   const handleCreaturePress = (creature: Creature) => {

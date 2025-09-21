@@ -1,15 +1,22 @@
-import React from 'react';
+import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { CachedUserData } from '@/types/database';
 
-interface CategoryProgressSectionProps {
-  stats: any;
+interface CategoryStat {
+  seen: number;
+  total: number;
+  completion: number;
 }
 
-const CategoryProgressSection: React.FC<CategoryProgressSectionProps> = ({ stats }) => {
+interface CategoryProgressSectionProps {
+  stats: CachedUserData['stats'] | null | undefined;
+}
+
+const CategoryProgressSection: React.FC<CategoryProgressSectionProps> = ({ stats }: { stats: CategoryProgressSectionProps['stats'] }) => {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Category Progress</Text>
-      {Object.entries(stats?.categoryStats || {}).map(([categoryId, stat]: [string, any]) => (
+      {Object.entries(stats?.categoryStats || {}).map(([categoryId, stat]: [string, CategoryStat]) => (
         <View key={categoryId} style={styles.categoryProgress}>
           <View style={styles.categoryProgressHeader}>
             <Text style={styles.categoryName}>{stats?.categoryNames?.[categoryId] || 'Category'}</Text>

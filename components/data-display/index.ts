@@ -1,5 +1,6 @@
 // Data Display Components (to be implemented)
-// export { default as CreatureCard } from './CreatureCard';
-// export { default as StatCard } from './StatCard';
-// export { default as CategoryCard } from './CategoryCard';
-// export { default as SightingCard } from './SightingCard';
+// export { default as Card } from './Card';
+// export { default as List } from './List';
+
+// Add empty export to make this a valid module
+export {};
