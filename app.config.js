@@ -36,7 +36,7 @@ module.exports = {
           },
           '(tabs)': {
             screens: {
-              index: 'home',
+              index: 'index',
               categories: 'categories',
               'log-dive': 'log-dive',
               profile: 'profile'

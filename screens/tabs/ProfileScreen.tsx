@@ -17,6 +17,8 @@ import { loadUserDataCache } from '@/services/cache';
 import { achievementService } from '@/services/achievementService';
 import { ImageWithFallback } from '@/components';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import { authService } from '@/services/authService';
+import { debugLogger } from '@/utils/debugLogger';
 
 export default function ProfileScreen() {
   const [userData, setUserData] = React.useState<CachedUserData | null>(null);
@@ -24,15 +26,19 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
 
   const loadData = async () => {
+    debugLogger.logProfileEvent('Loading profile data');
     try {
       const data = await syncService.pullUserData();
+      debugLogger.logProfileEvent('Profile data loaded from sync service', { hasData: !!data });
       setUserData(data);
       
       // Load achievements
+      debugLogger.logProfileEvent('Loading unlocked achievements');
       await achievementService.loadUnlockedAchievements();
     } catch (error) {
-      console.error('Error loading profile data:', error);
+      debugLogger.logError('ProfileScreen - Error loading profile data', error);
       const cachedData = await loadUserDataCache();
+      debugLogger.logProfileEvent('Using cached profile data', { hasCachedData: !!cachedData });
       setUserData(cachedData);
     } finally {
       setLoading(false);
@@ -40,28 +46,40 @@ export default function ProfileScreen() {
   };
 
   React.useEffect(() => {
+    debugLogger.logProfileEvent('ProfileScreen mounted, loading data');
     loadData();
   }, []);
 
   // Reload data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
+      debugLogger.logProfileEvent('ProfileScreen focused, reloading data');
       loadData();
     }, [])
   );
 
   const handleSignOut = async () => {
+    debugLogger.logAuthEvent('Sign out initiated');
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel', onPress: () => {
+          debugLogger.logAuthEvent('Sign out cancelled');
+        }},
         {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
-            await supabase.auth.signOut();
-            router.replace(ROUTES.AUTH.LOGIN);
+            debugLogger.logAuthEvent('Sign out confirmed, calling authService.signOut');
+            const result = await authService.signOut();
+            if (result.success) {
+              debugLogger.logAuthEvent('Sign out successful');
+              router.replace(ROUTES.AUTH.LOGIN);
+            } else {
+              debugLogger.logAuthEvent('Sign out failed', { message: result.message });
+              Alert.alert('Error', result.message);
+            }
           },
         },
       ]
@@ -69,19 +87,25 @@ export default function ProfileScreen() {
   };
 
   const handleForceSync = async () => {
+    debugLogger.logSyncEvent('Force sync initiated');
     Alert.alert(
       'Force Sync',
       'This will sync all pending changes and download the latest data.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel', onPress: () => {
+          debugLogger.logSyncEvent('Force sync cancelled');
+        }},
         {
           text: 'Sync',
           onPress: async () => {
             try {
+              debugLogger.logSyncEvent('Starting force sync');
               await syncService.fullSync();
               await loadData();
+              debugLogger.logSyncEvent('Force sync completed successfully');
               Alert.alert('Success', 'Data synced successfully');
             } catch (error) {
+              debugLogger.logError('ProfileScreen - Force sync failed', error);
               Alert.alert('Error', 'Failed to sync data');
             }
           },
@@ -91,19 +115,25 @@ export default function ProfileScreen() {
   };
 
   const handleDownloadCatalog = async () => {
+    debugLogger.logSyncEvent('Catalog download initiated');
     Alert.alert(
       'Download Catalog',
       'This will download the latest creature catalog.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel', onPress: () => {
+          debugLogger.logSyncEvent('Catalog download cancelled');
+        }},
         {
           text: 'Download',
           onPress: async () => {
             try {
+              debugLogger.logSyncEvent('Starting catalog download');
               await syncService.pullCatalog();
               await syncService.pullDiveSites();
+              debugLogger.logSyncEvent('Catalog download completed successfully');
               Alert.alert('Success', 'Catalog downloaded successfully');
             } catch (error) {
+              debugLogger.logError('ProfileScreen - Catalog download failed', error);
               Alert.alert('Error', 'Failed to download catalog');
             }
           },
@@ -113,6 +143,7 @@ export default function ProfileScreen() {
   };
 
   if (loading) {
+    debugLogger.logProfileEvent('ProfileScreen rendering loading state');
     return (
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <View style={styles.header}>
@@ -124,6 +155,12 @@ export default function ProfileScreen() {
 
   const profile = userData?.profile;
   const stats = userData?.stats;
+
+  debugLogger.logProfileEvent('ProfileScreen rendering profile data', { 
+    hasProfile: !!profile, 
+    hasStats: !!stats,
+    profileId: profile?.id
+  });
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
@@ -144,7 +181,10 @@ export default function ProfileScreen() {
           <Text style={styles.userEmail}>{profile?.email}</Text>
           <TouchableOpacity
             style={styles.editProfileButton}
-            onPress={() => router.push(ROUTES.PROFILE.EDIT)}
+            onPress={() => {
+              debugLogger.logProfileEvent('Edit profile button pressed');
+              router.push(ROUTES.PROFILE.EDIT);
+            }}
           >
             <Text style={styles.editProfileText}>Edit Profile</Text>
           </TouchableOpacity>

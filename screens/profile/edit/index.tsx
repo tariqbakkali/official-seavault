@@ -32,6 +32,7 @@ import {
 import { Profile } from '@/types/database';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import { AuthError } from '@supabase/auth-js';
+import { authService } from '@/services/authService';
 
 export default function EditProfileScreen() {
   const [profile, setProfile] = React.useState<Profile | null>(null);
@@ -493,13 +494,13 @@ export default function EditProfileScreen() {
           [
             { text: 'Sign Out Anyway', onPress: async () => {
               try {
-                await supabase.auth.signOut();
-                router.replace('/(auth)/login');
+                const result = await authService.signOut();
+                if (!result.success) {
+                  Alert.alert('Error', result.message);
+                }
               } catch (error: any) {
                 console.error('Sign out error:', error);
-                if (error instanceof AuthError) {
-                  console.error('Sign out error:', error.message);
-                }
+                Alert.alert('Error', 'Failed to sign out. Please try again.');
               }
             }},
             { text: 'Cancel', style: 'cancel' }
@@ -512,13 +513,13 @@ export default function EditProfileScreen() {
           [
             { text: 'Sign Out Anyway', onPress: async () => {
               try {
-                await supabase.auth.signOut();
-                router.replace('/(auth)/login');
+                const result = await authService.signOut();
+                if (!result.success) {
+                  Alert.alert('Error', result.message);
+                }
               } catch (error: any) {
                 console.error('Sign out error:', error);
-                if (error instanceof AuthError) {
-                  console.error('Sign out error:', error.message);
-                }
+                Alert.alert('Error', 'Failed to sign out. Please try again.');
               }
             }},
             { text: 'Cancel', style: 'cancel' }

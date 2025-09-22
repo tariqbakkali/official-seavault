@@ -13,10 +13,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import * as Linking from 'expo-linking';
+import { authService } from '@/services/authService';
 import { supabase } from '@/services/supabase';
-import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY, APP_CONFIG } from '@/constants';
-import { AuthError } from '@supabase/auth-js';
+import { ROUTES, COLORS, DIMENSIONS, APP_CONFIG } from '@/constants';
+import { debugLogger } from '@/utils/debugLogger';
 
 export default function LoginScreen() {
   const [email, setEmail] = React.useState('');
@@ -25,21 +25,6 @@ export default function LoginScreen() {
   const [isSignUp, setIsSignUp] = React.useState(false);
   const insets = useSafeAreaInsets();
 
-  React.useEffect(() => {
-    // Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event);
-      if (event === 'SIGNED_IN' && session) {
-        console.log('User signed in, navigating to main app');
-        router.replace(ROUTES.TABS.HOME);
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
   // Add email validation function
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -47,13 +32,17 @@ export default function LoginScreen() {
   };
 
   const handleAuth = async () => {
+    debugLogger.logAuthEvent('Handle auth called', { isSignUp, email });
+    
     if (!email || !password) {
+      debugLogger.logAuthEvent('Validation failed - missing fields');
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     // Validate email format
     if (!isValidEmail(email)) {
+      debugLogger.logAuthEvent('Validation failed - invalid email format');
       Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
@@ -61,92 +50,75 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       if (isSignUp) {
-        // For Expo Go, we need to specify the redirectTo URL
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            // This will redirect back to the app after email confirmation
-            emailRedirectTo: Linking.createURL('home')
+        debugLogger.logAuthEvent('Processing sign up request');
+        const result = await authService.signUp(email, password);
+        
+        if (result.success) {
+          if (result.requiresEmailConfirmation) {
+            debugLogger.logAuthEvent('Sign up successful but requires email confirmation');
+            Alert.alert(
+              'Confirm Your Email',
+              result.message,
+              [{ text: 'OK' }]
+            );
+            // Switch to sign in mode so user can sign in after confirming email
+            setIsSignUp(false);
+          } else {
+            // User is already signed in
+            debugLogger.logAuthEvent('Sign up successful and user signed in');
+            Alert.alert('Success', result.message);
+            router.replace(ROUTES.TABS.HOME);
           }
-        });
-      
-        if (error) throw error;
-      
-        // Check if email confirmation is required
-        if (data.user && !data.user.confirmed_at) {
-          Alert.alert(
-            'Confirm Your Email',
-            'Please check your email to confirm your account. After confirmation, you can sign in.',
-            [
-              { text: 'OK' }
-            ]
-          );
-        } else if (data.user) {
-          // Profile creation is handled by the database trigger
-          Alert.alert('Success', 'Account created successfully!');
-          router.replace(ROUTES.TABS.HOME);
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-      
-        if (error) throw error;
-        // Navigation will be handled by the auth state change listener
-      }
-    } catch (error: any) {
-      if (error instanceof AuthError) {
-        // Provide more specific error messages
-        if (error.message.includes('Invalid login credentials')) {
-          Alert.alert('Error', 'Invalid email or password');
-        } else if (error.message.includes('Email not confirmed')) {
-          Alert.alert('Error', 'Please confirm your email before signing in. Check your inbox for the confirmation email.');
         } else {
-          Alert.alert('Error', error.message);
+          debugLogger.logAuthEvent('Sign up failed', { message: result.message });
+          Alert.alert('Error', result.message);
         }
       } else {
-        console.error('Unexpected error:', error);
-        Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+        debugLogger.logAuthEvent('Processing sign in request');
+        const result = await authService.signIn(email, password);
+        
+        if (result.success) {
+          // Navigation will be handled by the auth state change listener
+          debugLogger.logAuthEvent('Sign in successful');
+          console.log('Sign in successful');
+        } else {
+          debugLogger.logAuthEvent('Sign in failed', { message: result.message });
+          Alert.alert('Error', result.message);
+        }
       }
     } finally {
+      debugLogger.logAuthEvent('Auth process completed, clearing loading state');
       setLoading(false);
     }
   };
 
   // Add password reset function
   const handlePasswordReset = async () => {
+    debugLogger.logAuthEvent('Handle password reset called', { email });
+    
     if (!email) {
+      debugLogger.logAuthEvent('Password reset failed - missing email');
       Alert.alert('Error', 'Please enter your email address');
       return;
     }
 
     if (!isValidEmail(email)) {
+      debugLogger.logAuthEvent('Password reset failed - invalid email format');
       Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: Linking.createURL('login'),
-      });
-
-      if (error) throw error;
-
+      debugLogger.logAuthEvent('Processing password reset request');
+      const result = await authService.resetPassword(email);
+      debugLogger.logAuthEvent('Password reset result', { success: result.success, message: result.message });
       Alert.alert(
-        'Password Reset Email Sent',
-        'Check your email for instructions to reset your password.'
+        result.success ? 'Success' : 'Error',
+        result.message
       );
-    } catch (error: any) {
-      if (error instanceof AuthError) {
-        Alert.alert('Error', error.message);
-      } else {
-        console.error('Unexpected error:', error);
-        Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-      }
     } finally {
+      debugLogger.logAuthEvent('Password reset process completed, clearing loading state');
       setLoading(false);
     }
   };
@@ -171,6 +143,7 @@ export default function LoginScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              editable={!loading}
             />
             
             <TextInput
@@ -181,6 +154,7 @@ export default function LoginScreen() {
               onChangeText={setPassword}
               secureTextEntry
               autoCorrect={false}
+              editable={!loading}
             />
 
             <TouchableOpacity
@@ -209,7 +183,11 @@ export default function LoginScreen() {
 
             <TouchableOpacity
               style={styles.switchButton}
-              onPress={() => setIsSignUp(!isSignUp)}
+              onPress={() => {
+                debugLogger.logAuthEvent('Switching auth mode', { isSignUp: !isSignUp });
+                setIsSignUp(!isSignUp);
+              }}
+              disabled={loading}
             >
               <Text style={styles.switchText}>
                 {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}

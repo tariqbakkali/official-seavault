@@ -1,13 +1,14 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { supabase } from '@/services/supabase';
+import { authService } from '@/services/authService';
 import { syncService } from '@/services/syncService';
 import { ensureCacheDirectories } from '@/services/cache';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { STACK_CONFIG, ROUTES } from '@/constants';
+import { debugLogger } from '@/utils/debugLogger';
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -15,50 +16,48 @@ export default function RootLayout() {
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const isMountedRef = useRef(true);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    initialize();
-    
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  const initialize = async () => {
+  const initialize = useCallback(async () => {
     try {
+      debugLogger.logAuthEvent('Starting app initialization');
+      
       // Initialize cache directories
+      debugLogger.logAuthEvent('Initializing cache directories');
       await ensureCacheDirectories();
       
-      // Check auth state
-      const { data: { session } } = await supabase.auth.getSession();
+      // Initialize auth service
+      debugLogger.logAuthEvent('Initializing auth service');
+      await authService.initialize();
       
-      if (session) {
-        // Initialize sync service
-        await syncService.checkConnectivity();
-        
-        // Initial data sync if online
-        if (syncService.getIsOnline()) {
-          await syncService.fullSync();
-        }
-        // Explicitly navigate to tabs if authenticated
-        if (isMountedRef.current) {
-          router.replace(ROUTES.TABS.HOME);
-        }
+      // Initialize sync service regardless of auth state
+      debugLogger.logSyncEvent('Initializing sync service');
+      await syncService.checkConnectivity();
+      
+      // Initial data sync if online
+      if (syncService.getIsOnline()) {
+        debugLogger.logSyncEvent('Device is online, performing initial sync');
+        await syncService.fullSync();
       } else {
-        // Explicitly navigate to auth if not authenticated
-        if (isMountedRef.current) {
-          router.replace(ROUTES.AUTH.LOGIN);
-        }
+        debugLogger.logSyncEvent('Device is offline, skipping initial sync');
       }
       
-      // Only update state if component is still mounted
+      // Always update state to ready, regardless of component mount status
       if (isMountedRef.current) {
+        debugLogger.logAuthEvent('App initialization completed, setting ready state');
         setIsReady(true);
       }
+
+      // Only navigate if we're still mounted and haven't already navigated
+      if (isMountedRef.current) {
+        // Navigation logic will be handled by the tab layout components
+        // The router.replace calls were causing infinite re-renders
+        debugLogger.logAuthEvent('App initialized and ready');
+        console.log('App initialized');
+      }
     } catch (error) {
+      debugLogger.logError('App initialization error', error);
       console.error('Initialization error:', error);
-      // Only update state if component is still mounted
       if (isMountedRef.current) {
         setHasError(true);
         setErrorMessage(error instanceof Error ? error.message : 'An unknown error occurred during initialization');
@@ -66,16 +65,38 @@ export default function RootLayout() {
         setIsReady(true);
       }
     }
-  };
+  }, []);
 
-  const handleRetry = async () => {
+  useEffect(() => {
+    debugLogger.logAuthEvent('RootLayout mounted, setting up auth listener and initializing app');
+    isMountedRef.current = true;
+    
+    // Set up auth listener
+    unsubscribeRef.current = authService.setupAuthListener();
+    
+    // Initialize app
+    initialize();
+    
+    return () => {
+      debugLogger.logAuthEvent('RootLayout unmounting, cleaning up auth listener');
+      isMountedRef.current = false;
+      // Clean up auth listener
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, [initialize]); // Add initialize to dependency array
+
+  const handleRetry = useCallback(async () => {
+    debugLogger.logAuthEvent('Retry initialization requested');
     setHasError(false);
     setErrorMessage('');
     await initialize();
-  };
+  }, [initialize]);
 
   // Show loading screen while initializing
   if (!isReady) {
+    debugLogger.logAuthEvent('Rendering loading screen');
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>SeaVault</Text>
@@ -87,6 +108,7 @@ export default function RootLayout() {
 
   // Show error screen if initialization failed
   if (hasError) {
+    debugLogger.logAuthEvent('Rendering error screen', { errorMessage });
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorTitle}>Initialization Error</Text>
@@ -99,6 +121,8 @@ export default function RootLayout() {
     );
   }
 
+  debugLogger.logAuthEvent('Rendering main app layout');
+  console.log('RootLayout rendering. isReady:', isReady, 'hasError:', hasError);
   return (
     <SafeAreaProvider>
       <Stack screenOptions={STACK_CONFIG.DEFAULT_SCREEN_OPTIONS}>

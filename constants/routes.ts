@@ -15,6 +15,7 @@ export const ROUTES = {
     CATEGORIES: '/(tabs)/categories' as const,
     LOG_DIVE: '/(tabs)/log-dive' as const,
     PROFILE: '/(tabs)/profile' as const,
+    SQL_EDITOR: '/(tabs)/sql-editor' as const,
   },
   
   // Category routes
@@ -72,6 +73,11 @@ export const TAB_CONFIG = {
     name: 'profile' as const,
     title: 'Profile',
     icon: 'User',
+  },
+  SQL_EDITOR: {
+    name: 'sql-editor' as const,
+    title: 'SQL Editor',
+    icon: 'Database',
   },
 } as const;
 

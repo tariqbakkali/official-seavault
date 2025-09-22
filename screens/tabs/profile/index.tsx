@@ -21,6 +21,7 @@ import ProfileHeader from '@/screens/tabs/profile/components/ProfileHeader';
 import StatsSection from '@/screens/tabs/profile/components/StatsSection';
 import CategoryProgressSection from '@/screens/tabs/profile/components/CategoryProgressSection';
 import SettingsSection from '@/screens/tabs/profile/components/SettingsSection';
+import { authService } from '@/services/authService';
 
 export default function ProfileScreen() {
   const [userData, setUserData] = React.useState<CachedUserData | null>(null);
@@ -113,8 +114,12 @@ export default function ProfileScreen() {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
-            await supabase.auth.signOut();
-            router.replace(ROUTES.AUTH.LOGIN);
+            const result = await authService.signOut();
+            if (result.success) {
+              router.replace(ROUTES.AUTH.LOGIN);
+            } else {
+              Alert.alert('Error', result.message);
+            }
           },
         },
       ]
