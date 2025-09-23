@@ -10,8 +10,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Calendar } from 'lucide-react-native';
-import { Creature, Sighting, CachedCatalog, CachedUserData } from '@/types/database';
-import { loadCatalogCache, loadUserDataCache } from '@/services/cache';
+import { Creature, Sighting } from '@/types/database';
+import { useDataStore } from '@/stores/data';
 import ImageWithFallback from '@/components/ImageWithFallback';
 
 const { width } = Dimensions.get('window');
@@ -34,10 +34,9 @@ export default function DiscoveredScreen() {
 
   const loadData = async () => {
     try {
-      const [catalog, userData] = await Promise.all([
-        loadCatalogCache(),
-        loadUserDataCache()
-      ]);
+      // Fetch catalog and user data directly from Supabase
+      const catalog = await dataService.fetchCatalog();
+      const userData = await dataService.fetchUserData();
 
       if (catalog && userData) {
         // Group sightings by creature
@@ -204,24 +203,23 @@ const styles = StyleSheet.create({
   },
   creatureInfo: {
     flex: 1,
-    padding: 12,
-    justifyContent: 'space-between',
+    padding: 16,
   },
   creatureName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   scientificName: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666',
     fontStyle: 'italic',
     marginBottom: 8,
   },
   sightingInfo: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
   dateRow: {
     flexDirection: 'row',
@@ -230,23 +228,24 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   firstSightingDate: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666',
   },
   totalSightings: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#007AFF',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   pointsBadge: {
     alignSelf: 'flex-start',
     backgroundColor: '#007AFF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 8,
   },
   pointsText: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#fff',
     fontWeight: '600',
   },

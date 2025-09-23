@@ -19,7 +19,8 @@
       "@/types": ["./types"],
       "@/types/*": ["./types/*"],
       "@/styles": ["./styles"],
-      "@/styles/*": ["./styles/*"]
+      "@/styles/*": ["./styles/*"],
+      "@/types/database": ["./types/database"]
     }
   },
   "include": [

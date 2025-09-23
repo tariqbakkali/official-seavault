@@ -9,8 +9,8 @@ export const APP_CONFIG = {
 } as const;
 
 export const APP_FEATURES = {
-  OFFLINE_SUPPORT: true,
-  BACKGROUND_SYNC: true,
+  OFFLINE_SUPPORT: false,
+  BACKGROUND_SYNC: false,
   PUSH_NOTIFICATIONS: false, // TODO: Implement later
   BIOMETRIC_AUTH: false, // TODO: Implement later
 } as const;

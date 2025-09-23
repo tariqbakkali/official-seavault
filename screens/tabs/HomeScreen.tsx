@@ -6,14 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Eye, Heart, Trophy } from 'lucide-react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
-import { syncService } from '@/services/syncService';
-import { CachedUserData } from '@/types/database';
-import { loadUserDataCache } from '@/services/cache';
+import { useDataStore } from '@/stores/data'; // Use the new data store
+import { calculateUserStats } from '@/stores/data';
 import { ImageWithFallback } from '@/components';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY, APP_CONFIG } from '@/constants';
 
@@ -34,20 +34,30 @@ interface LeaderboardEntry {
 }
 
 export default function HomeScreen() {
-  const [userData, setUserData] = React.useState<CachedUserData | null>(null);
+  const [userData, setUserData] = React.useState<any | null>(null);
+  const [userStats, setUserStats] = React.useState<any | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
+  
+  // Use the new data store instead of dataService
+  const { fetchUserData, fetchCatalog } = useDataStore();
 
   const loadData = async () => {
     try {
-      await syncService.checkConnectivity();
-      const data = await syncService.pullUserData();
+      // Fetch user data and catalog directly from Supabase using the new store
+      const data = await fetchUserData();
+      const catalog = await fetchCatalog();
+      
       setUserData(data);
+      
+      if (data && catalog) {
+        // Calculate user stats
+        const stats = calculateUserStats(data, catalog);
+        setUserStats(stats);
+      }
     } catch (error) {
       console.error('Error loading home data:', error);
-      const cachedData = await loadUserDataCache();
-      setUserData(cachedData);
     } finally {
       setLoading(false);
     }
@@ -56,12 +66,9 @@ export default function HomeScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      // Force a full sync on refresh
-      await syncService.fullSync();
       await loadData();
     } catch (error) {
       console.error('Error during refresh:', error);
-      await loadData(); // Fallback to cached data
     }
     setRefreshing(false);
   };
@@ -80,7 +87,7 @@ export default function HomeScreen() {
   const stats: StatCard[] = [
     {
       icon: <Eye size={24} color="#007AFF" />,
-      value: userData?.stats.uniqueCreatures || 0,
+      value: userStats?.uniqueCreatures || 0,
       label: 'Discovered',
       color: '#007AFF',
       onPress: () => router.push(ROUTES.STATS.DISCOVERED),
@@ -94,7 +101,7 @@ export default function HomeScreen() {
     },
     {
       icon: <Trophy size={24} color="#FF9500" />,
-      value: userData?.stats.totalPoints || 0,
+      value: userStats?.totalPoints || 0,
       label: 'Points',
       color: '#FF9500',
       onPress: () => router.push(ROUTES.STATS.POINTS),
@@ -104,7 +111,7 @@ export default function HomeScreen() {
   // Mock leaderboard data - in real app this would come from server
   const leaderboard: LeaderboardEntry[] = [
     { name: 'John Smith', avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg', creatures: 7, points: 2650 },
-    { name: userData?.profile?.full_name || 'You', avatar: userData?.profile?.avatar_url || '', creatures: userData?.stats.uniqueCreatures || 0, points: userData?.stats.totalPoints || 0, isCurrentUser: true },
+    { name: userData?.profile?.full_name || 'You', avatar: userData?.profile?.avatar_url || '', creatures: userStats?.uniqueCreatures || 0, points: userStats?.totalPoints || 0, isCurrentUser: true },
     { name: 'Batman', avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg', creatures: 2, points: 400 },
   ].sort((a, b) => b.points - a.points);
 
@@ -162,7 +169,7 @@ export default function HomeScreen() {
               <Trophy size={20} color="#FF9500" />
               <Text style={styles.sectionTitle}>Top Explorers</Text>
             </View>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push(ROUTES.MODAL.LEADERBOARD)}>
               <Text style={styles.seeAllButton}>See All</Text>
             </TouchableOpacity>
           </View>
@@ -198,7 +205,6 @@ export default function HomeScreen() {
               </View>
               <View style={styles.pointsBadge}>
                 <Text style={styles.pointsText}>{entry.points}</Text>
-                <Text style={styles.ptsText}>PTS</Text>
               </View>
             </View>
           ))}
@@ -207,6 +213,8 @@ export default function HomeScreen() {
     </View>
   );
 }
+
+const { width: WINDOW_WIDTH } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
@@ -219,6 +227,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 16,
+    paddingBottom: 24,
   },
   titleRow: {
     flexDirection: 'row',
@@ -226,53 +235,55 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   title: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 24,
   },
   logDiveButton: {
     backgroundColor: '#007AFF',
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 12,
   },
   logDiveText: {
     color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
-    fontSize: 14,
   },
   statsContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginBottom: 32,
-    gap: 12,
+    marginBottom: 24,
   },
   statCard: {
-    flex: 1,
     backgroundColor: '#1a1a1a',
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     alignItems: 'center',
-    gap: 8,
+    width: (WINDOW_WIDTH - 60) / 3,
   },
   statValue: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
+    marginVertical: 8,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666',
-    textAlign: 'center',
   },
   section: {
-    paddingHorizontal: 20,
-    marginBottom: 32,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    marginHorizontal: 20,
+    marginBottom: 24,
+    padding: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -292,21 +303,22 @@ const styles = StyleSheet.create({
   },
   seeAllButton: {
     color: '#007AFF',
+    fontSize: 16,
     fontWeight: '600',
   },
   leaderboardEntry: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
   },
   currentUserEntry: {
-    backgroundColor: '#003366',
-    borderWidth: 1,
-    borderColor: '#007AFF',
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    marginHorizontal: -8,
   },
   leaderboardLeft: {
     flexDirection: 'row',
@@ -314,52 +326,46 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   rankBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: 'rgba(255, 149, 0, 0.2)',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   avatarImage: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
   },
   leaderboardName: {
     fontSize: 16,
-    fontWeight: '600',
     color: '#fff',
+    fontWeight: '600',
   },
   youText: {
     color: '#007AFF',
-    fontStyle: 'italic',
+    fontWeight: 'normal',
   },
   leaderboardSubtext: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666',
   },
   pointsBadge: {
-    backgroundColor: '#FF9500',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: 'rgba(255, 149, 0, 0.2)',
     borderRadius: 12,
-    alignItems: 'center',
-    minWidth: 64,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   pointsText: {
+    color: '#FF9500',
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  ptsText: {
-    fontSize: 10,
-    color: '#fff',
-    opacity: 0.8,
+    fontWeight: '600',
   },
 });

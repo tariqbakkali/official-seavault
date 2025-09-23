@@ -10,9 +10,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
-import { syncService } from '@/services/syncService';
-import { loadUserDataCache } from '@/services/cache';
-import { CachedUserData } from '@/types/database';
+import { useDataStore } from '@/stores/data';
+import { calculateUserStats } from '@/stores/data';
 import LeaderboardEntry from '@/screens/modal/leaderboard/components/LeaderboardEntry';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
@@ -26,154 +25,38 @@ interface LeaderboardUser {
   rank: number;
 }
 
-export default function LeaderboardScreen() {
-  const [leaderboard, setLeaderboard] = React.useState<LeaderboardUser[]>([]);
+export default function LeaderboardModal() {
+  const [leaderboardData, setLeaderboardData] = React.useState<any[]>([]);
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
+  
+  // Use the new data store instead of dataService
+  const { fetchUserData, fetchCatalog } = useDataStore();
 
   const loadData = async () => {
     try {
-      await syncService.checkConnectivity();
-      const userData = await syncService.pullUserData();
+      // Fetch data directly from the new store
+      const userData = await fetchUserData();
+      const catalog = await fetchCatalog();
       
-      if (userData) {
-        // In a real production app, this data would come from a server API endpoint
-        // For demonstration purposes, we're using mock data with the current user's actual stats
-        const mockLeaderboard: LeaderboardUser[] = [
-          {
-            id: '1',
-            name: 'John Smith',
-            avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg',
-            creatures: 7,
-            points: 2650,
-            isCurrentUser: false,
-            rank: 1
-          },
-          {
-            id: userData.profile?.id || 'current',
-            name: userData.profile?.full_name || 'You',
-            avatar: userData.profile?.avatar_url || '',
-            creatures: userData.stats.uniqueCreatures,
-            points: userData.stats.totalPoints,
-            isCurrentUser: true,
-            rank: 2
-          },
-          {
-            id: '3',
-            name: 'Batman',
-            avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg',
-            creatures: 2,
-            points: 400,
-            isCurrentUser: false,
-            rank: 3
-          },
-          {
-            id: '4',
-            name: 'Jane Doe',
-            avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
-            creatures: 5,
-            points: 1800,
-            isCurrentUser: false,
-            rank: 4
-          },
-          {
-            id: '5',
-            name: 'Alex Johnson',
-            avatar: 'https://images.pexels.com/photos/1138904/pexels-photo-1138904.jpeg',
-            creatures: 3,
-            points: 950,
-            isCurrentUser: false,
-            rank: 5
-          },
-          {
-            id: '6',
-            name: 'Sarah Wilson',
-            avatar: 'https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg',
-            creatures: 8,
-            points: 3200,
-            isCurrentUser: false,
-            rank: 6
-          },
-          {
-            id: '7',
-            name: 'Michael Brown',
-            avatar: 'https://images.pexels.com/photos/1138904/pexels-photo-1138904.jpeg',
-            creatures: 4,
-            points: 1200,
-            isCurrentUser: false,
-            rank: 7
-          },
-          {
-            id: '8',
-            name: 'Emma Davis',
-            avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
-            creatures: 6,
-            points: 2100,
-            isCurrentUser: false,
-            rank: 8
-          }
-        ].sort((a, b) => b.points - a.points)
-          .map((user, index) => ({ ...user, rank: index + 1 }));
-
-        setLeaderboard(mockLeaderboard);
+      // Calculate stats using the function from the store
+      if (userData && catalog) {
+        const stats = calculateUserStats(userData, catalog);
+        // Mock leaderboard data - in real app this would come from server
+        const mockData = [
+          { id: '1', name: 'John Smith', avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg', creatures: 7, points: 2650 },
+          { id: '2', name: userData.profile?.full_name || 'You', avatar: userData.profile?.avatar_url || '', creatures: stats.uniqueCreatures, points: stats.totalPoints, isCurrentUser: true },
+          { id: '3', name: 'Batman', avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg', creatures: 2, points: 400 },
+        ].sort((a, b) => b.points - a.points).map((item, index) => ({
+          ...item,
+          rank: index + 1
+        }));
+        
+        setLeaderboardData(mockData);
       }
     } catch (error) {
-      console.error('Error loading leaderboard:', error);
-      // Load from cache as fallback
-      const cachedData = await loadUserDataCache();
-      if (cachedData) {
-        const mockLeaderboard: LeaderboardUser[] = [
-          {
-            id: '1',
-            name: 'John Smith',
-            avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg',
-            creatures: 7,
-            points: 2650,
-            isCurrentUser: false,
-            rank: 1
-          },
-          {
-            id: cachedData.profile?.id || 'current',
-            name: cachedData.profile?.full_name || 'You',
-            avatar: cachedData.profile?.avatar_url || '',
-            creatures: cachedData.stats.uniqueCreatures,
-            points: cachedData.stats.totalPoints,
-            isCurrentUser: true,
-            rank: 2
-          },
-          {
-            id: '3',
-            name: 'Batman',
-            avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg',
-            creatures: 2,
-            points: 400,
-            isCurrentUser: false,
-            rank: 3
-          },
-          {
-            id: '4',
-            name: 'Jane Doe',
-            avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
-            creatures: 5,
-            points: 1800,
-            isCurrentUser: false,
-            rank: 4
-          },
-          {
-            id: '5',
-            name: 'Alex Johnson',
-            avatar: 'https://images.pexels.com/photos/1138904/pexels-photo-1138904.jpeg',
-            creatures: 3,
-            points: 950,
-            isCurrentUser: false,
-            rank: 5
-          }
-        ].sort((a, b) => b.points - a.points)
-          .map((user, index) => ({ ...user, rank: index + 1 }));
-
-        setLeaderboard(mockLeaderboard);
-      }
+      console.error('Error loading leaderboard data:', error);
     } finally {
       setLoading(false);
     }
@@ -182,7 +65,6 @@ export default function LeaderboardScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await syncService.fullSync();
       await loadData();
     } catch (error) {
       console.error('Error refreshing leaderboard:', error);
@@ -228,20 +110,8 @@ export default function LeaderboardScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <View style={styles.infoBanner}>
-        <Text style={styles.infoText}>
-          Points are earned by discovering new creatures. Each creature has a point value based on rarity.
-        </Text>
-      </View>
-
-      <View style={styles.statsHeader}>
-        <Text style={styles.statsText}>
-          {leaderboard.length} explorers competing
-        </Text>
-      </View>
-
       <FlatList
-        data={leaderboard}
+        data={leaderboardData}
         keyExtractor={(item) => item.id}
         renderItem={renderLeaderboardEntry}
         contentContainerStyle={styles.listContainer}
@@ -250,8 +120,7 @@ export default function LeaderboardScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={COLORS.PRIMARY}
-            colors={[COLORS.PRIMARY]}
+            tintColor="#007AFF"
           />
         }
       />
@@ -262,13 +131,13 @@ export default function LeaderboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
+    backgroundColor: '#000',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
+    paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 16,
   },
@@ -276,38 +145,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.SURFACE,
+    backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    fontSize: TYPOGRAPHY.SIZE_TITLE,
-    fontWeight: TYPOGRAPHY.WEIGHT_BOLD as any,
-    color: COLORS.TEXT_PRIMARY,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
   },
   placeholder: {
     width: 40,
-  },
-  infoBanner: {
-    backgroundColor: COLORS.SURFACE_SECONDARY,
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    paddingVertical: DIMENSIONS.SPACE_MD,
-    marginHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    borderRadius: DIMENSIONS.RADIUS_MD,
-    marginBottom: DIMENSIONS.SPACE_LG,
-  },
-  infoText: {
-    fontSize: TYPOGRAPHY.SIZE_SM,
-    color: COLORS.TEXT_SECONDARY,
-    textAlign: 'center',
-  },
-  statsHeader: {
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    marginBottom: 16,
-  },
-  statsText: {
-    fontSize: TYPOGRAPHY.SIZE_SM,
-    color: COLORS.TEXT_TERTIARY,
   },
   loadingContainer: {
     flex: 1,
@@ -315,11 +163,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: TYPOGRAPHY.SIZE_MD,
-    color: COLORS.TEXT_TERTIARY,
+    color: '#666',
+    fontSize: 16,
   },
   listContainer: {
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    paddingBottom: 100,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
 });

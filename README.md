@@ -67,18 +67,12 @@ official-seavault/
 └── docs/                # Documentation
 ```
 
-## SQL Editor
-
-The application includes an SQL Editor feature that allows administrators to query database tables directly from the app. This feature is accessible through the "SQL Editor" tab in the main navigation.
-
-For more information about using the SQL Editor, see [SQL Editor Documentation](docs/SQL_EDITOR.md).
-
-## Supabase Setup
+## Database Setup
 
 The application uses Supabase for backend services. To set up Supabase:
 
 1. Create a new Supabase project
-2. Run the SQL migrations in the `supabase/migrations` directory
+2. Follow the detailed instructions in [supabase/SETUP_GUIDE.md](supabase/SETUP_GUIDE.md) to set up the complete database schema using the development script
 3. Configure authentication settings
 4. Set up storage buckets if needed
 

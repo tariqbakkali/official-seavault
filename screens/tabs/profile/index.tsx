@@ -1,223 +1,175 @@
-import * as React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  Alert,
   TouchableOpacity,
-  ActivityIndicator,
+  RefreshControl,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import { supabase } from '@/services/supabase';
-import { syncService } from '@/services/syncService';
-import { CachedUserData, Profile } from '@/types/database';
-import { loadUserDataCache } from '@/services/cache';
-import { achievementService } from '@/services/achievementService';
-import { ROUTES } from '@/constants';
-import ProfileHeader from '@/screens/tabs/profile/components/ProfileHeader';
-import StatsSection from '@/screens/tabs/profile/components/StatsSection';
-import CategoryProgressSection from '@/screens/tabs/profile/components/CategoryProgressSection';
-import SettingsSection from '@/screens/tabs/profile/components/SettingsSection';
-import { authService } from '@/services/authService';
+import { useRouter } from 'expo-router';
+import { User, Settings, LogOut, Star, Eye, Trophy } from 'lucide-react-native';
+import { ImageWithFallback } from '@/components';
+import { useAuthStore } from '@/stores/auth';
+import { useUserStore } from '@/stores/user';
+import { useCatalogStore } from '@/stores/catalog';
+import { calculateUserStats } from '@/stores/user/utils/utils';
+import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import StatsSection from './components/StatsSection';
+import CategoryProgressSection from './components/CategoryProgressSection';
+
+interface MenuItem {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  chevron?: boolean;
+}
 
 export default function ProfileScreen() {
-  const [userData, setUserData] = React.useState<CachedUserData | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [syncLoading, setSyncLoading] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [userData, setUserData] = React.useState<any>(null);
+  const [userStats, setUserStats] = React.useState<any>(null);
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  
+  const { signOut, user } = useAuthStore();
+  const { fetchUserData } = useUserStore();
+  const { fetchCatalog } = useCatalogStore();
 
   const loadData = async () => {
     try {
-      const data = await syncService.pullUserData();
+      const data = await fetchUserData();
+      const catalog = await fetchCatalog();
+      
       setUserData(data);
       
-      // Load achievements
-      await achievementService.loadUnlockedAchievements();
+      if (data && catalog) {
+        const stats = calculateUserStats(data, catalog);
+        setUserStats(stats);
+      }
     } catch (error) {
       console.error('Error loading profile data:', error);
-      const cachedData = await loadUserDataCache();
-      setUserData(cachedData);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Simplified function to check if profile exists
-  const checkProfileExists = async () => {
+  const handleRefresh = async () => {
+    setRefreshing(true);
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        console.error('Error getting user:', userError);
-        Alert.alert('Error', 'Failed to get user information. Please try signing out and back in.');
-        return false;
-      }
-      
-      if (!user) {
-        console.log('No user found');
-        return false;
-      }
-
-      // Check if profile exists
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      // If profile doesn't exist, show error (should be created by trigger)
-      if (profileError || !profileData) {
-        console.log('Profile does not exist for user:', user.id);
-        Alert.alert(
-          'Profile Error', 
-          'Your profile could not be found. This may be due to a system issue. Please try signing out and back in, or contact support if the problem persists.'
-        );
-        return false;
-      }
-      
-      console.log('Profile exists for user:', user.id);
-      return true;
-    } catch (error: any) {
-      console.error('Error checking profile:', error);
-      Alert.alert('Error', `Failed to check profile: ${error.message}. Please try again.`);
-      return false;
+      await loadData();
+    } catch (error) {
+      console.error('Error during refresh:', error);
     }
+    setRefreshing(false);
   };
 
-  React.useEffect(() => {
-    // Just check if profile exists, don't try to create it
-    checkProfileExists().then((exists) => {
-      if (exists) {
-        loadData();
-      } else {
-        setLoading(false);
-      }
-    });
+  useEffect(() => {
+    loadData();
   }, []);
 
-  // Reload data when screen comes into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      loadData();
-    }, [])
-  );
-
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
+        { 
+          text: 'Sign Out', 
           style: 'destructive',
           onPress: async () => {
-            const result = await authService.signOut();
-            if (result.success) {
+            try {
+              await signOut();
               router.replace(ROUTES.AUTH.LOGIN);
-            } else {
-              Alert.alert('Error', result.message);
+            } catch (error) {
+              console.error('Error signing out:', error);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
             }
-          },
+          }
         },
       ]
     );
   };
 
-  const handleForceSync = async () => {
-    setSyncLoading(true);
-    try {
-      await syncService.fullSync();
-      await loadData();
-      Alert.alert('Success', 'Data synced successfully');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to sync data');
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
-  const handleDownloadCatalog = async () => {
-    setSyncLoading(true);
-    try {
-      await syncService.pullCatalog();
-      await syncService.pullDiveSites();
-      Alert.alert('Success', 'Catalog downloaded successfully');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to download catalog');
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
-      </View>
-    );
-  }
-
-  // Add a check for profile data
-  if (!userData?.profile) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-        </View>
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No profile data available</Text>
-          <TouchableOpacity 
-            style={styles.retryButton}
-            onPress={() => {
-              setLoading(true);
-              checkProfileExists().then((exists) => {
-                if (exists) {
-                  loadData();
-                } else {
-                  setLoading(false);
-                }
-              });
-            }}
-          >
-            <Text style={styles.retryButtonText}>Retry Profile Check</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
+  const menuItems: MenuItem[] = [
+    {
+      icon: <Settings size={24} color="#fff" />,
+      title: 'Account Settings',
+      subtitle: 'Manage your account preferences',
+      onPress: () => router.push(ROUTES.PROFILE.EDIT),
+      chevron: true,
+    },
+    {
+      icon: <LogOut size={24} color="#FF3B30" />,
+      title: 'Sign Out',
+      subtitle: 'Sign out of your account',
+      onPress: handleSignOut,
+    },
+  ];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <ScrollView style={styles.scrollView}>
-        <ProfileHeader 
-          profile={userData.profile}
-          onEditProfile={() => router.push(ROUTES.PROFILE.EDIT)}
-        />
-        <StatsSection stats={userData?.stats} />
-        <CategoryProgressSection stats={userData?.stats} />
-        <SettingsSection 
-          onDownloadCatalog={handleDownloadCatalog}
-          onForceSync={handleForceSync}
-          onSignOut={handleSignOut}
-          loading={syncLoading}
-        />
-      </ScrollView>
-      {syncLoading && (
-        <View style={styles.overlay}>
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Syncing...</Text>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#007AFF"
+          />
+        }
+      >
+        {/* Profile Header */}
+        <View style={styles.header}>
+          <View style={styles.avatarContainer}>
+            <ImageWithFallback
+              uri={userData?.profile?.avatar_url}
+              style={styles.avatar}
+              fallbackColor="#333"
+            />
           </View>
+          <Text style={styles.name}>
+            {userData?.profile?.full_name || user?.email || 'User'}
+          </Text>
+          <Text style={styles.email}>{user?.email}</Text>
         </View>
-      )}
+
+        {/* Stats Section */}
+        <StatsSection 
+          uniqueCreatures={userStats?.uniqueCreatures || 0}
+          wishlistCount={userData?.wishlists?.length || 0}
+          totalPoints={userStats?.totalPoints || 0}
+        />
+
+        {/* Category Progress Section */}
+        <CategoryProgressSection 
+          categoryStats={userStats?.categoryStats || {}}
+          categoryNames={userStats?.categoryNames || {}}
+        />
+
+        {/* Menu Items */}
+        <View style={styles.menuSection}>
+          {menuItems.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.menuItem}
+              onPress={item.onPress}
+            >
+              <View style={styles.menuItemLeft}>
+                {item.icon}
+                <View>
+                  <Text style={styles.menuItemTitle}>{item.title}</Text>
+                  <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
+                </View>
+              </View>
+              {item.chevron && (
+                <Text style={styles.chevron}>›</Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -231,60 +183,65 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    alignItems: 'center',
+    paddingVertical: 32,
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
   },
-  title: {
-    fontSize: 32,
+  avatarContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    overflow: 'hidden',
+    marginBottom: 16,
+    borderWidth: 3,
+    borderColor: '#333',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  name: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    textAlign: 'center',
+    marginBottom: 4,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  emptyStateText: {
+  email: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 20,
-    textAlign: 'center',
   },
-  retryButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+  menuSection: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    margin: 20,
+    overflow: 'hidden',
   },
-  retryButtonText: {
+  menuItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  menuItemTitle: {
+    fontSize: 18,
     color: '#fff',
-    fontSize: 16,
     fontWeight: '600',
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  menuItemSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
   },
-  loadingOverlay: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
-  },
-  loadingText: {
-    color: '#fff',
-    fontSize: 16,
+  chevron: {
+    fontSize: 24,
+    color: '#666',
   },
 });

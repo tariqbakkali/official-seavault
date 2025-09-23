@@ -1,30 +1,37 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { CachedUserData } from '@/types/database';
+import { UserStats } from '@/stores/data';
 
 interface StatsSectionProps {
-  stats: CachedUserData['stats'] | null | undefined;
+  uniqueCreatures?: number;
+  wishlistCount?: number;
+  totalPoints?: number;
 }
 
-const StatsSection: React.FC<StatsSectionProps> = ({ stats }: { stats: StatsSectionProps['stats'] }) => {
+const StatsSection: React.FC<StatsSectionProps> = ({ 
+  uniqueCreatures = 0,
+  wishlistCount = 0,
+  totalPoints = 0
+}) => {
   return (
     <View style={styles.statsContainer}>
       <View style={styles.statItem}>
-        <Text style={styles.statValue}>{stats?.totalPoints || 0}</Text>
+        <Text style={styles.statValue}>{totalPoints}</Text>
         <Text style={styles.statLabel}>Total Points</Text>
       </View>
       <View style={styles.statItem}>
-        <Text style={styles.statValue}>{stats?.uniqueCreatures || 0}</Text>
+        <Text style={styles.statValue}>{uniqueCreatures}</Text>
         <Text style={styles.statLabel}>Species Found</Text>
       </View>
       <View style={styles.statItem}>
-        <Text style={styles.statValue}>{Math.round(stats?.overallCompletion || 0)}%</Text>
-        <Text style={styles.statLabel}>Completion</Text>
+        <Text style={styles.statValue}>{wishlistCount}</Text>
+        <Text style={styles.statLabel}>Wishlist</Text>
       </View>
     </View>
   );
 };
 
+// ... existing styles and export ...
 const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',

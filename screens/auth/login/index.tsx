@@ -13,10 +13,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { authService } from '@/services/authService';
+import { useAuthStore } from '@/stores/auth';
 import { supabase } from '@/services/supabase';
 import { ROUTES, COLORS, DIMENSIONS, APP_CONFIG } from '@/constants';
-import { debugLogger } from '@/utils/debugLogger';
 
 export default function LoginScreen() {
   const [email, setEmail] = React.useState('');
@@ -24,6 +23,9 @@ export default function LoginScreen() {
   const [loading, setLoading] = React.useState(false);
   const [isSignUp, setIsSignUp] = React.useState(false);
   const insets = useSafeAreaInsets();
+  
+  // Use the new auth store instead of authService
+  const { signUp, signIn, resetPassword } = useAuthStore();
 
   // Add email validation function
   const isValidEmail = (email: string): boolean => {
@@ -32,17 +34,12 @@ export default function LoginScreen() {
   };
 
   const handleAuth = async () => {
-    debugLogger.logAuthEvent('Handle auth called', { isSignUp, email });
-    
     if (!email || !password) {
-      debugLogger.logAuthEvent('Validation failed - missing fields');
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    // Validate email format
     if (!isValidEmail(email)) {
-      debugLogger.logAuthEvent('Validation failed - invalid email format');
       Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
@@ -50,75 +47,65 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       if (isSignUp) {
-        debugLogger.logAuthEvent('Processing sign up request');
-        const result = await authService.signUp(email, password);
+        const result = await signUp(email, password); // Updated usage
         
-        if (result.success) {
-          if (result.requiresEmailConfirmation) {
-            debugLogger.logAuthEvent('Sign up successful but requires email confirmation');
+        if (result) {
+          // Check if email confirmation is required
+          if (result.user && !result.user.email_confirmed_at) {
             Alert.alert(
               'Confirm Your Email',
-              result.message,
+              'Please check your email and click the confirmation link to complete your registration.',
               [{ text: 'OK' }]
             );
             // Switch to sign in mode so user can sign in after confirming email
             setIsSignUp(false);
           } else {
             // User is already signed in
-            debugLogger.logAuthEvent('Sign up successful and user signed in');
-            Alert.alert('Success', result.message);
+            Alert.alert('Success', 'Account created successfully!');
             router.replace(ROUTES.TABS.HOME);
           }
         } else {
-          debugLogger.logAuthEvent('Sign up failed', { message: result.message });
-          Alert.alert('Error', result.message);
+          Alert.alert('Error', 'Failed to create account. Please try again.');
         }
       } else {
-        debugLogger.logAuthEvent('Processing sign in request');
-        const result = await authService.signIn(email, password);
+        const result = await signIn(email, password); // Updated usage
         
-        if (result.success) {
-          // Navigation will be handled by the auth state change listener
-          debugLogger.logAuthEvent('Sign in successful');
+        if (result) {
           console.log('Sign in successful');
+          router.replace(ROUTES.TABS.HOME);
         } else {
-          debugLogger.logAuthEvent('Sign in failed', { message: result.message });
-          Alert.alert('Error', result.message);
+          Alert.alert('Error', 'Invalid email or password. Please try again.');
         }
       }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'An error occurred. Please try again.');
     } finally {
-      debugLogger.logAuthEvent('Auth process completed, clearing loading state');
       setLoading(false);
     }
   };
 
   // Add password reset function
   const handlePasswordReset = async () => {
-    debugLogger.logAuthEvent('Handle password reset called', { email });
-    
     if (!email) {
-      debugLogger.logAuthEvent('Password reset failed - missing email');
       Alert.alert('Error', 'Please enter your email address');
       return;
     }
 
     if (!isValidEmail(email)) {
-      debugLogger.logAuthEvent('Password reset failed - invalid email format');
       Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
 
     setLoading(true);
     try {
-      debugLogger.logAuthEvent('Processing password reset request');
-      const result = await authService.resetPassword(email);
-      debugLogger.logAuthEvent('Password reset result', { success: result.success, message: result.message });
+      await resetPassword(email); // Updated usage
       Alert.alert(
-        result.success ? 'Success' : 'Error',
-        result.message
+        'Success',
+        'Password reset email sent. Please check your inbox.'
       );
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to send password reset email. Please try again.');
     } finally {
-      debugLogger.logAuthEvent('Password reset process completed, clearing loading state');
       setLoading(false);
     }
   };
@@ -184,7 +171,6 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={styles.switchButton}
               onPress={() => {
-                debugLogger.logAuthEvent('Switching auth mode', { isSignUp: !isSignUp });
                 setIsSignUp(!isSignUp);
               }}
               disabled={loading}

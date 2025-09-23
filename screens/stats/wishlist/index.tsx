@@ -5,27 +5,16 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Dimensions,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ArrowLeft, Heart, X } from 'lucide-react-native';
-import { Creature, Wishlist, CachedCatalog, CachedUserData } from '@/types/database';
-import { loadCatalogCache, loadUserDataCache } from '@/services/cache';
-import { syncService } from '@/services/syncService';
+import { ArrowLeft, Heart } from 'lucide-react-native';
+import { useDataStore } from '@/stores/data';
+import { Creature } from '@/types/database';
 import ImageWithFallback from '@/components/ImageWithFallback';
 
-const { width } = Dimensions.get('window');
-const cardWidth = width - 40;
-
-interface WishlistCreature {
-  creature: Creature;
-  wishlistItem: Wishlist;
-}
-
 export default function WishlistScreen() {
-  const [wishlistCreatures, setWishlistCreatures] = React.useState<WishlistCreature[]>([]);
+  const [wishlistCreatures, setWishlistCreatures] = React.useState<Creature[]>([]);
   const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
 
@@ -35,102 +24,44 @@ export default function WishlistScreen() {
 
   const loadData = async () => {
     try {
-      const [catalog, userData] = await Promise.all([
-        loadCatalogCache(),
-        loadUserDataCache()
-      ]);
+      // Fetch catalog and user data directly from Supabase
+      const catalog = await dataService.fetchCatalog();
+      const userData = await dataService.fetchUserData();
 
       if (catalog && userData) {
-        const wishlistWithCreatures: WishlistCreature[] = userData.wishlists.map(wishlistItem => {
-          const creature = catalog.creatures.find(c => c.id === wishlistItem.creature_id);
-          return creature ? { creature, wishlistItem } : null;
-        }).filter(Boolean) as WishlistCreature[];
-
-        // Sort by most recently added to wishlist
-        wishlistWithCreatures.sort((a, b) => 
-          b.wishlistItem.created_at.localeCompare(a.wishlistItem.created_at)
-        );
-
-        setWishlistCreatures(wishlistWithCreatures);
+        // Get wishlist creatures
+        const wishlistCreatureIds = new Set(userData.wishlists.map(w => w.creature_id));
+        const wishlistItems = catalog.creatures.filter(c => wishlistCreatureIds.has(c.id));
+        
+        setWishlistCreatures(wishlistItems);
       }
     } catch (error) {
-      console.error('Error loading wishlist:', error);
+      console.error('Error loading wishlist data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRemoveFromWishlist = async (item: WishlistCreature) => {
-    Alert.alert(
-      'Remove from Wishlist',
-      `Remove ${item.creature.name} from your wishlist?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await syncService.queueWishlistToggle(item.wishlistItem, false);
-              // Remove from local state immediately
-              setWishlistCreatures(prev => 
-                prev.filter(wc => wc.wishlistItem.id !== item.wishlistItem.id)
-              );
-            } catch (error) {
-              Alert.alert('Error', 'Failed to remove from wishlist');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const renderWishlistCreature = ({ item }: { item: WishlistCreature }) => (
+  const renderWishlistCreature = ({ item }: { item: Creature }) => (
     <TouchableOpacity
       style={styles.creatureCard}
-      onPress={() => router.push(`/creatures/${item.creature.id}`)}
+      onPress={() => router.push(`/creatures/${item.id}`)}
     >
       <ImageWithFallback
-        uri={item.creature.image_url}
+        uri={item.image_url}
         style={styles.creatureImage}
         containerStyle={styles.imageContainer}
       />
       <View style={styles.creatureInfo}>
-        <View style={styles.creatureHeader}>
-          <View style={styles.creatureDetails}>
-            <Text style={styles.creatureName}>{item.creature.name}</Text>
-            {item.creature.scientific_name && (
-              <Text style={styles.scientificName}>{item.creature.scientific_name}</Text>
-            )}
-          </View>
-          <TouchableOpacity
-            style={styles.removeButton}
-            onPress={() => handleRemoveFromWishlist(item)}
-          >
-            <X size={16} color="#FF3B30" />
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.addedDate}>
-          Added: {formatDate(item.wishlistItem.created_at)}
-        </Text>
-        <View style={styles.bottomRow}>
-          <View style={styles.pointsBadge}>
-            <Text style={styles.pointsText}>{item.creature.points} pts</Text>
-          </View>
-          <View style={styles.heartIcon}>
-            <Heart size={16} color="#FF3B30" fill="#FF3B30" />
-          </View>
+        <Text style={styles.creatureName}>{item.name}</Text>
+        {item.scientific_name && (
+          <Text style={styles.scientificName}>{item.scientific_name}</Text>
+        )}
+        <View style={styles.pointsBadge}>
+          <Text style={styles.pointsText}>{item.points} pts</Text>
         </View>
       </View>
+      <Heart size={20} color="#FF3B30" fill="#FF3B30" />
     </TouchableOpacity>
   );
 
@@ -157,23 +88,22 @@ export default function WishlistScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      {wishlistCreatures.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Heart size={48} color="#666" />
-          <Text style={styles.emptyTitle}>No creatures in wishlist</Text>
-          <Text style={styles.emptySubtitle}>
-            Add creatures to your wishlist to keep track of what you want to see
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={wishlistCreatures}
-          keyExtractor={(item) => item.wishlistItem.id}
-          renderItem={renderWishlistCreature}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      <FlatList
+        data={wishlistCreatures}
+        keyExtractor={(item) => item.id}
+        renderItem={renderWishlistCreature}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Heart size={48} color="#666" />
+            <Text style={styles.emptyTitle}>No wishlist items</Text>
+            <Text style={styles.emptySubtitle}>
+              Add creatures to your wishlist to track them
+            </Text>
+          </View>
+        }
+      />
     </View>
   );
 }
@@ -207,40 +137,24 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 40,
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
   listContainer: {
     paddingHorizontal: 20,
     paddingBottom: 100,
   },
   creatureCard: {
-    width: cardWidth,
+    flexDirection: 'row',
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
-    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
   },
   imageContainer: {
-    width: 100,
-    height: 120,
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   creatureImage: {
     width: '100%',
@@ -249,58 +163,48 @@ const styles = StyleSheet.create({
   },
   creatureInfo: {
     flex: 1,
-    padding: 12,
-    justifyContent: 'space-between',
-  },
-  creatureHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  creatureDetails: {
-    flex: 1,
+    marginLeft: 16,
   },
   creatureName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   scientificName: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666',
     fontStyle: 'italic',
-  },
-  removeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#2a2a2a',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addedDate: {
-    fontSize: 12,
-    color: '#666',
-    marginVertical: 8,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    marginBottom: 8,
   },
   pointsBadge: {
     backgroundColor: '#007AFF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   pointsText: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#fff',
     fontWeight: '600',
   },
-  heartIcon: {
-    // Just for visual balance
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 40,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

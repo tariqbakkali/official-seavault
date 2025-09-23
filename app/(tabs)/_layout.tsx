@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Fish, Grid3x3, Plus, User, Database } from 'lucide-react-native';
+import { Fish, Grid3x3, Plus, User } from 'lucide-react-native';
 import { View, Text, StyleSheet } from 'react-native';
 import { TAB_CONFIG, COLORS, DIMENSIONS } from '@/constants';
 
@@ -39,15 +39,6 @@ export default function TabLayout() {
           title: TAB_CONFIG.LOG_DIVE.title,
           tabBarIcon: ({ color, size }) => (
             <Plus size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="sql-editor"
-        options={{
-          title: TAB_CONFIG.SQL_EDITOR.title,
-          tabBarIcon: ({ color, size }) => (
-            <Database size={size} color={color} />
           ),
         }}
       />

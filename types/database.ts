@@ -83,7 +83,7 @@ export interface Database {
           creature_id: string;
           created_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['wishlists']['Row'], 'created_at'>;
+        Insert: Omit<Database['public']['Tables']['wishlists']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['wishlists']['Insert']>;
       };
       achievements: {

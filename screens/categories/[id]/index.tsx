@@ -1,175 +1,126 @@
-import * as React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Dimensions,
-  TextInput,
+  RefreshControl,
 } from 'react-native';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Check, Search } from 'lucide-react-native';
-import { Creature, CachedCatalog, CachedUserData } from '@/types/database';
-import { loadCatalogCache, loadUserDataCache } from '@/services/cache';
-import ImageWithFallback from '@/components/ImageWithFallback';
-import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import { ArrowLeft } from 'lucide-react-native';
+import { ImageWithFallback } from '@/components';
+import { useCatalogStore } from '@/stores/catalog';
+import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
-const { width } = Dimensions.get('window');
-const cardWidth = (width - 60) / 2;
+interface Creature {
+  id: string;
+  name: string;
+  scientific_name: string | null;
+  image_url: string | null;
+  points: number;
+}
 
-export default function CategoryCreaturesScreen() {
+export default function CategoryDetailScreen() {
   const { id } = useLocalSearchParams();
-  const [creatures, setCreatures] = React.useState<Creature[]>([]);
-  const [categoryName, setCategoryName] = React.useState('');
-  const [seenCreatures, setSeenCreatures] = React.useState<Set<string>>(new Set<string>());
-  const [loading, setLoading] = React.useState(true);
-  const [searchQuery, setSearchQuery] = React.useState('');
+  const [category, setCategory] = useState<any>(null);
+  const [creatures, setCreatures] = useState<Creature[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
-
-  React.useEffect(() => {
-    loadData();
-  }, [id]);
+  
+  const { getCategories, getCreatures } = useCatalogStore();
 
   const loadData = async () => {
     try {
-      const [catalog, userData] = await Promise.all([
-        loadCatalogCache(),
-        loadUserDataCache()
-      ]);
+      // Get all categories to find the current one
+      const categories = await getCategories();
+      const currentCategory = categories.find((cat: any) => cat.id === id);
+      setCategory(currentCategory);
 
-      if (catalog && userData) {
-        const category = catalog.categories.find(c => c.id === id);
-        setCategoryName(category?.name || 'Category');
-
-        const categoryCreatures = catalog.creatures.filter(c => c.category_id === id);
+      // Get creatures for this category
+      if (id) {
+        const allCreatures = await getCreatures();
+        const categoryCreatures = allCreatures.filter(
+          (creature: any) => creature.category_id === id
+        );
         setCreatures(categoryCreatures);
-
-        const seen: Set<string> = new Set(userData.sightings.map(s => s.creature_id));
-        setSeenCreatures(seen);
       }
     } catch (error) {
-      console.error('Error loading category creatures:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error loading category data:', error);
     }
   };
 
-  // Filter creatures based on search query
-  const filteredCreatures = React.useMemo(() => {
-    if (!searchQuery.trim()) {
-      return creatures;
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadData();
+    } catch (error) {
+      console.error('Error during refresh:', error);
     }
-    
-    const query = searchQuery.toLowerCase().trim();
-    return creatures.filter(creature => 
-      creature.name.toLowerCase().includes(query) ||
-      (creature.scientific_name && creature.scientific_name.toLowerCase().includes(query)) ||
-      (creature.description && creature.description.toLowerCase().includes(query))
-    );
-  }, [creatures, searchQuery]);
+    setRefreshing(false);
+  };
 
-  const renderCreature = ({ item }: { item: Creature }) => {
-    const isSeen = seenCreatures.has(item.id);
+  useEffect(() => {
+    loadData();
+  }, [id]);
 
-    return (
-      <TouchableOpacity
-        style={styles.creatureCard}
-        onPress={() => router.push(`/creatures/${item.id}`)}
-      >
+  const renderCreature = ({ item }: { item: Creature }) => (
+    <TouchableOpacity
+      style={styles.creatureCard}
+      onPress={() => router.push(`/creatures/${item.id}`)}
+    >
+      <View style={styles.creatureImageContainer}>
         <ImageWithFallback
           uri={item.image_url}
           style={styles.creatureImage}
-          containerStyle={styles.imageContainer}
+          fallbackColor="#333"
         />
-        {isSeen && (
-          <View style={styles.seenBadge}>
-            <Check size={16} color="#fff" />
-          </View>
+      </View>
+      <View style={styles.creatureInfo}>
+        <Text style={styles.creatureName}>{item.name}</Text>
+        {item.scientific_name && (
+          <Text style={styles.scientificName}>{item.scientific_name}</Text>
         )}
-        <View style={styles.creatureInfo}>
-          <Text style={styles.creatureName} numberOfLines={2}>
-            {item.name}
-          </Text>
-          {item.scientific_name && (
-            <Text style={styles.scientificName} numberOfLines={1}>
-              {item.scientific_name}
-            </Text>
-          )}
-          {item.points && (
-            <View style={styles.pointsBadge}>
-              <Text style={styles.pointsText}>{item.points} pts</Text>
-            </View>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  if (loading) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Loading...</Text>
+        <View style={styles.pointsBadge}>
+          <Text style={styles.pointsText}>{item.points} pts</Text>
         </View>
       </View>
-    );
-  }
+    </TouchableOpacity>
+  );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <ArrowLeft size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.title}>{categoryName}</Text>
-        <View style={styles.placeholder} />
+        <Text style={styles.categoryTitle}>{category?.name || 'Loading...'}</Text>
       </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Search size={20} color={COLORS.TEXT_TERTIARY} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search creatures..."
-            placeholderTextColor={COLORS.TEXT_TERTIARY}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+      {/* Creatures List */}
+      <FlatList
+        data={creatures}
+        renderItem={renderCreature}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#007AFF"
           />
-        </View>
-      </View>
-
-      {/* Results Count */}
-      <View style={styles.resultsHeader}>
-        <Text style={styles.resultsCount}>
-          {filteredCreatures.length} of {creatures.length} {filteredCreatures.length === 1 ? 'creature' : 'creatures'}
-        </Text>
-      </View>
-
-      {filteredCreatures.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Search size={48} color={COLORS.TEXT_TERTIARY} />
-          <Text style={styles.emptyTitle}>No creatures found</Text>
-          <Text style={styles.emptySubtitle}>
-            Try adjusting your search query
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredCreatures}
-          keyExtractor={(item) => item.id}
-          renderItem={renderCreature}
-          numColumns={2}
-          contentContainerStyle={styles.listContainer}
-          columnWrapperStyle={styles.row}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No creatures found in this category</Text>
+          </View>
+        }
+      />
     </View>
   );
 }
@@ -177,140 +128,80 @@ export default function CategoryCreaturesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
+    backgroundColor: '#000',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.SURFACE,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginRight: 16,
   },
-  title: {
-    fontSize: TYPOGRAPHY.SIZE_TITLE,
-    fontWeight: TYPOGRAPHY.WEIGHT_BOLD as any,
-    color: COLORS.TEXT_PRIMARY,
-  },
-  placeholder: {
-    width: 40,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    marginBottom: 16,
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.SURFACE,
-    borderRadius: DIMENSIONS.RADIUS_MD,
-    paddingHorizontal: 16,
-  },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: TYPOGRAPHY.SIZE_MD,
-    color: COLORS.TEXT_PRIMARY,
-    paddingVertical: 16,
-  },
-  resultsHeader: {
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    marginBottom: 8,
-  },
-  resultsCount: {
-    fontSize: TYPOGRAPHY.SIZE_SM,
-    color: COLORS.TEXT_TERTIARY,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: TYPOGRAPHY.SIZE_LG,
-    fontWeight: TYPOGRAPHY.WEIGHT_BOLD as any,
-    color: COLORS.TEXT_PRIMARY,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: TYPOGRAPHY.SIZE_MD,
-    color: COLORS.TEXT_TERTIARY,
-    textAlign: 'center',
-    lineHeight: 24,
+  categoryTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
   },
   listContainer: {
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    paddingBottom: 100,
-  },
-  row: {
-    justifyContent: 'space-between',
+    padding: 20,
   },
   creatureCard: {
-    width: cardWidth,
-    backgroundColor: COLORS.SURFACE,
-    borderRadius: DIMENSIONS.RADIUS_MD,
-    marginBottom: DIMENSIONS.SPACE_LG,
+    flexDirection: 'row',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    marginBottom: 16,
     overflow: 'hidden',
   },
-  imageContainer: {
-    width: '100%',
-    height: 120,
+  creatureImageContainer: {
+    width: 100,
+    height: 100,
   },
   creatureImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  seenBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.SUCCESS,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   creatureInfo: {
-    padding: DIMENSIONS.SPACE_MD,
+    flex: 1,
+    padding: 16,
+    justifyContent: 'center',
   },
   creatureName: {
-    fontSize: TYPOGRAPHY.SIZE_MD,
-    fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD as any,
-    color: COLORS.TEXT_PRIMARY,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
     marginBottom: 4,
   },
   scientificName: {
-    fontSize: TYPOGRAPHY.SIZE_SM,
-    color: COLORS.TEXT_TERTIARY,
+    fontSize: 14,
+    color: '#666',
     fontStyle: 'italic',
     marginBottom: 8,
   },
   pointsBadge: {
+    backgroundColor: 'rgba(0, 122, 255, 0.2)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     alignSelf: 'flex-start',
-    backgroundColor: COLORS.PRIMARY,
-    paddingHorizontal: DIMENSIONS.SPACE_SM,
-    paddingVertical: DIMENSIONS.SPACE_XS,
-    borderRadius: DIMENSIONS.RADIUS_SM,
   },
   pointsText: {
-    fontSize: TYPOGRAPHY.SIZE_XS,
-    color: COLORS.TEXT_PRIMARY,
-    fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD as any,
+    color: '#007AFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 64,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
   },
 });

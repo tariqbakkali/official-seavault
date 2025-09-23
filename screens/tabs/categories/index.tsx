@@ -4,86 +4,39 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  TouchableOpacity,
   RefreshControl,
-  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import { syncService } from '@/services/syncService';
-import { loadCatalogCache, loadUserDataCache } from '@/services/cache';
-import CategoryCard from '@/screens/tabs/categories/components/CategoryCard';
+import { useDataStore } from '@/stores/data';
+import { calculateUserStats } from '@/stores/data';
+import ImageWithFallback from '@/components/ImageWithFallback';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Category } from '@/types/database';
 
-interface CategoryWithStats {
-  id: string;
-  name: string;
-  image_url: string | null;
+interface CategoryWithStats extends Category {
   seen: number;
   total: number;
   completion: number;
 }
 
-const { width } = Dimensions.get('window');
-const cardWidth = width - 40;
-
-export default function CategoriesScreen() {
-  const [categories, setCategories] = React.useState<CategoryWithStats[]>([]);
+export default function CategoriesTab() {
+  const [categories, setCategories] = React.useState<Category[]>([]);
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
-  const [isOffline, setIsOffline] = React.useState(false);
   const insets = useSafeAreaInsets();
+  
+  // Use the new data store instead of dataService
+  const { fetchCatalog } = useDataStore();
 
   const loadData = async () => {
     try {
-      await syncService.checkConnectivity();
-      const isOnline = syncService.getIsOnline();
-      setIsOffline(!isOnline);
-
-      const [catalog, userData] = await Promise.all([
-        syncService.pullCatalog(),
-        syncService.pullUserData()
-      ]);
-
-      if (catalog && userData) {
-        const categoriesWithStats = catalog.categories.map(category => {
-          const categoryStats = userData.stats.categoryStats[category.id] || {
-            seen: 0,
-            total: 0,
-            completion: 0
-          };
-
-          return {
-            ...category,
-            ...categoryStats
-          };
-        });
-
-        setCategories(categoriesWithStats);
-      }
+      // Fetch catalog directly from the new store
+      const catalog = await fetchCatalog();
+      setCategories(catalog?.categories || []);
     } catch (error) {
       console.error('Error loading categories:', error);
-      // Load from cache
-      const [cachedCatalog, cachedUserData] = await Promise.all([
-        loadCatalogCache(),
-        loadUserDataCache()
-      ]);
-
-      if (cachedCatalog && cachedUserData) {
-        const categoriesWithStats = cachedCatalog.categories.map(category => {
-          const categoryStats = cachedUserData.stats.categoryStats[category.id] || {
-            seen: 0,
-            total: 0,
-            completion: 0
-          };
-
-          return {
-            ...category,
-            ...categoryStats
-          };
-        });
-
-        setCategories(categoriesWithStats);
-      }
     } finally {
       setLoading(false);
     }
@@ -92,12 +45,9 @@ export default function CategoriesScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      // Force a full sync on refresh
-      await syncService.fullSync();
       await loadData();
     } catch (error) {
       console.error('Error during refresh:', error);
-      await loadData(); // Fallback to cached data
     }
     setRefreshing(false);
   };
@@ -111,6 +61,32 @@ export default function CategoriesScreen() {
     React.useCallback(() => {
       loadData();
     }, [])
+  );
+
+  const renderCategory = ({ item }: { item: CategoryWithStats }) => (
+    <TouchableOpacity
+      style={styles.categoryCard}
+      onPress={() => router.push(`/categories/${item.id}`)}
+    >
+      <ImageWithFallback
+        uri={item.image_url}
+        style={styles.categoryImage}
+        containerStyle={styles.imageContainer}
+      />
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        style={styles.categoryOverlay}
+      >
+        <View style={styles.categoryContent}>
+          <Text style={styles.categoryName}>{item.name}</Text>
+        </View>
+      </LinearGradient>
+      <View style={styles.completionBadge}>
+        <Text style={styles.completionText}>
+          {item.seen}/{item.total}
+        </Text>
+      </View>
+    </TouchableOpacity>
   );
 
   if (loading) {
@@ -127,22 +103,12 @@ export default function CategoriesScreen() {
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Categories</Text>
-        {isOffline && (
-          <View style={styles.offlineBanner}>
-            <Text style={styles.offlineText}>You're offline. All content available.</Text>
-          </View>
-        )}
       </View>
 
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <CategoryCard 
-            category={item} 
-            onPress={() => router.push(`/categories/${item.id}`)} 
-          />
-        )}
+        renderItem={renderCategory}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -171,21 +137,51 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
-    textAlign: 'center',
-  },
-  offlineBanner: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  offlineText: {
-    color: '#666',
-    fontSize: 14,
   },
   listContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 20,
+  },
+  categoryCard: {
+    height: 180,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 20,
+    position: 'relative',
+  },
+  imageContainer: {
+    width: '100%',
+    height: '100%',
+  },
+  categoryImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  categoryOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+  },
+  categoryContent: {
+    padding: 16,
+  },
+  categoryName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  completionBadge: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  completionText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

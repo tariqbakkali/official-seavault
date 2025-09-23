@@ -15,12 +15,11 @@ export const ROUTES = {
     CATEGORIES: '/(tabs)/categories' as const,
     LOG_DIVE: '/(tabs)/log-dive' as const,
     PROFILE: '/(tabs)/profile' as const,
-    SQL_EDITOR: '/(tabs)/sql-editor' as const,
   },
   
   // Category routes
   CATEGORY: {
-    DETAIL: (id: string) => `/categories/${id}` as const,
+    DETAIL: (id: string) => `/categories/${id}/index` as const,
   },
   
   // Creature routes
@@ -40,7 +39,7 @@ export const ROUTES = {
     WISHLIST: '/stats/wishlist' as const,
   },
   
-  // Modal routes (to be implemented)
+  // Modal routes
   MODAL: {
     LEADERBOARD: '/modal/leaderboard' as const,
     EXPLORE: '/modal/explore' as const,
@@ -74,11 +73,6 @@ export const TAB_CONFIG = {
     title: 'Profile',
     icon: 'User',
   },
-  SQL_EDITOR: {
-    name: 'sql-editor' as const,
-    title: 'SQL Editor',
-    icon: 'Database',
-  },
 } as const;
 
 /**
@@ -103,7 +97,7 @@ export const STACK_CONFIG = {
  * Route parameter types for type safety
  */
 export type RouteParams = {
-  '/categories/[id]': { id: string };
+  '/categories/[id]/index': { id: string };
   '/creatures/[id]': { id: string };
   '/stats/discovered': undefined;
   '/stats/points': undefined;

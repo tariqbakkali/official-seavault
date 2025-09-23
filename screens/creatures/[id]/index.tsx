@@ -12,23 +12,34 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Heart, Plus, Calendar, MapPin, Clock } from 'lucide-react-native';
-import { Creature, Sighting, CachedCatalog, CachedUserData } from '@/types/database';
-import { loadCatalogCache, loadUserDataCache } from '@/services/cache';
-import { syncService } from '@/services/syncService';
+import { Creature, Sighting } from '@/types/database';
 import { supabase } from '@/services/supabase';
 import ImageWithFallback from '@/components/ImageWithFallback';
+import { formatDate, formatTime } from '@/utils/format';
+import { useCatalogStore } from '@/stores/catalog';
+import { useUserStore } from '@/stores/user';
+import { useWishlistStore } from '@/stores/wishlist';
+import { useSightingsStore } from '@/stores/sightings';
 
 const { width } = Dimensions.get('window');
 
 export default function CreatureDetailScreen() {
   const { id } = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
+  
+  // State variables instead of Zustand store
   const [creature, setCreature] = React.useState<Creature | null>(null);
   const [sightings, setSightings] = React.useState<Sighting[]>([]);
   const [isWishlisted, setIsWishlisted] = React.useState(false);
   const [isSeen, setIsSeen] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<'about' | 'sightings'>('about');
+  const [activeTab, setActiveTab] = React.useState('about');
   const [loading, setLoading] = React.useState(true);
-  const insets = useSafeAreaInsets();
+  
+  // Use existing stores
+  const { getCreatures } = useCatalogStore();
+  const { fetchUserData } = useUserStore();
+  const { toggleWishlistItem } = useWishlistStore();
+  const { createSighting } = useSightingsStore();
 
   React.useEffect(() => {
     loadData();
@@ -36,25 +47,40 @@ export default function CreatureDetailScreen() {
 
   const loadData = async () => {
     try {
-      const [catalog, userData] = await Promise.all([
-        loadCatalogCache(),
-        loadUserDataCache()
-      ]);
+      setLoading(true);
+      
+      // Fetch creature data
+      const allCreatures = await getCreatures();
+      const creatureData = allCreatures.find((c: any) => c.id === id);
+      setCreature(creatureData || null);
 
-      if (catalog && userData) {
-        const creatureData = catalog.creatures.find(c => c.id === id);
-        setCreature(creatureData || null);
-
-        const isInWishlist = userData.wishlists.some(w => w.creature_id === id);
-        setIsWishlisted(isInWishlist);
-
-        const creatureSightings = userData.sightings.filter(s => s.creature_id === id);
-        const hasBeenSeen = creatureSightings.length > 0;
-        setIsSeen(hasBeenSeen);
+      // Fetch user data
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Check if creature is wishlisted
+        const { data: wishlistData, error: wishlistError } = await supabase
+          .from('wishlists')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('creature_id', id)
+          .maybeSingle();
         
-        // Sort sightings by date (most recent first)
-        const sortedSightings = creatureSightings.sort((a, b) => b.date.localeCompare(a.date));
-        setSightings(sortedSightings);
+        if (!wishlistError) {
+          setIsWishlisted(!!wishlistData);
+        }
+
+        // Fetch sightings for this creature
+        const { data: sightingsData, error: sightingsError } = await supabase
+          .from('sightings')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('creature_id', id)
+          .order('date', { ascending: false });
+        
+        if (!sightingsError) {
+          setSightings(sightingsData || []);
+          setIsSeen((sightingsData || []).length > 0);
+        }
       }
     } catch (error) {
       console.error('Error loading creature:', error);
@@ -70,21 +96,12 @@ export default function CreatureDetailScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      if (isWishlisted) {
-        // Remove from wishlist
-        const wishlistItem = { id: `${user.id}-${creature.id}`, user_id: user.id, creature_id: creature.id };
-        await syncService.queueWishlistToggle(wishlistItem, false);
-        setIsWishlisted(false);
-      } else {
-        // Add to wishlist
-        const wishlistItem = {
-          id: `${user.id}-${creature.id}`,
-          user_id: user.id,
-          creature_id: creature.id
-        };
-        await syncService.queueWishlistToggle(wishlistItem, true);
-        setIsWishlisted(true);
-      }
+      // Toggle wishlist item using the store function
+      const result = await toggleWishlistItem(creature.id);
+      setIsWishlisted(result);
+      
+      // Refresh user data to update stats
+      await fetchUserData();
     } catch (error) {
       Alert.alert('Error', 'Failed to update wishlist');
     }
@@ -95,21 +112,6 @@ export default function CreatureDetailScreen() {
       // Navigate to log dive screen instead
       router.push('/(tabs)/log-dive');
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatTime = (timeString: string | null) => {
-    if (!timeString) return null;
-    return timeString.slice(0, 5); // HH:MM format
   };
 
   const renderSighting = ({ item, index }: { item: Sighting; index: number }) => (

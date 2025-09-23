@@ -12,72 +12,38 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Search, Filter } from 'lucide-react-native';
-import { syncService } from '@/services/syncService';
-import { loadCatalogCache, loadUserDataCache } from '@/services/cache';
-import { Creature, Category, CachedUserData } from '@/types/database';
-import ExploreCreatureCard from '@/screens/modal/explore/components/ExploreCreatureCard';
+import { Database } from '@/types/database';
+import { useDataStore } from '@/stores/data';
+import ExploreDiveSiteCard from '@/screens/modal/explore/components/ExploreDiveSiteCard';
+
+type DiveSite = Database['public']['Tables']['dive_sites']['Row'];
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 60) / 2;
 
-interface FilterOptions {
-  category: string | null;
-  sortBy: 'name' | 'points';
-  sortOrder: 'asc' | 'desc';
-}
-
-export default function ExploreScreen() {
-  const [creatures, setCreatures] = React.useState<Creature[]>([]);
-  const [categories, setCategories] = React.useState<Category[]>([]);
-  const [filteredCreatures, setFilteredCreatures] = React.useState<Creature[]>([]);
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [filterOptions, setFilterOptions] = React.useState<FilterOptions>({
-    category: null,
-    sortBy: 'name',
-    sortOrder: 'asc',
-  });
-  const [showFilters, setShowFilters] = React.useState(false);
+export default function ExploreModal() {
+  const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
-  const [seenCreatures, setSeenCreatures] = React.useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [showFilters, setShowFilters] = React.useState(false);
+  const [filterOptions, setFilterOptions] = React.useState({
+    category: null as string | null,
+    sortBy: 'name' as 'name' | 'points',
+    sortOrder: 'asc' as 'asc' | 'desc',
+  });
   const insets = useSafeAreaInsets();
+  
+  // Use the new data store instead of dataService
+  const { fetchDiveSites } = useDataStore();
 
   const loadData = async () => {
     try {
-      await syncService.checkConnectivity();
-      const catalog = await syncService.pullCatalog();
-      
-      // Load user data to determine seen creatures
-      const userData = await syncService.pullUserData();
-      
-      if (catalog) {
-        setCreatures(catalog.creatures);
-        setCategories(catalog.categories);
-        setFilteredCreatures(catalog.creatures);
-      }
-      
-      if (userData) {
-        const seen: Set<string> = new Set(userData.sightings.map(s => s.creature_id));
-        setSeenCreatures(seen);
-      }
+      // Fetch dive sites directly from the new store
+      const sites = await fetchDiveSites();
+      setDiveSites(sites);
     } catch (error) {
-      console.error('Error loading explore data:', error);
-      // Fallback to cache
-      const [cachedCatalog, cachedUserData] = await Promise.all([
-        loadCatalogCache(),
-        loadUserDataCache()
-      ]);
-      
-      if (cachedCatalog) {
-        setCreatures(cachedCatalog.creatures);
-        setCategories(cachedCatalog.categories);
-        setFilteredCreatures(cachedCatalog.creatures);
-      }
-      
-      if (cachedUserData) {
-        const seen: Set<string> = new Set(cachedUserData.sightings.map(s => s.creature_id));
-        setSeenCreatures(seen);
-      }
+      console.error('Error loading dive sites:', error);
     } finally {
       setLoading(false);
     }
@@ -86,10 +52,9 @@ export default function ExploreScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await syncService.fullSync();
       await loadData();
     } catch (error) {
-      console.error('Error refreshing explore data:', error);
+      console.error('Error refreshing dive sites:', error);
     }
     setRefreshing(false);
   };
@@ -98,55 +63,15 @@ export default function ExploreScreen() {
     loadData();
   }, []);
 
-  // Apply filters and search
-  React.useEffect(() => {
-    let result = [...creatures];
-    
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(creature => 
-        creature.name.toLowerCase().includes(query) ||
-        (creature.scientific_name && creature.scientific_name.toLowerCase().includes(query)) ||
-        (creature.description && creature.description.toLowerCase().includes(query))
-      );
-    }
-    
-    // Apply category filter
-    if (filterOptions.category) {
-      result = result.filter(creature => creature.category_id === filterOptions.category);
-    }
-    
-    // Apply sorting
-    result.sort((a, b) => {
-      if (filterOptions.sortBy === 'name') {
-        const comparison = a.name.localeCompare(b.name);
-        return filterOptions.sortOrder === 'asc' ? comparison : -comparison;
-      } else {
-        const comparison = (a.points || 0) - (b.points || 0);
-        return filterOptions.sortOrder === 'asc' ? comparison : -comparison;
-      }
-    });
-    
-    setFilteredCreatures(result);
-  }, [creatures, searchQuery, filterOptions]);
-
-  const handleCreaturePress = (creatureId: string) => {
-    router.push(`/creatures/${creatureId}`);
+  const handleDiveSitePress = (diveSiteId: string) => {
+    router.push(`/categories/${diveSiteId}`);
   };
 
-  const renderCreature = ({ item }: { item: Creature }) => {
-    // Find the category name for this creature
-    const category = categories.find(cat => cat.id === item.category_id);
-    
+  const renderDiveSite = ({ item }: { item: DiveSite }) => {
     return (
-      <ExploreCreatureCard
-        creature={{
-          ...item,
-          isDiscovered: seenCreatures.has(item.id),
-          category: category?.name || 'Unknown'
-        }}
-        onPress={() => handleCreaturePress(item.id)}
+      <ExploreDiveSiteCard
+        diveSite={item}
+        onPress={() => handleDiveSitePress(item.id)}
       />
     );
   };
@@ -169,7 +94,7 @@ export default function ExploreScreen() {
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading creatures...</Text>
+          <Text style={styles.loadingText}>Loading dive sites...</Text>
         </View>
       </View>
     );
@@ -190,7 +115,7 @@ export default function ExploreScreen() {
           <Search size={20} color="#666" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search creatures..."
+            placeholder="Search dive sites..."
             placeholderTextColor="#666"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -207,58 +132,20 @@ export default function ExploreScreen() {
       {showFilters && (
         <View style={styles.filtersContainer}>
           <View style={styles.filterRow}>
-            <Text style={styles.filterLabel}>Category:</Text>
-            <TouchableOpacity 
-              style={[
-                styles.categoryFilter,
-                !filterOptions.category && styles.activeCategoryFilter
-              ]}
-              onPress={() => setFilterOptions(prev => ({ ...prev, category: null }))}
-            >
-              <Text style={[
-                styles.categoryFilterText,
-                !filterOptions.category && styles.activeCategoryFilterText
-              ]}>
-                All
-              </Text>
-            </TouchableOpacity>
-            {categories.map(category => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryFilter,
-                  filterOptions.category === category.id && styles.activeCategoryFilter
-                ]}
-                onPress={() => setFilterOptions(prev => ({ ...prev, category: category.id }))}
-              >
-                <Text style={[
-                  styles.categoryFilterText,
-                  filterOptions.category === category.id && styles.activeCategoryFilterText
-                ]}>
-                  {category.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          
-          <View style={styles.filterRow}>
             <Text style={styles.filterLabel}>Sort by:</Text>
             <TouchableOpacity 
-              style={styles.sortButton}
-              onPress={() => setFilterOptions(prev => ({ 
-                ...prev, 
-                sortBy: prev.sortBy === 'name' ? 'points' : 'name' 
-              }))}
+              style={[styles.filterOption, filterOptions.sortBy === 'name' && styles.filterOptionActive]}
+              onPress={() => setFilterOptions(prev => ({ ...prev, sortBy: 'name' }))}
             >
-              <Text style={styles.sortButtonText}>
-                {filterOptions.sortBy === 'name' ? 'Name' : 'Points'}
+              <Text style={[styles.filterText, filterOptions.sortBy === 'name' && styles.filterTextActive]}>
+                Name
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={styles.sortOrderButton}
+              style={styles.filterOption}
               onPress={toggleSortOrder}
             >
-              <Text style={styles.sortOrderText}>
+              <Text style={styles.filterText}>
                 {filterOptions.sortOrder === 'asc' ? '↑' : '↓'}
               </Text>
             </TouchableOpacity>
@@ -266,38 +153,27 @@ export default function ExploreScreen() {
         </View>
       )}
 
-      <View style={styles.resultsHeader}>
-        <Text style={styles.resultsCount}>
-          {filteredCreatures.length} {filteredCreatures.length === 1 ? 'creature' : 'creatures'}
-        </Text>
-      </View>
-
-      {filteredCreatures.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Search size={48} color="#666" />
-          <Text style={styles.emptyTitle}>No creatures found</Text>
-          <Text style={styles.emptySubtitle}>
-            Try adjusting your search or filters
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredCreatures}
-          keyExtractor={(item) => item.id}
-          renderItem={renderCreature}
-          numColumns={2}
-          contentContainerStyle={styles.listContainer}
-          columnWrapperStyle={styles.row}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor="#007AFF"
-            />
-          }
-        />
-      )}
+      <FlatList
+        data={diveSites}
+        keyExtractor={(item) => item.id}
+        renderItem={renderDiveSite}
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#007AFF"
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No dive sites found</Text>
+          </View>
+        }
+      />
     </View>
   );
 }
@@ -343,20 +219,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   searchIcon: {
-    marginRight: 12,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    height: 44,
     color: '#fff',
-    paddingVertical: 16,
+    fontSize: 16,
   },
   filterButton: {
-    width: 50,
-    height: 50,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     backgroundColor: '#1a1a1a',
     justifyContent: 'center',
@@ -375,84 +251,36 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginBottom: 12,
   },
-  filterRowLast: {
-    marginBottom: 0,
-  },
   filterLabel: {
-    fontSize: 14,
     color: '#fff',
     fontWeight: '600',
     marginRight: 12,
-    width: 70,
+    width: 80,
   },
-  categoryFilter: {
-    backgroundColor: '#2a2a2a',
+  filterOption: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 16,
+    backgroundColor: '#333',
     marginRight: 8,
     marginBottom: 8,
   },
-  activeCategoryFilter: {
+  filterOptionActive: {
     backgroundColor: '#007AFF',
   },
-  categoryFilterText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  activeCategoryFilterText: {
-    color: '#fff',
-  },
-  sortButton: {
-    backgroundColor: '#2a2a2a',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  sortButtonText: {
-    fontSize: 12,
-    color: '#fff',
-  },
-  sortOrderButton: {
-    backgroundColor: '#007AFF',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sortOrderText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  resultsHeader: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  resultsCount: {
+  filterText: {
+    color: '#ccc',
     fontSize: 14,
-    color: '#666',
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  filterTextActive: {
     color: '#fff',
-    marginTop: 16,
-    marginBottom: 8,
   },
-  emptySubtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
+  columnWrapper: {
+    justifyContent: 'space-between',
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -460,15 +288,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 16,
     color: '#666',
+    fontSize: 16,
   },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 40,
   },
-  row: {
-    justifyContent: 'space-between',
-    marginBottom: 20,
+  emptyText: {
+    color: '#666',
+    fontSize: 16,
   },
 });
