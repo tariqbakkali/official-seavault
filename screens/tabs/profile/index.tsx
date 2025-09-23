@@ -130,7 +130,7 @@ export default function ProfileScreen() {
             />
           </View>
           <Text style={styles.name}>
-            {userData?.profile?.full_name || user?.email || 'User'}
+            {userData?.profile?.full_name || 'User'}
           </Text>
           <Text style={styles.email}>{user?.email}</Text>
         </View>

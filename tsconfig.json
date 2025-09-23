@@ -20,7 +20,8 @@
       "@/types/*": ["./types/*"],
       "@/styles": ["./styles"],
       "@/styles/*": ["./styles/*"],
-      "@/types/database": ["./types/database"]
+      "@/types/database": ["./types/database"],
+      "@/assets/images/*": ["./assets/images/*"]
     }
   },
   "include": [
@@ -28,6 +29,7 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
-    "nativewind-env.d.ts"
+    "nativewind-env.d.ts",
+    "assets/images/index.d.ts"
   ]
 }

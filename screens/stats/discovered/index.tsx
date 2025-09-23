@@ -11,7 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Calendar } from 'lucide-react-native';
 import { Creature, Sighting } from '@/types/database';
-import { useDataStore } from '@/stores/data';
+import { useCatalogStore } from '@/stores/catalog';
+import { useUserStore } from '@/stores/user';
 import ImageWithFallback from '@/components/ImageWithFallback';
 
 const { width } = Dimensions.get('window');
@@ -27,6 +28,9 @@ export default function DiscoveredScreen() {
   const [discoveredCreatures, setDiscoveredCreatures] = React.useState<DiscoveredCreature[]>([]);
   const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
+  
+  const { fetchCatalog } = useCatalogStore();
+  const { fetchUserData } = useUserStore();
 
   React.useEffect(() => {
     loadData();
@@ -34,9 +38,9 @@ export default function DiscoveredScreen() {
 
   const loadData = async () => {
     try {
-      // Fetch catalog and user data directly from Supabase
-      const catalog = await dataService.fetchCatalog();
-      const userData = await dataService.fetchUserData();
+      // Fetch catalog and user data from stores
+      const catalog = await fetchCatalog();
+      const userData = await fetchUserData();
 
       if (catalog && userData) {
         // Group sightings by creature

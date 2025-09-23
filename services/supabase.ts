@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // For session persistence
 import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system';
+import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy';
 import { Database } from '@/types/database';
 
 // ✅ Load Supabase credentials from app config / env
@@ -31,21 +33,27 @@ export const uploadImage = async (
   isPublic: boolean = true
 ): Promise<string | null> => {
   try {
-    // Fetch file and convert to ArrayBuffer
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
+    // Read file as base64
+    const base64 = await readAsStringAsync(uri, {
+      encoding: EncodingType.Base64,
+    });
 
-    // Generate unique file path
-    const fileExt = blob.type.split('/')[1] || 'jpg';
+    // Convert base64 to Uint8Array
+    const arrayBuffer = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+
+    // Determine file extension from URI
+    const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `${folder}/${fileName}`;
+
+    // Determine content type
+    const contentType = `image/${fileExt === 'jpg' || fileExt === 'jpeg' ? 'jpeg' : fileExt}`;
 
     // Upload file
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(filePath, arrayBuffer, {
-        contentType: blob.type || 'image/jpeg',
+        contentType: contentType,
         upsert: false,
       });
 

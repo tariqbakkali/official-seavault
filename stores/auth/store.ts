@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../../services/supabase';
-import { AuthState, AuthActions } from './types';
+import { AuthState, AuthActions } from './types/types';
 import { Database } from '../../types/database';
 
 export type AuthStore = AuthState & AuthActions;
@@ -16,7 +16,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   // Actions
   initializeAuth: async (): Promise<void> => {
     try {
-      set((state) => ({ ...state, isLoading: true, error: null }));
+      set((state: AuthState) => ({ ...state, isLoading: true, error: null }));
       
       // Get current session
       const { data: { session } } = await supabase.auth.getSession();
@@ -24,7 +24,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (session) {
         // Get user profile
         const { data: { user } } = await supabase.auth.getUser();
-        set((state) => ({ 
+        set((state: AuthState) => ({ 
           ...state, 
           user: user || null, 
           session, 
@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           isLoading: false 
         }));
       } else {
-        set((state) => ({ 
+        set((state: AuthState) => ({ 
           ...state, 
           user: null, 
           session: null, 
@@ -42,7 +42,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
-      set((state) => ({ 
+      set((state: AuthState) => ({ 
         ...state, 
         error: 'Failed to initialize auth', 
         isLoading: false 
@@ -50,9 +50,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  signUp: async (email, password, fullName): Promise<{ user: any; session: any } | null> => {
+  signUp: async (email: string, password: string, fullName?: string): Promise<{ user: any; session: any } | null> => {
     try {
-      set((state) => ({ ...state, isLoading: true, error: null }));
+      set((state: AuthState) => ({ ...state, isLoading: true, error: null }));
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -67,7 +67,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (error) throw error;
 
       if (data.user) {
-        set((state) => ({ 
+        set((state: AuthState) => ({ 
           ...state, 
           user: data.user, 
           session: data.session, 
@@ -79,7 +79,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return data;
     } catch (error: any) {
       console.error('Sign up error:', error);
-      set((state) => ({ 
+      set((state: AuthState) => ({ 
         ...state, 
         error: error.message || 'Failed to sign up', 
         isLoading: false 
@@ -88,9 +88,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  signIn: async (email, password): Promise<{ user: any; session: any } | null> => {
+  signIn: async (email: string, password: string): Promise<{ user: any; session: any } | null> => {
     try {
-      set((state) => ({ ...state, isLoading: true, error: null }));
+      set((state: AuthState) => ({ ...state, isLoading: true, error: null }));
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -100,7 +100,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (error) throw error;
 
       if (data.user) {
-        set((state) => ({ 
+        set((state: AuthState) => ({ 
           ...state, 
           user: data.user, 
           session: data.session, 
@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return data;
     } catch (error: any) {
       console.error('Sign in error:', error);
-      set((state) => ({ 
+      set((state: AuthState) => ({ 
         ...state, 
         error: error.message || 'Failed to sign in', 
         isLoading: false 
@@ -123,13 +123,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   signOut: async (): Promise<void> => {
     try {
-      set((state) => ({ ...state, isLoading: true, error: null }));
+      set((state: AuthState) => ({ ...state, isLoading: true, error: null }));
       
       const { error } = await supabase.auth.signOut();
       
       if (error) throw error;
       
-      set((state) => ({ 
+      set((state: AuthState) => ({ 
         ...state, 
         user: null, 
         session: null, 
@@ -138,7 +138,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }));
     } catch (error: any) {
       console.error('Sign out error:', error);
-      set((state) => ({ 
+      set((state: AuthState) => ({ 
         ...state, 
         error: error.message || 'Failed to sign out', 
         isLoading: false 
@@ -146,51 +146,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  resetPassword: async (email): Promise<void> => {
+  updateEmail: async (newEmail: string): Promise<void> => {
     try {
-      set((state) => ({ ...state, isLoading: true, error: null }));
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      
-      if (error) throw error;
-      
-      set((state) => ({ ...state, isLoading: false }));
-    } catch (error: any) {
-      console.error('Reset password error:', error);
-      set((state) => ({ 
-        ...state, 
-        error: error.message || 'Failed to send reset password email', 
-        isLoading: false 
-      }));
-    }
-  },
-
-  updatePassword: async (newPassword): Promise<void> => {
-    try {
-      set((state) => ({ ...state, isLoading: true, error: null }));
-      
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-      
-      if (error) throw error;
-      
-      set((state) => ({ ...state, isLoading: false }));
-    } catch (error: any) {
-      console.error('Update password error:', error);
-      set((state) => ({ 
-        ...state, 
-        error: error.message || 'Failed to update password', 
-        isLoading: false 
-      }));
-    }
-  },
-
-  updateEmail: async (newEmail): Promise<void> => {
-    try {
-      set((state) => ({ ...state, isLoading: true, error: null }));
+      set((state: AuthState) => ({ ...state, isLoading: true, error: null }));
       
       const { error } = await supabase.auth.updateUser({
         email: newEmail,
@@ -200,14 +158,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       
       // Refresh user data
       const { data: { user } } = await supabase.auth.getUser();
-      set((state) => ({ 
+      set((state: AuthState) => ({ 
         ...state, 
         user: user || state.user, 
         isLoading: false 
       }));
     } catch (error: any) {
       console.error('Update email error:', error);
-      set((state) => ({ 
+      set((state: AuthState) => ({ 
         ...state, 
         error: error.message || 'Failed to update email', 
         isLoading: false 
@@ -220,7 +178,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (session) {
         // Get user profile
         supabase.auth.getUser().then(({ data: { user } }) => {
-          set((state) => ({ 
+          set((state: AuthState) => ({ 
             ...state, 
             user: user || null, 
             session, 
@@ -228,7 +186,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           }));
         });
       } else {
-        set((state) => ({ 
+        set((state: AuthState) => ({ 
           ...state, 
           user: null, 
           session: null, 
@@ -238,7 +196,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     });
   },
 
-  isAuthenticated: () => {
+  checkIsAuthenticated: (): boolean => {
     return get().isAuthenticated;
   },
 
@@ -257,7 +215,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (error) throw error;
       
       if (user) {
-        set((state) => ({ ...state, user }));
+        set((state: AuthState) => ({ ...state, user }));
       }
       
       return user || null;

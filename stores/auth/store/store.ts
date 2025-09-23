@@ -146,48 +146,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  resetPassword: async (email): Promise<void> => {
-    try {
-      set((state) => ({ ...state, isLoading: true, error: null }));
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      
-      if (error) throw error;
-      
-      set((state) => ({ ...state, isLoading: false }));
-    } catch (error: any) {
-      console.error('Reset password error:', error);
-      set((state) => ({ 
-        ...state, 
-        error: error.message || 'Failed to send reset password email', 
-        isLoading: false 
-      }));
-    }
-  },
-
-  updatePassword: async (newPassword): Promise<void> => {
-    try {
-      set((state) => ({ ...state, isLoading: true, error: null }));
-      
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-      
-      if (error) throw error;
-      
-      set((state) => ({ ...state, isLoading: false }));
-    } catch (error: any) {
-      console.error('Update password error:', error);
-      set((state) => ({ 
-        ...state, 
-        error: error.message || 'Failed to update password', 
-        isLoading: false 
-      }));
-    }
-  },
-
   updateEmail: async (newEmail): Promise<void> => {
     try {
       set((state) => ({ ...state, isLoading: true, error: null }));

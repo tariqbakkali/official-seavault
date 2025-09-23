@@ -22,7 +22,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onEditProfile }:
       <Text style={styles.userEmail}>{profile?.email}</Text>
       
       {/* Membership tier and premium status */}
-      {(profile?.membership_tier || profile?.is_premium) && (
+      {(profile?.membership_tier || profile?.is_premium === true) && (
         <View style={styles.membershipContainer}>
           {profile?.membership_tier && (
             <View style={[styles.membershipBadge, profile?.membership_tier === 'premium' && styles.premiumBadge]}>
@@ -31,7 +31,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onEditProfile }:
               </Text>
             </View>
           )}
-          {profile?.is_premium && (
+          {profile?.is_premium === true && (
             <View style={styles.premiumBadge}>
               <Text style={styles.premiumText}>Premium</Text>
             </View>

@@ -9,8 +9,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import { useDataStore } from '@/stores/data';
-import { calculateUserStats } from '@/stores/data';
+import { useCatalogStore } from '@/stores/catalog';
+import { useUserStore } from '@/stores/user';
+import { calculateUserStats } from '@/stores/user/utils/utils';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Category } from '@/types/database';
@@ -22,21 +23,74 @@ interface CategoryWithStats extends Category {
 }
 
 export default function CategoriesTab() {
-  const [categories, setCategories] = React.useState<Category[]>([]);
+  const [categories, setCategories] = React.useState<CategoryWithStats[]>([]);
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const [isOffline, setIsOffline] = React.useState(false);
   const insets = useSafeAreaInsets();
   
-  // Use the new data store instead of dataService
-  const { fetchCatalog } = useDataStore();
+  const { fetchCatalog } = useCatalogStore();
+  const { fetchUserData } = useUserStore();
 
   const loadData = async () => {
     try {
-      // Fetch catalog directly from the new store
+      // Check if we're offline
+      const online = navigator.onLine;
+      setIsOffline(!online);
+      
+      // Fetch catalog and user data
       const catalog = await fetchCatalog();
-      setCategories(catalog?.categories || []);
+      const userData = await fetchUserData();
+      
+      if (catalog?.categories) {
+        let categoriesWithStats: CategoryWithStats[] = catalog.categories.map(category => ({
+          ...category,
+          seen: 0,
+          total: 0,
+          completion: 0
+        }));
+        
+        // If we have user data, calculate stats
+        if (userData && catalog) {
+          const stats = calculateUserStats(userData, catalog);
+          
+          // Map categories with their stats
+          categoriesWithStats = catalog.categories.map(category => {
+            const categoryStat = stats.categoryStats[category.id] || {
+              seen: 0,
+              total: 0,
+              completion: 0,
+              points: 0
+            };
+            
+            return {
+              ...category,
+              seen: categoryStat.seen,
+              total: categoryStat.total,
+              completion: categoryStat.completion
+            };
+          });
+        }
+        
+        setCategories(categoriesWithStats);
+      }
     } catch (error) {
       console.error('Error loading categories:', error);
+      // Try to load from cache if online fetch fails
+      try {
+        const catalog = await fetchCatalog();
+        if (catalog?.categories) {
+          const categoriesWithStats: CategoryWithStats[] = catalog.categories.map(category => ({
+            ...category,
+            seen: 0,
+            total: 0,
+            completion: 0
+          }));
+          setCategories(categoriesWithStats);
+        }
+      } catch (cacheError) {
+        console.error('Error loading categories from cache:', cacheError);
+      }
     } finally {
       setLoading(false);
     }
@@ -103,6 +157,11 @@ export default function CategoriesTab() {
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Categories</Text>
+        {isOffline && (
+          <View style={styles.offlineBanner}>
+            <Text style={styles.offlineText}>You're offline. All content available.</Text>
+          </View>
+        )}
       </View>
 
       <FlatList
@@ -137,6 +196,17 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  offlineBanner: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  offlineText: {
+    color: '#666',
+    fontSize: 14,
   },
   listContainer: {
     paddingHorizontal: 20,

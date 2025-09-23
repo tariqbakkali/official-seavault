@@ -5,42 +5,39 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
+
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { supabase } from '@/services/supabase';
 import { ROUTES, COLORS, DIMENSIONS, APP_CONFIG } from '@/constants';
+import { isValidEmail } from './utils/authValidation';
+import { showAlert } from '@/utils/alertUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  const [email, setEmail] = React.useState('naeemcharbagh1274@gmail.com');
+  const [password, setPassword] = React.useState('1274886naeem');
   const [loading, setLoading] = React.useState(false);
   const [isSignUp, setIsSignUp] = React.useState(false);
   const insets = useSafeAreaInsets();
   
   // Use the new auth store instead of authService
-  const { signUp, signIn, resetPassword } = useAuthStore();
+  const { signUp, signIn } = useAuthStore();
 
-  // Add email validation function
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const handleAuth = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showAlert('Error', 'Please fill in all fields');
       return;
     }
 
     if (!isValidEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      showAlert('Error', 'Please enter a valid email address');
       return;
     }
 
@@ -52,59 +49,32 @@ export default function LoginScreen() {
         if (result) {
           // Check if email confirmation is required
           if (result.user && !result.user.email_confirmed_at) {
-            Alert.alert(
+            showAlert(
               'Confirm Your Email',
               'Please check your email and click the confirmation link to complete your registration.',
-              [{ text: 'OK' }]
+              () => setIsSignUp(false) // Pass a callback for OK button
             );
             // Switch to sign in mode so user can sign in after confirming email
             setIsSignUp(false);
           } else {
             // User is already signed in
-            Alert.alert('Success', 'Account created successfully!');
-            router.replace(ROUTES.TABS.HOME);
+            showAlert('Success', 'Account created successfully!');
+
           }
         } else {
-          Alert.alert('Error', 'Failed to create account. Please try again.');
+          showAlert('Error', 'Failed to create account. Please try again.');
         }
       } else {
         const result = await signIn(email, password); // Updated usage
         
         if (result) {
           console.log('Sign in successful');
-          router.replace(ROUTES.TABS.HOME);
         } else {
-          Alert.alert('Error', 'Invalid email or password. Please try again.');
+          showAlert('Error', 'Invalid email or password. Please try again.');
         }
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'An error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Add password reset function
-  const handlePasswordReset = async () => {
-    if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await resetPassword(email); // Updated usage
-      Alert.alert(
-        'Success',
-        'Password reset email sent. Please check your inbox.'
-      );
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to send password reset email. Please try again.');
+      showAlert('Error', error.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -157,16 +127,6 @@ export default function LoginScreen() {
                 </Text>
               )}
             </TouchableOpacity>
-
-            {!isSignUp && (
-              <TouchableOpacity
-                style={styles.forgotPasswordButton}
-                onPress={handlePasswordReset}
-                disabled={loading}
-              >
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-              </TouchableOpacity>
-            )}
 
             <TouchableOpacity
               style={styles.switchButton}
@@ -239,14 +199,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  forgotPasswordButton: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  forgotPasswordText: {
-    color: '#007AFF',
-    fontSize: 14,
   },
   switchButton: {
     alignItems: 'center',

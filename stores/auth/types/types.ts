@@ -13,8 +13,6 @@ export interface AuthActions {
   signUp: (email: string, password: string, fullName?: string) => Promise<{ user: any; session: any } | null>;
   signIn: (email: string, password: string) => Promise<{ user: any; session: any } | null>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updatePassword: (newPassword: string) => Promise<void>;
   updateEmail: (newEmail: string) => Promise<void>;
   setupAuthListener: () => void;
   checkIsAuthenticated: () => boolean;

@@ -24,14 +24,6 @@ export const signOut = (): Promise<void> => {
   return useAuthStore.getState().signOut();
 };
 
-export const resetPassword = (email: string): Promise<void> => {
-  return useAuthStore.getState().resetPassword(email);
-};
-
-export const updatePassword = (newPassword: string): Promise<void> => {
-  return useAuthStore.getState().updatePassword(newPassword);
-};
-
 export const updateEmail = (newEmail: string): Promise<void> => {
   return useAuthStore.getState().updateEmail(newEmail);
 };

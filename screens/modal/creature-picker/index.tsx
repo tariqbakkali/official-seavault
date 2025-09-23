@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Search, Filter } from 'lucide-react-native';
 import { Database } from '@/types/database';
 import { useCatalogStore } from '@/stores/catalog';
@@ -35,6 +35,9 @@ export default function CreaturePickerScreen() {
     sortOrder: 'asc' as 'asc' | 'desc',
   });
   const insets = useSafeAreaInsets();
+  
+  const params = useLocalSearchParams();
+  const creatureEntryId = params.creatureEntryId as string;
   
   const { getCreatures, getCategories } = useCatalogStore();
 
@@ -71,7 +74,10 @@ export default function CreaturePickerScreen() {
     // Pass the selected creature back to the log dive screen
     router.push({
       pathname: '/(tabs)/log-dive',
-      params: { selectedCreatureId: creatureId }
+      params: { 
+        selectedCreatureId: creatureId,
+        creatureEntryId: creatureEntryId
+      }
     } as any);
   };
 

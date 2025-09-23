@@ -16,7 +16,7 @@ module.exports = {
       output: 'single',
       favicon: './assets/images/favicon.png'
     },
-    plugins: ['expo-router', 'expo-font', 'expo-web-browser', 'expo-image-picker'],
+    plugins: ['expo-router', 'expo-font', 'expo-web-browser', 'expo-image-picker', 'expo-maps'],
     experiments: {
       typedRoutes: true
     },

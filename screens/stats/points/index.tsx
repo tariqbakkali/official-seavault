@@ -9,8 +9,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Star, Eye, Heart } from 'lucide-react-native';
-import { useDataStore } from '@/stores/data';
-import { calculateUserStats } from '@/stores/data';
+import { useUserStore } from '@/stores/user';
+import { useCatalogStore } from '@/stores/catalog';
+import { calculateUserStats } from '@/stores/user/utils/utils';
 import { Category } from '@/types/database';
 
 interface CategoryStat {
@@ -25,12 +26,12 @@ export default function PointsScreen() {
   const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
   
-  // Use the new data store instead of dataService
-  const { fetchUserData, fetchCatalog } = useDataStore();
+  const { fetchUserData } = useUserStore();
+  const { fetchCatalog } = useCatalogStore();
 
   const loadData = async () => {
     try {
-      // Fetch data directly from the new store
+      // Fetch data directly from the stores
       const userData = await fetchUserData();
       const catalog = await fetchCatalog();
       
@@ -62,6 +63,25 @@ export default function PointsScreen() {
     </View>
   );
 
+  // Prepare category stats data for FlatList
+  const categoryStatsData = userStats?.categoryStats 
+    ? Object.entries(userStats.categoryStats).map(([categoryId, stat]: [string, any]) => {
+        // Get the full category object from the catalog
+        const category = userStats.categories?.find((cat: any) => cat.id === categoryId) || {
+          id: categoryId,
+          name: userStats.categoryNames?.[categoryId] || 'Unknown Category',
+          created_at: new Date().toISOString(),
+          image_url: null
+        };
+        
+        return {
+          category,
+          points: stat.points || 0,
+          creatures: stat.seen || 0
+        };
+      })
+    : [];
+
   if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
@@ -88,30 +108,35 @@ export default function PointsScreen() {
       <View style={styles.statsHeader}>
         <View style={styles.pointsContainer}>
           <Star size={32} color="#FF9500" />
-          <Text style={styles.totalPoints}>{totalPoints}</Text>
+          <Text style={styles.totalPoints}>{userStats?.totalPoints || 0}</Text>
           <Text style={styles.pointsLabel}>Total Points</Text>
         </View>
         
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <Eye size={24} color="#007AFF" />
-            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statValue}>{userStats?.uniqueCreatures || 0}</Text>
             <Text style={styles.statLabel}>Unique</Text>
           </View>
           <View style={styles.statBox}>
             <Heart size={24} color="#FF3B30" />
-            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statValue}>{userStats?.wishlistCount || 0}</Text>
             <Text style={styles.statLabel}>Wishlist</Text>
           </View>
         </View>
       </View>
 
       <FlatList
-        data={categoryStats}
+        data={categoryStatsData}
         keyExtractor={(item) => item.category.id}
         renderItem={renderCategoryStat}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No points data available</Text>
+          </View>
+        }
       />
     </View>
   );
@@ -212,6 +237,16 @@ const styles = StyleSheet.create({
   },
   categoryCreatures: {
     fontSize: 14,
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 40,
+  },
+  emptyText: {
+    fontSize: 16,
     color: '#666',
   },
 });

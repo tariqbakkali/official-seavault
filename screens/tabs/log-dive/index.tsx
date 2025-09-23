@@ -10,9 +10,10 @@ import {
   Platform,
   KeyboardAvoidingView,
   RefreshControl,
+  FlatList,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Camera, Calendar, MapPin, Clock, Fish, Image as ImageIcon } from 'lucide-react-native';
+import { Camera, Calendar, MapPin, Clock, Fish, Image as ImageIcon, X, Plus } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useDiveSitesStore } from '@/stores/diveSites';
@@ -22,6 +23,29 @@ import { useUserStore } from '@/stores/user';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import ImagePicker from '@/components/ImagePicker';
 import { Database } from '@/types/database';
+import ImageWithFallback from '@/components/ImageWithFallback';
+
+// Conditional import for maps with error handling
+let AppleMaps: any, GoogleMaps: any;
+let mapsAvailable = false;
+if (Platform.OS !== 'web') {
+  try {
+    const maps = require('expo-maps');
+    AppleMaps = maps.AppleMaps;
+    GoogleMaps = maps.GoogleMaps;
+    mapsAvailable = true;
+  } catch (error) {
+    console.warn('ExpoMaps not available:', error);
+    mapsAvailable = false;
+  }
+}
+
+interface CreatureEntry {
+  id: string;
+  creatureId: string | null;
+  notes: string;
+  imageUri: string | null;
+}
 
 interface FormData {
   date: Date;
@@ -29,9 +53,8 @@ interface FormData {
   diveType: string;
   timeOfDay: string;
   depth: string;
-  creatureId: string | null;
+  creatures: CreatureEntry[];
   diveNotes: string;
-  creatureNotes: string;
   imageUri: string | null;
 }
 
@@ -42,9 +65,13 @@ export default function LogDiveScreen() {
     diveType: '',
     timeOfDay: '',
     depth: '',
-    creatureId: null,
+    creatures: [{
+      id: Date.now().toString(),
+      creatureId: null,
+      notes: '',
+      imageUri: null
+    }],
     diveNotes: '',
-    creatureNotes: '',
     imageUri: null,
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -62,20 +89,27 @@ export default function LogDiveScreen() {
 
   // Handle selected creature and dive site from modals
   useEffect(() => {
-    if (params.selectedCreatureId) {
-      setFormData(prev => ({
-        ...prev,
-        creatureId: params.selectedCreatureId as string
-      }));
-    }
-    
     if (params.selectedDiveSiteId) {
       setFormData(prev => ({
         ...prev,
         diveSiteId: params.selectedDiveSiteId as string
       }));
     }
-  }, [params.selectedCreatureId, params.selectedDiveSiteId]);
+  }, [params.selectedDiveSiteId]);
+
+  // Handle creature selection from modal
+  useEffect(() => {
+    if (params.selectedCreatureId && params.creatureEntryId) {
+      setFormData(prev => ({
+        ...prev,
+        creatures: prev.creatures.map(creature => 
+          creature.id === params.creatureEntryId 
+            ? { ...creature, creatureId: params.selectedCreatureId as string } 
+            : creature
+        )
+      }));
+    }
+  }, [params.selectedCreatureId, params.creatureEntryId]);
 
   const loadData = async () => {
     try {
@@ -121,27 +155,38 @@ export default function LogDiveScreen() {
         return;
       }
 
-      if (!formData.creatureId) {
-        Alert.alert('Error', 'Please select a creature');
+      // Validate that at least one creature is selected
+      const hasSelectedCreature = formData.creatures.some(c => c.creatureId);
+      if (!hasSelectedCreature) {
+        Alert.alert('Error', 'Please select at least one creature');
         return;
       }
 
-      // Create sighting
-      const sightingData = {
-        dive_site_id: formData.diveSiteId,
-        creature_id: formData.creatureId,
-        date: formData.date.toISOString().split('T')[0],
-        dive_type: formData.diveType || null,
-        time_of_day: formData.timeOfDay || null,
-        depth: formData.depth || null,
-        dive_notes: formData.diveNotes || null,
-        creature_notes: formData.creatureNotes || null,
-        image_url: formData.imageUri || null,
-      };
+      // Create sightings for each selected creature
+      const results = await Promise.all(
+        formData.creatures
+          .filter(creature => creature.creatureId)
+          .map(async (creature) => {
+            const sightingData = {
+              dive_site_id: formData.diveSiteId,
+              creature_id: creature.creatureId,
+              date: formData.date.toISOString().split('T')[0],
+              dive_type: formData.diveType || null,
+              time_of_day: formData.timeOfDay || null,
+              depth: formData.depth || null,
+              dive_notes: formData.diveNotes || null,
+              creature_notes: creature.notes || null,
+              image_url: creature.imageUri || null,
+            };
 
-      const result = await createSighting(sightingData as any);
+            return createSighting(sightingData as any);
+          })
+      );
       
-      if (result) {
+      // Check if all sightings were created successfully
+      const allSuccessful = results.every(result => result);
+      
+      if (allSuccessful) {
         // Refresh user data to update stats
         await fetchUserData();
         
@@ -163,9 +208,211 @@ export default function LogDiveScreen() {
     ? diveSites.find(site => site.id === formData.diveSiteId)
     : null;
 
-  const selectedCreature = formData.creatureId
-    ? creatures.find(creature => creature.id === formData.creatureId)
-    : null;
+  // Render map component
+  const renderMap = () => {
+    // Maps are not available on web platform or if expo-maps is not available
+    if (Platform.OS === 'web' || !mapsAvailable) {
+      return (
+        <View style={styles.mapPlaceholder}>
+          <MapPin size={32} color="#666" />
+          <Text style={styles.mapPlaceholderText}>
+            {selectedDiveSite 
+              ? `Selected: ${selectedDiveSite.name}`
+              : 'Map view not available. Use the dropdown above to select a dive site.'
+            }
+          </Text>
+        </View>
+      );
+    }
+
+    // Filter sites that have valid coordinates
+    const sitesWithCoords = diveSites.filter(site => 
+      site.latitude && site.longitude && 
+      !isNaN(site.latitude) && !isNaN(site.longitude)
+    );
+
+    if (sitesWithCoords.length === 0) {
+      return (
+        <View style={styles.mapPlaceholder}>
+          <MapPin size={32} color="#666" />
+          <Text style={styles.mapPlaceholderText}>
+            {selectedDiveSite 
+              ? `Selected: ${selectedDiveSite.name}`
+              : 'No dive sites with coordinates available'
+            }
+          </Text>
+        </View>
+      );
+    }
+
+    // Calculate center point from all dive sites
+    const avgLat = sitesWithCoords.reduce((sum, site) => sum + (site.latitude || 0), 0) / sitesWithCoords.length;
+    const avgLng = sitesWithCoords.reduce((sum, site) => sum + (site.longitude || 0), 0) / sitesWithCoords.length;
+
+    const markers = sitesWithCoords.map(site => ({
+      id: site.id,
+      coordinates: {
+        latitude: site.latitude!,
+        longitude: site.longitude!
+      },
+      title: site.name || 'Dive Site',
+      tintColor: selectedDiveSite?.id === site.id ? '#007AFF' : '#FF3B30'
+    }));
+
+    const MapComponent = Platform.OS === 'ios' ? AppleMaps.View : GoogleMaps.View;
+
+    return (
+      <View style={styles.mapContainer}>
+        <MapComponent
+          style={styles.map}
+          cameraPosition={{
+            coordinates: {
+              latitude: avgLat,
+              longitude: avgLng
+            },
+            zoom: 8
+          }}
+          markers={markers}
+          onMarkerClick={(event: any) => {
+            const site = sitesWithCoords.find(s => s.id === event.id);
+            if (site) {
+              setFormData(prev => ({ ...prev, diveSiteId: site.id }));
+            }
+          }}
+          properties={{
+            isMyLocationEnabled: true,
+            mapType: Platform.OS === 'ios' ? 'STANDARD' : 'NORMAL'
+          }}
+          uiSettings={{
+            myLocationButtonEnabled: true,
+            compassEnabled: true,
+            scaleBarEnabled: true
+          }}
+        />
+        {selectedDiveSite && (
+          <View style={styles.selectedSiteOverlay}>
+            <MapPin size={16} color="#007AFF" />
+            <Text style={styles.selectedSiteText}>Selected: {selectedDiveSite.name}</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // Creature management functions
+  const addCreatureEntry = () => {
+    setFormData(prev => ({
+      ...prev,
+      creatures: [
+        ...prev.creatures,
+        {
+          id: Date.now().toString(),
+          creatureId: null,
+          notes: '',
+          imageUri: null
+        }
+      ]
+    }));
+  };
+
+  const removeCreatureEntry = (id: string) => {
+    if (formData.creatures.length <= 1) {
+      Alert.alert('Error', 'You must have at least one creature entry');
+      return;
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      creatures: prev.creatures.filter(creature => creature.id !== id)
+    }));
+  };
+
+  const updateCreatureEntry = (id: string, field: keyof CreatureEntry, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      creatures: prev.creatures.map(creature => 
+        creature.id === id ? { ...creature, [field]: value } : creature
+      )
+    }));
+  };
+
+  const selectCreatureForEntry = (entryId: string) => {
+    router.push({
+      pathname: '/modal/creature-picker',
+      params: { creatureEntryId: entryId }
+    } as any);
+  };
+
+  // Render a single creature entry
+  const renderCreatureEntry = (entry: CreatureEntry) => {
+    const selectedCreature = entry.creatureId
+      ? creatures.find(creature => creature.id === entry.creatureId)
+      : null;
+
+    return (
+      <View style={styles.creatureEntryContainer} key={entry.id}>
+        <View style={styles.creatureEntryHeader}>
+          <Text style={styles.inputLabel}>Creature</Text>
+          {formData.creatures.length > 1 && (
+            <TouchableOpacity 
+              style={styles.removeCreatureButton}
+              onPress={() => removeCreatureEntry(entry.id)}
+            >
+              <X size={20} color="#FF3B30" />
+            </TouchableOpacity>
+          )}
+        </View>
+        
+        <TouchableOpacity
+          style={styles.selectInput}
+          onPress={() => selectCreatureForEntry(entry.id)}
+        >
+          {selectedCreature ? (
+            <View style={styles.selectedCreatureRow}>
+              <ImageWithFallback
+                uri={selectedCreature.image_url}
+                style={styles.selectedCreatureImage}
+              />
+              <Text style={styles.selectText}>{selectedCreature.name}</Text>
+            </View>
+          ) : (
+            <Text style={styles.placeholderText}>Select a creature</Text>
+          )}
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+
+        {/* Creature Notes */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Creature Notes</Text>
+          <TextInput
+            style={[styles.textInput, styles.textArea]}
+            placeholder="Describe your creature encounter..."
+            placeholderTextColor="#666"
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+            value={entry.notes}
+            onChangeText={(text) => updateCreatureEntry(entry.id, 'notes', text)}
+          />
+        </View>
+
+        {/* Creature Photo */}
+        <View style={styles.inputGroup}>
+          <View style={styles.inputLabelRow}>
+            <Camera size={20} color="#666" />
+            <Text style={styles.inputLabel}>Creature Photo</Text>
+          </View>
+          <ImagePicker onImageSelect={(uri) => updateCreatureEntry(entry.id, 'imageUri', uri)} />
+          {entry.imageUri && (
+            <View style={styles.imagePreview}>
+              <ImageIcon size={24} color="#666" />
+              <Text style={styles.imageText}>Image selected</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   return (
     <KeyboardAvoidingView
@@ -187,6 +434,15 @@ export default function LogDiveScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>Log a Dive</Text>
             <Text style={styles.subtitle}>Record your underwater discoveries</Text>
+          </View>
+
+          {/* Map */}
+          <View style={styles.inputGroup}>
+            <View style={styles.inputLabelRow}>
+              <MapPin size={20} color="#666" />
+              <Text style={styles.inputLabel}>Dive Site Map</Text>
+            </View>
+            {renderMap()}
           </View>
 
           {/* Form */}
@@ -281,23 +537,22 @@ export default function LogDiveScreen() {
               />
             </View>
 
-            {/* Creature */}
+            {/* Creatures Section */}
             <View style={styles.inputGroup}>
-              <View style={styles.inputLabelRow}>
-                <Fish size={20} color="#666" />
-                <Text style={styles.inputLabel}>Creature</Text>
+              <View style={styles.sectionHeader}>
+                <View style={styles.inputLabelRow}>
+                  <Fish size={20} color="#666" />
+                  <Text style={styles.inputLabel}>Creatures</Text>
+                </View>
+                <TouchableOpacity 
+                  style={styles.addButton}
+                  onPress={addCreatureEntry}
+                >
+                  <Plus size={20} color="#007AFF" />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={styles.selectInput}
-                onPress={() => router.push('/modal/creature-picker' as any)}
-              >
-                {selectedCreature ? (
-                  <Text style={styles.selectText}>{selectedCreature.name}</Text>
-                ) : (
-                  <Text style={styles.placeholderText}>Select a creature</Text>
-                )}
-                <Text style={styles.chevron}>›</Text>
-              </TouchableOpacity>
+              
+              {formData.creatures.map(renderCreatureEntry)}
             </View>
 
             {/* Dive Notes */}
@@ -315,26 +570,11 @@ export default function LogDiveScreen() {
               />
             </View>
 
-            {/* Creature Notes */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Creature Notes</Text>
-              <TextInput
-                style={[styles.textInput, styles.textArea]}
-                placeholder="Describe your creature encounter..."
-                placeholderTextColor="#666"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                value={formData.creatureNotes}
-                onChangeText={(text) => setFormData({ ...formData, creatureNotes: text })}
-              />
-            </View>
-
-            {/* Photo */}
+            {/* Overall Photo */}
             <View style={styles.inputGroup}>
               <View style={styles.inputLabelRow}>
                 <Camera size={20} color="#666" />
-                <Text style={styles.inputLabel}>Photo</Text>
+                <Text style={styles.inputLabel}>Dive Photo</Text>
               </View>
               <ImagePicker onImageSelect={handleImageSelect} />
               {formData.imageUri && (
@@ -465,5 +705,85 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+  },
+  mapContainer: {
+    height: 250,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  map: {
+    flex: 1,
+  },
+  selectedSiteOverlay: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  selectedSiteText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  mapPlaceholder: {
+    height: 250,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  mapPlaceholderText: {
+    color: '#666',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  addButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  creatureEntryContainer: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  creatureEntryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  removeCreatureButton: {
+    padding: 4,
+  },
+  selectedCreatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  selectedCreatureImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
 });
