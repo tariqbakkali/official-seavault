@@ -2,10 +2,12 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { useUserStore } from '@/stores/user';
+import { ActivityIndicator, View, Text } from 'react-native';
 
 export default function RootLayout() {
   const { initializeAuth, setupAuthListener } = useAuthStore();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
   const { ensureUserProfile } = useUserStore();
 
   useEffect(() => {
@@ -18,6 +20,16 @@ export default function RootLayout() {
       ensureUserProfile();
     }
   }, [isAuthenticated]);
+  
+  // Show loading screen while auth state is being determined
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={{ color: '#fff', marginTop: 10 }}>Loading...</Text>
+      </View>
+    );
+  }
   
   return (
     <Stack>

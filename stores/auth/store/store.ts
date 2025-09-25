@@ -10,7 +10,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   session: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true, // Start with loading state as true
   error: null,
 
   // Actions
@@ -182,7 +182,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             ...state, 
             user: user || null, 
             session, 
-            isAuthenticated: true 
+            isAuthenticated: true,
+            isLoading: false
           }));
         });
       } else {
@@ -190,7 +191,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           ...state, 
           user: null, 
           session: null, 
-          isAuthenticated: false 
+          isAuthenticated: false,
+          isLoading: false
         }));
       }
     });

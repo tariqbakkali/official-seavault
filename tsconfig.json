@@ -30,6 +30,7 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts",
-    "assets/images/index.d.ts"
+    "assets/images/index.d.ts",
+    "typings/**/*.d.ts"
   ]
 }
