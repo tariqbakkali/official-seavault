@@ -25,22 +25,18 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
 }) => {
   return (
     <View style={styles.header}>
-      {showBackButton && onBackPress ? (
+      {showBackButton && onBackPress && (
         <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
           <ArrowLeft size={DIMENSIONS.ICON_LG} color={COLORS.PRIMARY} />
         </TouchableOpacity>
-      ) : (
-        <View style={styles.placeholder} />
       )}
       
       <Text style={styles.headerText}>{title}</Text>
       
-      {showActionButton && onActionPress && actionText ? (
+      {showActionButton && onActionPress && actionText && (
         <TouchableOpacity onPress={onActionPress} style={styles.actionButton}>
           <Text style={styles.actionButtonText}>{actionText}</Text>
         </TouchableOpacity>
-      ) : (
-        <View style={styles.placeholder} />
       )}
     </View>
   );
@@ -49,7 +45,6 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
     paddingVertical: DIMENSIONS.SPACE_LG,
@@ -70,9 +65,8 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
     color: COLORS.TEXT_PRIMARY,
-    textAlign: 'center',
     flex: 1,
-    marginHorizontal: DIMENSIONS.SPACE_MD,
+    marginLeft: DIMENSIONS.SPACE_MD,
   },
   actionButton: {
     padding: DIMENSIONS.SPACE_SM,

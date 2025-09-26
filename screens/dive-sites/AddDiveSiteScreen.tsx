@@ -12,6 +12,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import MapContainer from '@/components/ui/MapContainer';
 import DiveSiteMarker from '@/components/DiveSiteMarker';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import { DiveSite } from '@/types/database';
 
 const AddDiveSiteScreen = () => {
   const {
@@ -35,8 +36,8 @@ const AddDiveSiteScreen = () => {
   // Filter out sites without valid coordinates
   const validSites = useMemo(() => {
     return diveSites
-      ?.filter(site => hasValidCoordinates(site))
-      .map(site => ({
+      ?.filter((site: DiveSite) => hasValidCoordinates(site))
+      .map((site: DiveSite) => ({
         type: 'Feature',
         id: site.id,
         properties: {
@@ -87,7 +88,7 @@ const AddDiveSiteScreen = () => {
   };
 
   // Handle coordinate selection and update the draggable marker
-  const handleMapPress = (event: any) => {
+  const handleMapPress = (event: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => {
     handleCoordinateSelect(event);
     if (isSelectingCoordinates) {
       const { coordinate } = event.nativeEvent;
@@ -96,7 +97,7 @@ const AddDiveSiteScreen = () => {
   };
 
   // Handle marker drag end event
-  const handleMarkerDragEnd = (event: any) => {
+  const handleMarkerDragEnd = (event: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => {
     const { coordinate } = event.nativeEvent;
     setLatitude(coordinate.latitude.toString());
     setLongitude(coordinate.longitude.toString());

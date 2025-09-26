@@ -53,21 +53,16 @@ export const calculateUserStats = (userData: UserData, catalog: any): UserStats 
     };
   });
   
-  // Count total creatures per category and calculate points per category
+  // Count total creatures per category
   catalog.creatures.forEach((creature: Creature) => {
     if (categoryStats[creature.category_id]) {
       categoryStats[creature.category_id].total += 1;
-      
-      // If this creature has been seen, add its points to the category
-      if (seenCreatureIds.has(creature.id)) {
-        categoryStats[creature.category_id].points += creature.points || 0;
-      }
     }
   });
   
-  // Count seen creatures per category and accumulate points
-  userData.sightings.forEach((sighting: any) => {
-    const creature = creatureMap.get(sighting.creature_id);
+  // Count seen creatures per category and accumulate points (only once per unique creature)
+  seenCreatureIds.forEach((creatureId: string) => {
+    const creature = creatureMap.get(creatureId);
     if (creature && categoryStats[creature.category_id]) {
       categoryStats[creature.category_id].seen += 1;
       categoryStats[creature.category_id].points += creature.points || 0;

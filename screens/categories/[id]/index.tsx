@@ -13,6 +13,7 @@ import { ImageWithFallback } from '@/components';
 import { useCatalogStore } from '@/stores/catalog';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { Plus } from 'lucide-react-native';
 
 interface Creature {
   id: string;
@@ -65,6 +66,17 @@ export default function CategoryDetailScreen() {
     loadData();
   }, [id]);
 
+  const handleLogDive = () => {
+    // Navigate to log dive screen with category pre-selected
+    router.push({
+      pathname: ROUTES.TABS.LOG_DIVE,
+      params: { 
+        selectedCategory: id as string,
+        source: 'category'
+      }
+    });
+  };
+
   const renderCreature = ({ item }: { item: Creature }) => (
     <TouchableOpacity
       style={styles.creatureCard}
@@ -97,6 +109,12 @@ export default function CategoryDetailScreen() {
         showBackButton={true}
       />
 
+      {/* Log Dive Button */}
+      <TouchableOpacity style={styles.logDiveButton} onPress={handleLogDive}>
+        <Plus size={20} color={COLORS.TEXT_PRIMARY} />
+        <Text style={styles.logDiveButtonText}>Log Dive</Text>
+      </TouchableOpacity>
+
       {/* Creatures List */}
       <FlatList
         data={creatures}
@@ -124,6 +142,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  logDiveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.PRIMARY,
+    marginHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
+    marginVertical: DIMENSIONS.SPACE_MD,
+    paddingVertical: DIMENSIONS.SPACE_MD,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+  },
+  logDiveButtonText: {
+    color: COLORS.TEXT_PRIMARY,
+    fontSize: TYPOGRAPHY.SIZE_LG,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+    marginLeft: DIMENSIONS.SPACE_SM,
   },
   listContainer: {
     padding: 20,

@@ -17,7 +17,7 @@ import { useDataStore } from '@/stores/data';
 import { calculateUserStats } from '@/stores/user/utils/utils';
 import { ImageWithFallback } from '@/components';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY, APP_CONFIG } from '@/constants';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+// ScreenHeader import removed
 
 interface StatCard {
   icon: React.ReactNode;
@@ -141,7 +141,7 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <ScreenHeader title={APP_CONFIG.NAME} />
+        {/* ScreenHeader removed */}
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={styles.title}>{APP_CONFIG.NAME}</Text>
@@ -154,7 +154,7 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <ScreenHeader title={APP_CONFIG.NAME} />
+      {/* ScreenHeader removed */}
       <ScrollView
         style={styles.scrollView}
         refreshControl={

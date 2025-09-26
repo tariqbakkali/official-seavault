@@ -132,8 +132,15 @@ export default function CreatureDetailScreen() {
 
   const handleAddSighting = () => {
     if (creature) {
-      // Navigate to log dive screen instead
-      router.push('/(tabs)/log-dive');
+      // Navigate to log dive screen with creature and category pre-selected
+      router.push({
+        pathname: '/(tabs)/log-dive',
+        params: { 
+          selectedCategory: creature.category_id,
+          selectedCreature: creature.id,
+          source: 'creature'
+        }
+      });
     }
   };
 

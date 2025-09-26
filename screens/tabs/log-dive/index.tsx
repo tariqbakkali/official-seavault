@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useCatalogStore } from '../../../stores/catalog/store/store';
 import { useSightingsStore } from '../../../stores/sightings/store/store';
 import { useDiveSitesStore } from '../../../stores/diveSites/store/store';
@@ -28,6 +29,8 @@ interface FormData {
 
 const LogDiveScreen = () => {
   const insets = useSafeAreaInsets();
+  const { selectedCategory, selectedCreature, source } = useLocalSearchParams();
+  
   const [formData, setFormData] = useState<FormData>({
     diveSiteId: null,
     date: new Date(),
@@ -49,9 +52,30 @@ const LogDiveScreen = () => {
   const { diveSites, fetchDiveSites } = useDiveSitesStore();
 
   // Fetch catalog data and dive sites on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     fetchCatalog();
     fetchDiveSites();
+  }, []);
+
+  // Set selected category and creature if passed from navigation
+  useEffect(() => {
+    if (selectedCategory && typeof selectedCategory === 'string') {
+      setSelectedCategories([selectedCategory]);
+    }
+    
+    if (selectedCreature && typeof selectedCreature === 'string') {
+      setFormData(prev => ({
+        ...prev,
+        creatureId: selectedCreature
+      }));
+    }
+  }, [selectedCategory, selectedCreature]);
+
+  // Clear selected categories when component unmounts
+  useEffect(() => {
+    return () => {
+      setSelectedCategories([]);
+    };
   }, []);
 
   const handleSubmit = async () => {
@@ -89,42 +113,56 @@ const LogDiveScreen = () => {
       
       // Reset image selection
       setSelectedImage(null);
-      setSelectedCategories([]); // Also reset category selections
+      setSelectedCategories([]); // Clear category selections
     } catch (error) {
       alert('Error submitting dive log. Please try again.');
     }
   };
 
+  // Determine if we should show back button based on navigation source
+  const shouldShowBackButton = source === 'creature';
+
+  const handleBackPress = () => {
+    // Clear selected categories before navigating back
+    setSelectedCategories([]);
+    
+    if (shouldShowBackButton && selectedCreature) {
+      // Navigate back to the specific creature details screen
+      router.push(`/creatures/${selectedCreature}`);
+    } else {
+      // Default back navigation for other cases
+      router.back();
+    }
+  };
+
   return (
-    <TouchableWithoutFeedback 
-      onPress={() => {
-        // Close all dropdowns when clicking outside
-      }}
-    >
-      <View style={[styles.container, { 
-        paddingTop: insets.top, 
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right
-      }]}>
-        <ScreenHeader title="Log Dive" />
-        <MainLogDiveForm
-          formData={formData}
-          setFormData={setFormData}
-          diveSites={diveSites}
-          catalog={catalog}
-          selectedCategories={selectedCategories}
-          setSelectedCategories={setSelectedCategories}
-          selectedImage={selectedImage}
-          setSelectedImage={setSelectedImage}
-          handleSubmit={handleSubmit}
-          diveSiteSearchQuery={diveSiteSearchQuery}
-          setDiveSiteSearchQuery={setDiveSiteSearchQuery}
-          showDiveSiteSearch={showDiveSiteSearch}
-          setShowDiveSiteSearch={setShowDiveSiteSearch}
-        />
-      </View>
-    </TouchableWithoutFeedback>
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
+      <ScreenHeader 
+        title="Log Dive" 
+        onBackPress={handleBackPress}
+        showBackButton={shouldShowBackButton}
+      />
+      <MainLogDiveForm
+        formData={formData}
+        setFormData={setFormData}
+        diveSites={diveSites}
+        catalog={catalog}
+        selectedCategories={selectedCategories}
+        setSelectedCategories={setSelectedCategories}
+        selectedImage={selectedImage}
+        setSelectedImage={setSelectedImage}
+        handleSubmit={handleSubmit}
+        diveSiteSearchQuery={diveSiteSearchQuery}
+        setDiveSiteSearchQuery={setDiveSiteSearchQuery}
+        showDiveSiteSearch={showDiveSiteSearch}
+        setShowDiveSiteSearch={setShowDiveSiteSearch}
+      />
+    </View>
   );
 }
 

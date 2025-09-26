@@ -46,7 +46,7 @@ export default function DiscoveredScreen() {
       if (catalog && userData) {
         // Group sightings by creature
         const creatureGroups: Record<string, Sighting[]> = {};
-        userData.sightings.forEach(sighting => {
+        userData.sightings.forEach((sighting: Sighting) => {
           if (!creatureGroups[sighting.creature_id]) {
             creatureGroups[sighting.creature_id] = [];
           }
@@ -55,7 +55,7 @@ export default function DiscoveredScreen() {
 
         // Create discovered creatures list
         const discovered: DiscoveredCreature[] = Object.entries(creatureGroups).map(([creatureId, sightings]) => {
-          const creature = catalog.creatures.find(c => c.id === creatureId);
+          const creature = catalog.creatures.find((c: Creature) => c.id === creatureId);
           if (!creature) return null;
 
           // Sort sightings by date (oldest first) to get first sighting

@@ -139,6 +139,7 @@ const MainLogDiveForm: React.FC<MainLogDiveFormProps> = ({
     <ScrollView 
       style={styles.container}
       keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
         <Text style={styles.headerText}>Record your dive detail and Creature spotted</Text>

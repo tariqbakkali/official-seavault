@@ -45,7 +45,7 @@ export default function CategoriesTab() {
       const userData = await fetchUserData();
       
       if (catalog?.categories) {
-        let categoriesWithStats: CategoryWithStats[] = catalog.categories.map(category => ({
+        let categoriesWithStats: CategoryWithStats[] = catalog.categories.map((category: any) => ({
           ...category,
           seen: 0,
           total: 0,
@@ -57,7 +57,7 @@ export default function CategoriesTab() {
           const stats = calculateUserStats(userData, catalog);
           
           // Map categories with their stats
-          categoriesWithStats = catalog.categories.map(category => {
+          categoriesWithStats = catalog.categories.map((category: any) => {
             const categoryStat = stats.categoryStats[category.id] || {
               seen: 0,
               total: 0,
@@ -82,7 +82,7 @@ export default function CategoriesTab() {
       try {
         const catalog = await fetchCatalog();
         if (catalog?.categories) {
-          const categoriesWithStats: CategoryWithStats[] = catalog.categories.map(category => ({
+          const categoriesWithStats: CategoryWithStats[] = catalog.categories.map((category: any) => ({
             ...category,
             seen: 0,
             total: 0,
