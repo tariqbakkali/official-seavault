@@ -37,7 +37,7 @@ export interface UserStats {
     completion: number;
   }>;
   categoryNames: Record<string, string>;
-}
+};
 
 export interface DataState {
   catalog: CatalogData | null;
@@ -45,12 +45,19 @@ export interface DataState {
   diveSites: Database['public']['Tables']['dive_sites']['Row'][] | null;
   isLoading: boolean;
   error: string | null;
-}
+};
 
 export interface DataActions {
   fetchCatalog: () => Promise<CatalogData>;
   fetchUserData: () => Promise<UserData>;
   fetchDiveSites: () => Promise<Database['public']['Tables']['dive_sites']['Row'][]>;
+  fetchLeaderboard: (limit?: number) => Promise<Array<{
+    user_id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    creatures_discovered: number;
+    total_points: number;
+  }>>;
   createSighting: (
     sighting: Omit<Database['public']['Tables']['sightings']['Insert'], 'user_id'>
   ) => Promise<Database['public']['Tables']['sightings']['Row'] | null>;
@@ -63,4 +70,4 @@ export interface DataActions {
     profileData: Partial<Database['public']['Tables']['profiles']['Insert']>
   ) => Promise<Database['public']['Tables']['profiles']['Row'] | null>;
   reset: () => void;
-}
+};

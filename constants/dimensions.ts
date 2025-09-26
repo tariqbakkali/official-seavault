@@ -41,7 +41,7 @@ export const DIMENSIONS = {
   
   // Button heights
   BUTTON_HEIGHT_SM: 36,
-  BUTTON_HEIGHT_MD: 44,
+  BUTTON_HEIGHT_MD: 48,
   BUTTON_HEIGHT_LG: 52,
   
   // Card dimensions

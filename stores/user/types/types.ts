@@ -6,21 +6,6 @@ export type UserData = {
   wishlists: Database['public']['Tables']['wishlists']['Row'][];
 };
 
-// Add a stats property to UserData
-export type UserDataWithStats = UserData & {
-  stats: {
-    totalPoints: number;
-    uniqueCreatures: number;
-    overallCompletion: number;
-    categoryStats: Record<string, {
-      seen: number;
-      total: number;
-      completion: number;
-    }>;
-    categoryNames: Record<string, string>;
-  };
-};
-
 export interface UserStats {
   totalPoints: number;
   uniqueCreatures: number;
@@ -29,6 +14,7 @@ export interface UserStats {
     seen: number;
     total: number;
     completion: number;
+    points: number;
   }>;
   categoryNames: Record<string, string>;
 }

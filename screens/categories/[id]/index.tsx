@@ -9,10 +9,10 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
 import { ImageWithFallback } from '@/components';
 import { useCatalogStore } from '@/stores/catalog';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 interface Creature {
   id: string;
@@ -91,16 +91,11 @@ export default function CategoryDetailScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ArrowLeft size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.categoryTitle}>{category?.name || 'Loading...'}</Text>
-      </View>
+      <ScreenHeader 
+        title={category?.name || 'Loading...'} 
+        onBackPress={() => router.back()}
+        showBackButton={true}
+      />
 
       {/* Creatures List */}
       <FlatList
@@ -129,22 +124,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  categoryTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
   },
   listContainer: {
     padding: 20,

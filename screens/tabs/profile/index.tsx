@@ -19,6 +19,7 @@ import { calculateUserStats } from '@/stores/user/utils/utils';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import StatsSection from './components/StatsSection';
 import CategoryProgressSection from './components/CategoryProgressSection';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -110,6 +111,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ScreenHeader title="Profile" />
       <ScrollView
         style={styles.scrollView}
         refreshControl={

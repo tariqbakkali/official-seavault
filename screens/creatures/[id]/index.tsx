@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Heart, Plus, Calendar, MapPin, Clock } from 'lucide-react-native';
-import { Creature, Sighting } from '@/types/database';
+import { Heart, Plus, Calendar, MapPin, Clock } from 'lucide-react-native';
+import { Creature, Sighting, DiveSite } from '@/types/database';
 import { supabase } from '@/services/supabase';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import { formatDate, formatTime } from '@/utils/format';
@@ -20,6 +20,7 @@ import { useCatalogStore } from '@/stores/catalog';
 import { useUserStore } from '@/stores/user';
 import { useWishlistStore } from '@/stores/wishlist';
 import { useSightingsStore } from '@/stores/sightings';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -34,6 +35,8 @@ export default function CreatureDetailScreen() {
   const [isSeen, setIsSeen] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState('about');
   const [loading, setLoading] = React.useState(true);
+  // Add state for dive sites
+  const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
   
   // Use existing stores
   const { getCreatures } = useCatalogStore();
@@ -78,8 +81,28 @@ export default function CreatureDetailScreen() {
           .order('date', { ascending: false });
         
         if (!sightingsError) {
-          setSightings(sightingsData || []);
-          setIsSeen((sightingsData || []).length > 0);
+          const sightingsArray = sightingsData || [];
+          setSightings(sightingsArray);
+          setIsSeen(sightingsArray.length > 0);
+          
+          // Fetch dive sites for all sightings
+          if (sightingsArray.length > 0) {
+            const diveSiteIds = sightingsArray
+              .map((sighting: any) => sighting.dive_site_id)
+              .filter((id): id is string => id !== null);
+            
+            if (diveSiteIds.length > 0) {
+              // Fetch dive sites
+              const { data: diveSitesData, error: diveSitesError } = await supabase
+                .from('dive_sites')
+                .select('*')
+                .in('id', diveSiteIds);
+              
+              if (!diveSitesError) {
+                setDiveSites(diveSitesData || []);
+              }
+            }
+          }
         }
       }
     } catch (error) {
@@ -114,81 +137,228 @@ export default function CreatureDetailScreen() {
     }
   };
 
-  const renderSighting = ({ item, index }: { item: Sighting; index: number }) => (
-    <View style={styles.sightingCard}>
-      <View style={styles.sightingHeader}>
-        <View style={styles.sightingNumber}>
-          <Text style={styles.sightingNumberText}>#{sightings.length - index}</Text>
-        </View>
-        <View style={styles.sightingDateInfo}>
-          <View style={styles.dateRow}>
-            <Calendar size={16} color="#007AFF" />
-            <Text style={styles.sightingDate}>{formatDate(item.date)}</Text>
+  // Group sightings by dive site for better UI organization
+  const groupSightingsByDiveSite = () => {
+    const grouped: { 
+      [key: string]: { 
+        diveSite: DiveSite | null; 
+        sightings: Sighting[] 
+      } 
+    } = {};
+    
+    sightings.forEach(sighting => {
+      const diveSiteId = sighting.dive_site_id || 'unknown';
+      const diveSite = diveSiteId !== 'unknown' 
+        ? diveSites.find(site => site.id === diveSiteId) || null 
+        : null;
+      
+      if (!grouped[diveSiteId]) {
+        grouped[diveSiteId] = {
+          diveSite,
+          sightings: []
+        };
+      }
+      
+      grouped[diveSiteId].sightings.push(sighting);
+    });
+    
+    return grouped;
+  };
+
+  const renderSighting = ({ item, index }: { item: Sighting; index: number }) => {
+    // Find the dive site name for this sighting
+    const diveSite = item.dive_site_id 
+      ? diveSites.find(site => site.id === item.dive_site_id) 
+      : null;
+    
+    return (
+      <View style={styles.sightingCard}>
+        <View style={styles.sightingHeader}>
+          <View style={styles.sightingNumber}>
+            <Text style={styles.sightingNumberText}>#{sightings.length - index}</Text>
           </View>
-          {item.time_of_day && (
+          <View style={styles.sightingDateInfo}>
             <View style={styles.dateRow}>
-              <Clock size={16} color="#666" />
-              <Text style={styles.sightingTime}>{formatTime(item.time_of_day)}</Text>
+              <Calendar size={16} color="#007AFF" />
+              <Text style={styles.sightingDate}>{formatDate(item.date)}</Text>
+            </View>
+            {item.time_of_day && (
+              <View style={styles.dateRow}>
+                <Clock size={16} color="#666" />
+                <Text style={styles.sightingTime}>{formatTime(item.time_of_day)}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+        
+        <View style={styles.sightingDetailsContainer}>
+          {diveSite && (
+            <View style={styles.sightingDetailRow}>
+              <MapPin size={16} color="#007AFF" />
+              <View style={styles.sightingDetailContent}>
+                <Text style={styles.sightingDetailLabel}>Dive Site</Text>
+                <Text style={styles.sightingDetailValue}>{diveSite.name}</Text>
+              </View>
+            </View>
+          )}
+          
+          {item.dive_type && (
+            <View style={styles.sightingDetailRow}>
+              <Text style={styles.sightingDetailLabel}>Dive Type</Text>
+              <Text style={styles.sightingDetailValue}>{item.dive_type}</Text>
+            </View>
+          )}
+          
+          {item.depth && (
+            <View style={styles.sightingDetailRow}>
+              <Text style={styles.sightingDetailLabel}>Depth</Text>
+              <Text style={styles.sightingDetailValue}>{item.depth}m</Text>
             </View>
           )}
         </View>
+        
+        {(item.creature_notes || item.dive_notes) && (
+          <View style={styles.notesContainer}>
+            {item.creature_notes && (
+              <View style={styles.noteSection}>
+                <Text style={styles.noteLabel}>Creature Notes</Text>
+                <Text style={styles.noteText}>{item.creature_notes}</Text>
+              </View>
+            )}
+            
+            {item.dive_notes && (
+              <View style={styles.noteSection}>
+                <Text style={styles.noteLabel}>Dive Notes</Text>
+                <Text style={styles.noteText}>{item.dive_notes}</Text>
+              </View>
+            )}
+          </View>
+        )}
+        
+        {item.image_url && (
+          <View style={styles.sightingImageContainer}>
+            <ImageWithFallback
+              uri={item.image_url}
+              style={styles.sightingImage}
+              containerStyle={styles.sightingImageWrapper}
+            />
+          </View>
+        )}
       </View>
-      
-      {item.dive_site_id && (
-        <View style={styles.sightingDetail}>
-          <MapPin size={14} color="#666" />
-          <Text style={styles.sightingDetailText}>Dive Site ID: {item.dive_site_id}</Text>
-        </View>
-      )}
-      
-      {item.dive_type && (
-        <View style={styles.sightingDetail}>
-          <Text style={styles.sightingDetailLabel}>Dive Type:</Text>
-          <Text style={styles.sightingDetailText}>{item.dive_type}</Text>
-        </View>
-      )}
-      
-      {item.depth && (
-        <View style={styles.sightingDetail}>
-          <Text style={styles.sightingDetailLabel}>Depth:</Text>
-          <Text style={styles.sightingDetailText}>{item.depth}m</Text>
-        </View>
-      )}
-      
-      {item.creature_notes && (
-        <View style={styles.notesSection}>
-          <Text style={styles.notesLabel}>Creature Notes:</Text>
-          <Text style={styles.notesText}>{item.creature_notes}</Text>
-        </View>
-      )}
-      
-      {item.dive_notes && (
-        <View style={styles.notesSection}>
-          <Text style={styles.notesLabel}>Dive Notes:</Text>
-          <Text style={styles.notesText}>{item.dive_notes}</Text>
-        </View>
-      )}
-      
-      {item.image_url && (
-        <View style={styles.sightingImageContainer}>
-          <ImageWithFallback
-            uri={item.image_url}
-            style={styles.sightingImage}
-            containerStyle={styles.sightingImageWrapper}
-          />
-        </View>
-      )}
-    </View>
-  );
+    );
+  };
+
+  // Render sightings grouped by dive site
+  const renderSightingsByDiveSite = () => {
+    const groupedSightings = groupSightingsByDiveSite();
+    const diveSiteKeys = Object.keys(groupedSightings);
+    
+    return (
+      <View style={styles.sightingsByDiveSiteContainer}>
+        {diveSiteKeys.map((diveSiteId) => {
+          const group = groupedSightings[diveSiteId];
+          const diveSite = group.diveSite;
+          
+          return (
+            <View key={diveSiteId} style={styles.diveSiteGroup}>
+              {diveSite && (
+                <View style={styles.diveSiteHeader}>
+                  <MapPin size={18} color="#007AFF" />
+                  <Text style={styles.diveSiteName}>{diveSite.name}</Text>
+                  <View style={styles.sightingCountBadge}>
+                    <Text style={styles.sightingCountText}>{group.sightings.length}</Text>
+                  </View>
+                </View>
+              )}
+              
+              <View style={styles.sightingsListContainer}>
+                {group.sightings.map((sighting, index) => (
+                  <View 
+                    key={sighting.id} 
+                    style={[
+                      styles.sightingCardInGroup, 
+                      index !== group.sightings.length - 1 && styles.sightingCardWithDivider
+                    ]}
+                  >
+                    <View style={styles.sightingHeaderInGroup}>
+                      <View style={styles.sightingDateInfoInGroup}>
+                        <View style={styles.dateRow}>
+                          <Calendar size={14} color="#007AFF" />
+                          <Text style={styles.sightingDateInGroup}>{formatDate(sighting.date)}</Text>
+                        </View>
+                        {sighting.time_of_day && (
+                          <View style={styles.dateRow}>
+                            <Clock size={14} color="#666" />
+                            <Text style={styles.sightingTimeInGroup}>{formatTime(sighting.time_of_day)}</Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.sightingIndex}>
+                        <Text style={styles.sightingIndexText}>#{group.sightings.length - index}</Text>
+                      </View>
+                    </View>
+                    
+                    <View style={styles.sightingDetailsContainerInGroup}>
+                      {sighting.dive_type && (
+                        <View style={styles.sightingDetailRowInGroup}>
+                          <Text style={styles.sightingDetailLabelInGroup}>Dive Type</Text>
+                          <Text style={styles.sightingDetailValueInGroup}>{sighting.dive_type}</Text>
+                        </View>
+                      )}
+                      
+                      {sighting.depth && (
+                        <View style={styles.sightingDetailRowInGroup}>
+                          <Text style={styles.sightingDetailLabelInGroup}>Depth</Text>
+                          <Text style={styles.sightingDetailValueInGroup}>{sighting.depth}m</Text>
+                        </View>
+                      )}
+                    </View>
+                    
+                    {(sighting.creature_notes || sighting.dive_notes) && (
+                      <View style={styles.notesContainerInGroup}>
+                        {sighting.creature_notes && (
+                          <View style={styles.noteSectionInGroup}>
+                            <Text style={styles.noteLabelInGroup}>Creature Notes</Text>
+                            <Text style={styles.noteTextInGroup}>{sighting.creature_notes}</Text>
+                          </View>
+                        )}
+                        
+                        {sighting.dive_notes && (
+                          <View style={styles.noteSectionInGroup}>
+                            <Text style={styles.noteLabelInGroup}>Dive Notes</Text>
+                            <Text style={styles.noteTextInGroup}>{sighting.dive_notes}</Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                    
+                    {sighting.image_url && (
+                      <View style={styles.sightingImageContainerInGroup}>
+                        <ImageWithFallback
+                          uri={sighting.image_url}
+                          style={styles.sightingImageInGroup}
+                          containerStyle={styles.sightingImageWrapperInGroup}
+                        />
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    );
+  };
 
   if (loading || !creature) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        <ScreenHeader 
+          title="Creature Details"
+          onBackPress={() => router.back()}
+          showBackButton={true}
+        />
       </View>
     );
   }
@@ -209,10 +379,13 @@ export default function CreatureDetailScreen() {
             style={styles.heroImage}
             containerStyle={styles.imageWrapper}
           />
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#fff" />
-          </TouchableOpacity>
         </View>
+
+        <ScreenHeader 
+          title={creature.name}
+          onBackPress={() => router.back()}
+          showBackButton={true}
+        />
 
         <View style={styles.content}>
           <View style={styles.titleSection}>
@@ -297,7 +470,8 @@ export default function CreatureDetailScreen() {
                     Log a dive to record your first sighting of this creature
                   </Text>
                 </View>
-              ) : (
+              ) : sightings.length === 1 ? (
+                // For single sighting, use the original rendering
                 <FlatList
                   data={sightings}
                   keyExtractor={(item) => item.id}
@@ -306,6 +480,11 @@ export default function CreatureDetailScreen() {
                   scrollEnabled={false}
                   contentContainerStyle={styles.sightingsList}
                 />
+              ) : (
+                // For multiple sightings, use the grouped rendering
+                <ScrollView showsVerticalScrollIndicator={false} style={styles.sightingsScrollView}>
+                  {renderSightingsByDiveSite()}
+                </ScrollView>
               )}
             </View>
           )}
@@ -352,25 +531,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
   },
   content: {
     padding: 20,
@@ -505,23 +665,25 @@ const styles = StyleSheet.create({
   },
   sightingCard: {
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   sightingHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 12,
   },
   sightingNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
     backgroundColor: '#007AFF',
-    justifyContent: 'center',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
-    marginRight: 12,
+    justifyContent: 'center',
   },
   sightingNumberText: {
     color: '#fff',
@@ -530,6 +692,7 @@ const styles = StyleSheet.create({
   },
   sightingDateInfo: {
     flex: 1,
+    alignItems: 'flex-end',
   },
   dateRow: {
     flexDirection: 'row',
@@ -546,38 +709,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  sightingDetail: {
+  sightingDetailsContainer: {
+    marginBottom: 12,
+  },
+  sightingDetailRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginBottom: 8,
   },
+  sightingDetailContent: {
+    flex: 1,
+  },
   sightingDetailLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     fontWeight: '500',
+    textTransform: 'uppercase',
+    marginBottom: 2,
   },
-  sightingDetailText: {
+  sightingDetailValue: {
     fontSize: 14,
-    color: '#ccc',
+    color: '#fff',
+    fontWeight: '500',
   },
-  notesSection: {
-    marginTop: 8,
+  notesContainer: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  noteSection: {
     marginBottom: 8,
   },
-  notesLabel: {
-    fontSize: 14,
+  noteSectionLast: {
+    marginBottom: 0,
+  },
+  noteLabel: {
+    fontSize: 12,
     color: '#007AFF',
     fontWeight: '600',
+    textTransform: 'uppercase',
     marginBottom: 4,
   },
-  notesText: {
+  noteText: {
     fontSize: 14,
     color: '#ccc',
     lineHeight: 20,
   },
   sightingImageContainer: {
-    marginTop: 12,
+    marginTop: 8,
   },
   sightingImageWrapper: {
     width: '100%',
@@ -623,5 +804,141 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  
+  // New styles for grouped sightings
+  sightingsByDiveSiteContainer: {
+    paddingBottom: 20,
+  },
+  diveSiteGroup: {
+    marginBottom: 24,
+  },
+  diveSiteHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  diveSiteName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginLeft: 8,
+    flex: 1,
+  },
+  sightingCountBadge: {
+    backgroundColor: '#007AFF',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  sightingCountText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  sightingsListContainer: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  sightingCardInGroup: {
+    padding: 16,
+  },
+  sightingCardWithDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  sightingHeaderInGroup: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  sightingDateInfoInGroup: {
+    flex: 1,
+  },
+  sightingDateInGroup: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  sightingTimeInGroup: {
+    fontSize: 12,
+    color: '#666',
+  },
+  sightingIndex: {
+    backgroundColor: '#007AFF',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sightingIndexText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  sightingDetailsContainerInGroup: {
+    marginBottom: 12,
+  },
+  sightingDetailRowInGroup: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  sightingDetailLabelInGroup: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  sightingDetailValueInGroup: {
+    fontSize: 12,
+    color: '#fff',
+    fontWeight: '500',
+  },
+  notesContainerInGroup: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+  },
+  noteSectionInGroup: {
+    marginBottom: 6,
+  },
+  noteSectionInGroupLast: {
+    marginBottom: 0,
+  },
+  noteLabelInGroup: {
+    fontSize: 10,
+    color: '#007AFF',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  noteTextInGroup: {
+    fontSize: 12,
+    color: '#ccc',
+    lineHeight: 16,
+  },
+  sightingImageContainerInGroup: {
+    marginTop: 8,
+  },
+  sightingImageWrapperInGroup: {
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  sightingImageInGroup: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  sightingsScrollView: {
+    flex: 1,
   },
 });

@@ -39,7 +39,7 @@ export const calculateUserStats = (userData: UserData, catalog: any): UserStats 
   });
   
   // Create category stats
-  const categoryStats: Record<string, { seen: number; total: number; completion: number }> = {};
+  const categoryStats: Record<string, { seen: number; total: number; completion: number; points: number }> = {};
   const categoryNames: Record<string, string> = {};
   
   // Initialize category stats with zeros
@@ -48,22 +48,29 @@ export const calculateUserStats = (userData: UserData, catalog: any): UserStats 
     categoryStats[category.id] = {
       seen: 0,
       total: 0,
-      completion: 0
+      completion: 0,
+      points: 0
     };
   });
   
-  // Count total creatures per category
+  // Count total creatures per category and calculate points per category
   catalog.creatures.forEach((creature: Creature) => {
     if (categoryStats[creature.category_id]) {
       categoryStats[creature.category_id].total += 1;
+      
+      // If this creature has been seen, add its points to the category
+      if (seenCreatureIds.has(creature.id)) {
+        categoryStats[creature.category_id].points += creature.points || 0;
+      }
     }
   });
   
-  // Count seen creatures per category
-  seenCreatureIds.forEach((creatureId: string) => {
-    const creature = creatureMap.get(creatureId);
+  // Count seen creatures per category and accumulate points
+  userData.sightings.forEach((sighting: any) => {
+    const creature = creatureMap.get(sighting.creature_id);
     if (creature && categoryStats[creature.category_id]) {
       categoryStats[creature.category_id].seen += 1;
+      categoryStats[creature.category_id].points += creature.points || 0;
     }
   });
   

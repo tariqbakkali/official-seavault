@@ -5,22 +5,30 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ArrowLeft, Star, Eye, Heart } from 'lucide-react-native';
+import { Star, Eye, Heart, Trophy } from 'lucide-react-native';
 import { useUserStore } from '@/stores/user';
 import { useCatalogStore } from '@/stores/catalog';
 import { calculateUserStats } from '@/stores/user/utils/utils';
 import { Category } from '@/types/database';
+import ScreenHeader from '@/components/ui/ScreenHeader';
+import { COLORS } from '@/constants/colors';
+import { DIMENSIONS } from '@/constants/dimensions';
+import { TYPOGRAPHY } from '@/constants';
 
 interface CategoryStat {
   category: Category;
   points: number;
   creatures: number;
+  completion: number;
+  totalCreatures: number;
 }
 
 export default function PointsScreen() {
+  const [userData, setUserData] = React.useState<any | null>(null);
   const [userStats, setUserStats] = React.useState<any | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
@@ -36,6 +44,7 @@ export default function PointsScreen() {
       const catalog = await fetchCatalog();
       
       if (userData && catalog) {
+        setUserData(userData);
         // Calculate user stats using the function from the store
         const stats = calculateUserStats(userData, catalog);
         setUserStats(stats);
@@ -57,9 +66,34 @@ export default function PointsScreen() {
         <Text style={styles.categoryName}>{item.category.name}</Text>
         <Text style={styles.categoryPoints}>{item.points} pts</Text>
       </View>
-      <Text style={styles.categoryCreatures}>
-        {item.creatures} creature{item.creatures !== 1 ? 's' : ''}
-      </Text>
+      
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBarBackground}>
+          <View 
+            style={[
+              styles.progressBarFill, 
+              { 
+                width: `${item.completion}%`,
+                backgroundColor: item.completion === 100 ? COLORS.SUCCESS : COLORS.PRIMARY
+              }
+            ]} 
+          />
+        </View>
+        <Text style={styles.progressText}>
+          {item.creatures}/{item.totalCreatures} ({item.completion}%)
+        </Text>
+      </View>
+      
+      <View style={styles.categoryStats}>
+        <View style={styles.statItem}>
+          <Eye size={16} color={COLORS.TEXT_TERTIARY} />
+          <Text style={styles.statValue}>{item.creatures}</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Trophy size={16} color={COLORS.TEXT_TERTIARY} />
+          <Text style={styles.statValue}>{item.points}</Text>
+        </View>
+      </View>
     </View>
   );
 
@@ -77,7 +111,9 @@ export default function PointsScreen() {
         return {
           category,
           points: stat.points || 0,
-          creatures: stat.seen || 0
+          creatures: stat.seen || 0,
+          completion: stat.completion || 0,
+          totalCreatures: stat.total || 0
         };
       })
     : [];
@@ -85,42 +121,39 @@ export default function PointsScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Loading...</Text>
-        </View>
+        <ScreenHeader 
+          title="Loading..." 
+          onBackPress={() => router.back()}
+          showBackButton={true}
+        />
       </View>
     );
   }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Points</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ScreenHeader 
+        title="Points" 
+        onBackPress={() => router.back()}
+        showBackButton={true}
+      />
 
       <View style={styles.statsHeader}>
         <View style={styles.pointsContainer}>
-          <Star size={32} color="#FF9500" />
+          <Star size={32} color={COLORS.SECONDARY} />
           <Text style={styles.totalPoints}>{userStats?.totalPoints || 0}</Text>
           <Text style={styles.pointsLabel}>Total Points</Text>
         </View>
         
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Eye size={24} color="#007AFF" />
+            <Eye size={24} color={COLORS.PRIMARY} />
             <Text style={styles.statValue}>{userStats?.uniqueCreatures || 0}</Text>
             <Text style={styles.statLabel}>Unique</Text>
           </View>
           <View style={styles.statBox}>
-            <Heart size={24} color="#FF3B30" />
-            <Text style={styles.statValue}>{userStats?.wishlistCount || 0}</Text>
+            <Heart size={24} color={COLORS.ERROR} />
+            <Text style={styles.statValue}>{userData?.wishlists?.length || 0}</Text>
             <Text style={styles.statLabel}>Wishlist</Text>
           </View>
         </View>
@@ -134,8 +167,19 @@ export default function PointsScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No points data available</Text>
+            <Star size={48} color={COLORS.TEXT_DISABLED} />
+            <Text style={styles.emptyTitle}>No points yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Start discovering marine life to earn points
+            </Text>
           </View>
+        }
+        ListHeaderComponent={
+          categoryStatsData.length > 0 ? (
+            <Text style={styles.sectionTitle}>
+              Categories ({categoryStatsData.length})
+            </Text>
+          ) : null
         }
       />
     </View>
@@ -145,108 +189,130 @@ export default function PointsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1a1a1a',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  placeholder: {
-    width: 40,
+    backgroundColor: COLORS.BACKGROUND,
   },
   statsHeader: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
+    paddingBottom: DIMENSIONS.SPACE_LG,
   },
   pointsContainer: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: DIMENSIONS.SPACE_XXL,
+    marginTop: DIMENSIONS.SPACE_LG,
   },
   totalPoints: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginVertical: 8,
+    fontSize: TYPOGRAPHY.SIZE_HERO,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+    color: COLORS.TEXT_PRIMARY,
+    marginVertical: DIMENSIONS.SPACE_SM,
   },
   pointsLabel: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: TYPOGRAPHY.SIZE_LG,
+    color: COLORS.TEXT_SECONDARY,
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: DIMENSIONS.RADIUS_LG,
+    padding: DIMENSIONS.SPACE_LG,
+    marginHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
   },
   statBox: {
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginVertical: 8,
+    fontSize: TYPOGRAPHY.SIZE_XL,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+    color: COLORS.TEXT_PRIMARY,
+    marginVertical: DIMENSIONS.SPACE_XS,
   },
   statLabel: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: TYPOGRAPHY.SIZE_SM,
+    color: COLORS.TEXT_SECONDARY,
   },
   listContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
     paddingBottom: 100,
   },
+  sectionTitle: {
+    fontSize: TYPOGRAPHY.SIZE_LG,
+    fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD,
+    color: COLORS.TEXT_SECONDARY,
+    marginBottom: DIMENSIONS.SPACE_MD,
+    marginTop: DIMENSIONS.SPACE_SM,
+  },
   categoryCard: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.SPACE_LG,
+    marginBottom: DIMENSIONS.SPACE_MD,
   },
   categoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.SPACE_MD,
   },
   categoryName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
+    fontSize: TYPOGRAPHY.SIZE_LG,
+    fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD,
+    color: COLORS.TEXT_PRIMARY,
   },
   categoryPoints: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FF9500',
+    fontSize: TYPOGRAPHY.SIZE_LG,
+    fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD,
+    color: COLORS.SECONDARY,
   },
-  categoryCreatures: {
-    fontSize: 14,
-    color: '#666',
+  progressContainer: {
+    marginBottom: DIMENSIONS.SPACE_MD,
+  },
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: COLORS.SURFACE_SECONDARY,
+    borderRadius: DIMENSIONS.RADIUS_FULL,
+    overflow: 'hidden',
+    marginBottom: DIMENSIONS.SPACE_XS,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: COLORS.PRIMARY,
+    borderRadius: DIMENSIONS.RADIUS_FULL,
+  },
+  progressText: {
+    fontSize: TYPOGRAPHY.SIZE_SM,
+    color: COLORS.TEXT_SECONDARY,
+  },
+  categoryStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: COLORS.BORDER_PRIMARY,
+    paddingTop: DIMENSIONS.SPACE_MD,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DIMENSIONS.SPACE_XS,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: DIMENSIONS.SPACE_XXXL,
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
+  emptyTitle: {
+    fontSize: TYPOGRAPHY.SIZE_LG,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+    color: COLORS.TEXT_PRIMARY,
+    marginTop: DIMENSIONS.SPACE_LG,
+    marginBottom: DIMENSIONS.SPACE_SM,
+  },
+  emptySubtitle: {
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    color: COLORS.TEXT_SECONDARY,
+    textAlign: 'center',
+    lineHeight: TYPOGRAPHY.LINE_HEIGHT_MD,
+    paddingHorizontal: DIMENSIONS.SPACE_LG,
   },
 });

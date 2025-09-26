@@ -12,12 +12,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useProfile } from './hooks/useProfile';
-import { Header } from './components/Header';
 import { LoadingView } from './components/LoadingView';
 import { AvatarSection } from './components/AvatarSection';
 import { PersonalInfoSectionWithSave } from './components/PersonalInfoSectionWithSave';
 import { Lock } from 'lucide-react-native';
 import { styles } from './styles';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 export default function EditProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -62,9 +62,10 @@ export default function EditProfileScreen() {
       style={[styles.container, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Header 
-        onBack={handleBack} 
-        hasUnsavedChanges={hasUnsavedChangesState} 
+      <ScreenHeader 
+        title="Edit Profile"
+        onBackPress={handleBack}
+        showBackButton={true}
       />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>

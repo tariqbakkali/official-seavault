@@ -1,0 +1,92 @@
+import React from 'react';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
+
+interface FormFieldProps {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad';
+  multiline?: boolean;
+  numberOfLines?: number;
+  required?: boolean;
+  error?: string;
+}
+
+/**
+ * Reusable form field component with label and styling
+ */
+const FormField: React.FC<FormFieldProps> = ({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType = 'default',
+  multiline = false,
+  numberOfLines = 1,
+  required = false,
+  error
+}) => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.label}>
+        {label} {required && <Text style={styles.required}>*</Text>}
+      </Text>
+      <TextInput
+        style={[
+          styles.input,
+          multiline && styles.textArea,
+          error && styles.inputError
+        ]}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#999"
+        keyboardType={keyboardType}
+        multiline={multiline}
+        numberOfLines={numberOfLines}
+        textAlignVertical={multiline ? 'top' : 'center'}
+      />
+      {error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  required: {
+    color: '#ff3b30',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 8,
+    padding: 15,
+    backgroundColor: '#1a1a1a',
+    fontSize: 16,
+    color: '#fff',
+  },
+  inputError: {
+    borderColor: '#ff3b30',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#ff3b30',
+    fontStyle: 'italic',
+    marginTop: 5,
+  },
+});
+
+export default FormField;

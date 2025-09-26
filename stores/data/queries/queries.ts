@@ -222,3 +222,66 @@ export const getAchievementByCode = async (code: string): Promise<Database['publ
   if (error) throw error;
   return data || null;
 };
+
+// Leaderboard query
+export const getLeaderboard = async (limit: number = 10): Promise<Array<{
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  creatures_discovered: number;
+  total_points: number;
+}>> => {
+  // Simple approach: get users and calculate stats in JavaScript
+  // This is less efficient but more reliable
+  
+  const { data: users, error: usersError } = await supabase
+    .from('profiles')
+    .select(`
+      id,
+      full_name,
+      avatar_url
+    `)
+    .not('full_name', 'is', null)
+    .not('full_name', 'eq', '')
+    .limit(limit);
+  
+  if (usersError) throw usersError;
+  
+  // Calculate stats for each user
+  const leaderboardData = await Promise.all(
+    (users || []).map(async (user: any) => {
+      // Get all sightings for this user
+      const { data: sightings, error: sightingsError } = await supabase
+        .from('sightings')
+        .select(`
+          creature_id,
+          creatures (points)
+        `)
+        .eq('user_id', user.id);
+      
+      if (sightingsError) throw sightingsError;
+      
+      // Calculate unique creatures and total points
+      const uniqueCreatures = new Set(sightings?.map((s: any) => s.creature_id) || []);
+      const totalPoints = sightings?.reduce((sum: number, sighting: any) => {
+        return sum + (sighting.creatures?.points || 0);
+      }, 0) || 0;
+      
+      return {
+        user_id: user.id,
+        full_name: user.full_name,
+        avatar_url: user.avatar_url,
+        creatures_discovered: uniqueCreatures.size,
+        total_points: totalPoints
+      };
+    })
+  );
+  
+  // Sort by points (descending), then by creatures discovered (descending)
+  return leaderboardData.sort((a, b) => {
+    if (b.total_points !== a.total_points) {
+      return b.total_points - a.total_points;
+    }
+    return b.creatures_discovered - a.creatures_discovered;
+  });
+};

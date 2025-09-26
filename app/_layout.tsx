@@ -32,41 +32,45 @@ export default function RootLayout() {
   }
   
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerShown: false, // Disable headers by default for all screens
+      }}
+    >
 
       <Stack.Protected guard={!isAuthenticated}>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" />
       </Stack.Protected>
 
       <Stack.Protected guard={isAuthenticated}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="profile/edit" options={{headerShown: false}} />
-        <Stack.Screen name="profile/change-password" options={{headerShown: false}} />
-        <Stack.Screen name="stats/discovered" options={{ title: 'Discovered Creatures' }} />
-        <Stack.Screen name="stats/points" options={{ title: 'Points' }} />
-        <Stack.Screen name="stats/wishlist" options={{ title: 'Wishlist' }} />
-        <Stack.Screen name="creatures/[id]" options={{ title: 'Creature Details' }} />
-        <Stack.Screen name="categories/[id]/index" options={{ title: 'Category' }} />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="profile/edit" />
+        <Stack.Screen name="profile/change-password" />
+        <Stack.Screen name="stats/discovered" />
+        <Stack.Screen name="stats/points" />
+        <Stack.Screen name="stats/wishlist" />
+        <Stack.Screen name="creatures/[id]" />
+        <Stack.Screen name="categories/[id]/index" />
         <Stack.Screen 
           name="modal/explore" 
           options={{ 
             presentation: 'modal',
-            title: 'Explore'
           }} 
         />
         <Stack.Screen 
           name="modal/leaderboard" 
           options={{ 
             presentation: 'modal',
-            title: 'Leaderboard'
           }} 
         />
         <Stack.Screen 
           name="modal/creature-picker" 
           options={{ 
             presentation: 'modal',
-            title: 'Select Creature'
           }} 
+        />
+        <Stack.Screen 
+          name="dive-sites/add" 
         />
       </Stack.Protected>
     </Stack>

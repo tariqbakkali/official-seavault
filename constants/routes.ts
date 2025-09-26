@@ -32,6 +32,11 @@ export const ROUTES = {
     EDIT: '/profile/edit' as const,
   },
   
+  // Dive site routes
+  DIVE_SITES: {
+    ADD: '/dive-sites/add' as const,
+  },
+  
   // Stats routes
   STATS: {
     DISCOVERED: '/stats/discovered' as const,
@@ -105,4 +110,5 @@ export type RouteParams = {
   '/profile/edit': undefined;
   '/modal/leaderboard': undefined;
   '/modal/explore': undefined;
+  '/dive-sites/add': undefined;
 };

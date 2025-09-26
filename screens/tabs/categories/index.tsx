@@ -15,6 +15,8 @@ import { calculateUserStats } from '@/stores/user/utils/utils';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Category } from '@/types/database';
+import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 interface CategoryWithStats extends Category {
   seen: number;
@@ -146,17 +148,15 @@ export default function CategoriesTab() {
   if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Categories</Text>
-        </View>
+        <ScreenHeader title="Categories" />
       </View>
     );
   }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Categories</Text>
+      <ScreenHeader title="Categories" />
+      <View style={styles.content}>
         {isOffline && (
           <View style={styles.offlineBanner}>
             <Text style={styles.offlineText}>You're offline. All content available.</Text>
@@ -174,7 +174,7 @@ export default function CategoriesTab() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#007AFF"
+            tintColor={COLORS.PRIMARY}
           />
         }
       />
@@ -185,38 +185,32 @@ export default function CategoriesTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: COLORS.BACKGROUND,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
+  content: {
+    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
+    paddingVertical: DIMENSIONS.SPACE_MD,
   },
   offlineBanner: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 16,
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.SPACE_MD,
     alignItems: 'center',
+    marginBottom: DIMENSIONS.SPACE_MD,
   },
   offlineText: {
-    color: '#666',
-    fontSize: 14,
+    color: COLORS.TEXT_TERTIARY,
+    fontSize: TYPOGRAPHY.SIZE_MD,
   },
   listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
+    paddingBottom: DIMENSIONS.SPACE_XXL,
   },
   categoryCard: {
     height: 180,
-    borderRadius: 16,
+    borderRadius: DIMENSIONS.RADIUS_LG,
     overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: DIMENSIONS.SPACE_LG,
     position: 'relative',
   },
   imageContainer: {
@@ -233,25 +227,35 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   categoryContent: {
-    padding: 16,
+    padding: DIMENSIONS.SPACE_LG,
   },
   categoryName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: TYPOGRAPHY.SIZE_XL,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+    color: COLORS.TEXT_PRIMARY,
   },
   completionBadge: {
     position: 'absolute',
-    top: 16,
-    right: 16,
+    top: DIMENSIONS.SPACE_LG,
+    right: DIMENSIONS.SPACE_LG,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingHorizontal: DIMENSIONS.SPACE_MD,
+    paddingVertical: DIMENSIONS.SPACE_XS,
   },
   completionText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    color: COLORS.TEXT_PRIMARY,
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD,
+  },
+  header: {
+    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
+    paddingTop: DIMENSIONS.SPACE_LG,
+    paddingBottom: DIMENSIONS.SPACE_LG,
+  },
+  title: {
+    fontSize: TYPOGRAPHY.SIZE_HERO,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+    color: COLORS.TEXT_PRIMARY,
   },
 });

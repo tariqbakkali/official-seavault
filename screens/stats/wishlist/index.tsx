@@ -9,12 +9,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ArrowLeft, Heart, X } from 'lucide-react-native';
+import { Heart, X } from 'lucide-react-native';
 import { useUserStore } from '@/stores/user';
 import { useCatalogStore } from '@/stores/catalog';
 import { useWishlistStore } from '@/stores/wishlist';
 import { Creature } from '@/types/database';
 import ImageWithFallback from '@/components/ImageWithFallback';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 interface WishlistItem {
   creature: Creature;
@@ -131,25 +132,22 @@ export default function WishlistScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Loading...</Text>
-        </View>
+        <ScreenHeader 
+          title="Loading..." 
+          onBackPress={() => router.back()}
+          showBackButton={true}
+        />
       </View>
     );
   }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Wishlist ({wishlistItems.length})</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ScreenHeader 
+        title={`Wishlist (${wishlistItems.length})`} 
+        onBackPress={() => router.back()}
+        showBackButton={true}
+      />
 
       <FlatList
         data={wishlistItems}
@@ -176,32 +174,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1a1a1a',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  placeholder: {
-    width: 40,
-  },
   listContainer: {
     paddingHorizontal: 20,
+    // Reduce top padding to account for safe area insets and ScreenHeader padding
+    paddingTop: 5,
     paddingBottom: 100,
   },
   creatureCard: {

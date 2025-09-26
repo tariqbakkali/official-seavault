@@ -104,6 +104,27 @@ export const useDataStore = create<DataStore>((set, get) => ({
     }
   },
 
+  fetchLeaderboard: async (limit: number = 10): Promise<Array<{
+    user_id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    creatures_discovered: number;
+    total_points: number;
+  }>> => {
+    try {
+      set((state) => ({ ...state, isLoading: true, error: null }));
+      
+      const leaderboard = await queries.getLeaderboard(limit);
+      
+      set((state) => ({ ...state, isLoading: false }));
+      return leaderboard;
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+      set((state) => ({ ...state, error: 'Failed to fetch leaderboard', isLoading: false }));
+      return [];
+    }
+  },
+
   createSighting: async (
     sighting: Omit<Database['public']['Tables']['sightings']['Insert'], 'user_id'>
   ): Promise<Database['public']['Tables']['sightings']['Row'] | null> => {

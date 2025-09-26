@@ -11,10 +11,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ArrowLeft, Search, Filter } from 'lucide-react-native';
+import { Search, Filter } from 'lucide-react-native';
 import { Database } from '@/types/database';
 import { useDataStore } from '@/stores/data';
 import ExploreDiveSiteCard from '@/screens/modal/explore/components/ExploreDiveSiteCard';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 type DiveSite = Database['public']['Tables']['dive_sites']['Row'];
 
@@ -86,13 +87,11 @@ export default function ExploreModal() {
   if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Explore</Text>
-          <View style={styles.placeholder} />
-        </View>
+        <ScreenHeader 
+          title="Explore" 
+          onBackPress={() => router.back()}
+          showBackButton={true}
+        />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading dive sites...</Text>
         </View>
@@ -102,13 +101,11 @@ export default function ExploreModal() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Explore</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ScreenHeader 
+        title="Explore" 
+        onBackPress={() => router.back()}
+        showBackButton={true}
+      />
 
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
@@ -182,30 +179,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1a1a1a',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  placeholder: {
-    width: 40,
   },
   searchContainer: {
     flexDirection: 'row',
