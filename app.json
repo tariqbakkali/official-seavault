@@ -23,7 +23,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.seavault.app"
+      "package": "com.naeemul_haq.seavault"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,12 +37,23 @@
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "technext96"
+        }
       ]
     ],
     "scheme": "seavault",
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "61041964-a99c-4b5e-874e-5250ca4e93e1"
       }
     },
     "platforms": [

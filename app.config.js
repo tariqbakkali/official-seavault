@@ -11,6 +11,9 @@ module.exports = {
     ios: {
       supportsTablet: true
     },
+    android: {
+      package: 'com.naeemul_haq.seavault'
+    },
     web: {
       bundler: 'metro',
       output: 'single',
@@ -23,6 +26,9 @@ module.exports = {
     extra: {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      eas: {
+        projectId: '61041964-a99c-4b5e-874e-5250ca4e93e1'
+      }
     },
     // Deep linking configuration
     linking: {
