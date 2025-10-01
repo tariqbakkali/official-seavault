@@ -5,6 +5,7 @@ import { Database } from '@/types/database';
 /**
  * Custom hook for accessing dive sites data and actions
  * Separates business logic from UI components
+ * Updated to use Legend-State observables for local-first functionality
  */
 export const useDiveSites = () => {
   const {
@@ -14,11 +15,15 @@ export const useDiveSites = () => {
     fetchDiveSites,
     getDiveSiteById,
     createDiveSite,
+    createSighting,
+    createWishlistItem,
+    removeWishlistItem,
     reset
   } = useDiveSitesStore();
 
   /**
    * Fetch all dive sites with proper error handling
+   * Data is automatically loaded by observables in the new implementation
    */
   const loadDiveSites = useCallback(async () => {
     try {
@@ -65,6 +70,12 @@ export const useDiveSites = () => {
     loadDiveSites,
     fetchDiveSiteById,
     addDiveSite,
+    
+    // Local-first actions
+    createSighting,
+    createWishlistItem,
+    removeWishlistItem,
+    
     reset,
   };
 };

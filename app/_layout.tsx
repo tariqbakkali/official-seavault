@@ -3,6 +3,14 @@ import { Stack } from 'expo-router';
 import { useAuthStore } from '@/stores/auth';
 import { useUserStore } from '@/stores/user';
 import { ActivityIndicator, View, Text } from 'react-native';
+import * as Sentry from 'sentry-expo';
+
+// Initialize Sentry
+Sentry.init({
+  dsn: "https://dc149a7492f76fc80c8634923f23401f@o4510096394158080.ingest.us.sentry.io/4510114340864000",
+  enableInExpoDevelopment: true,
+  debug: true, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending an event.
+});
 
 export default function RootLayout() {
   const { initializeAuth, setupAuthListener } = useAuthStore();

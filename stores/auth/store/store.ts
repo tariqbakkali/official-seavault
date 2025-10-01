@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { supabase } from '../../../services/supabase';
 import { AuthState, AuthActions } from '../types/types';
 import { Database } from '../../../types/database';
+import { setCurrentUserID, profile$ } from '../../syncedObservables';
+import { initializeUserSession, cleanupUserSession } from '../../../utils/appInitializer';
 
 export type AuthStore = AuthState & AuthActions;
 
@@ -24,6 +26,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (session) {
         // Get user profile
         const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Set current user ID for local-first implementation
+          setCurrentUserID(user.id);
+          // Initialize user session for local-first implementation
+          await initializeUserSession(user.id);
+        }
         set((state) => ({ 
           ...state, 
           user: user || null, 
@@ -67,6 +75,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (error) throw error;
 
       if (data.user) {
+        // Set current user ID for local-first implementation
+        setCurrentUserID(data.user.id);
+        // Initialize user session for local-first implementation
+        await initializeUserSession(data.user.id);
+        
         set((state) => ({ 
           ...state, 
           user: data.user, 
@@ -100,6 +113,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (error) throw error;
 
       if (data.user) {
+        // Set current user ID for local-first implementation
+        setCurrentUserID(data.user.id);
+        // Initialize user session for local-first implementation
+        await initializeUserSession(data.user.id);
+        
         set((state) => ({ 
           ...state, 
           user: data.user, 
@@ -128,6 +146,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const { error } = await supabase.auth.signOut();
       
       if (error) throw error;
+      
+      // Clean up user session for local-first implementation
+      await cleanupUserSession();
+      // Clear current user ID
+      setCurrentUserID(null);
       
       set((state) => ({ 
         ...state, 
@@ -177,7 +200,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         // Get user profile
-        supabase.auth.getUser().then(({ data: { user } }) => {
+        supabase.auth.getUser().then(async ({ data: { user } }) => {
+          if (user) {
+            // Set current user ID for local-first implementation
+            setCurrentUserID(user.id);
+            // Initialize user session for local-first implementation
+            await initializeUserSession(user.id);
+          }
           set((state) => ({ 
             ...state, 
             user: user || null, 
@@ -187,6 +216,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           }));
         });
       } else {
+        // Clean up user session for local-first implementation
+        cleanupUserSession();
+        // Clear current user ID
+        setCurrentUserID(null);
+        
         set((state) => ({ 
           ...state, 
           user: null, 

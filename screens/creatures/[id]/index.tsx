@@ -16,7 +16,7 @@ import { Creature, Sighting, DiveSite } from '@/types/database';
 import { supabase } from '@/services/supabase';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import { formatDate, formatTime } from '@/utils/format';
-import { useCatalogStore } from '@/stores/catalog';
+import { useCatalogStore } from '@/stores/catalog/store/store';
 import { useUserStore } from '@/stores/user';
 import { useWishlistStore } from '@/stores/wishlist';
 import { useSightingsStore } from '@/stores/sightings';
@@ -38,7 +38,7 @@ export default function CreatureDetailScreen() {
   // Add state for dive sites
   const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
   
-  // Use existing stores
+  // Use updated observable-based store
   const { getCreatures } = useCatalogStore();
   const { fetchUserData } = useUserStore();
   const { toggleWishlistItem } = useWishlistStore();
@@ -52,7 +52,7 @@ export default function CreatureDetailScreen() {
     try {
       setLoading(true);
       
-      // Fetch creature data
+      // Fetch creature data using the new observable-based approach
       const allCreatures = await getCreatures();
       const creatureData = allCreatures.find((c: any) => c.id === id);
       setCreature(creatureData || null);
