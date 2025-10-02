@@ -11,8 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Calendar } from 'lucide-react-native';
 import { Creature, Sighting } from '@/types/database';
-import { useCatalogStore } from '@/stores/catalog';
-import { useUserStore } from '@/stores/user';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 
@@ -30,23 +29,22 @@ export default function DiscoveredScreen() {
   const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
   
-  const { fetchCatalog } = useCatalogStore();
-  const { fetchUserData } = useUserStore();
+  const { creatures: allCreatures, sightings: allSightings } = useSyncedData();
 
   React.useEffect(() => {
     loadData();
-  }, []);
+  }, [allCreatures, allSightings]);
 
-  const loadData = async () => {
+  const loadData = () => {
     try {
-      // Fetch catalog and user data from stores
-      const catalog = await fetchCatalog();
-      const userData = await fetchUserData();
+      // Extract data from observables
+      const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
+      const sightingsArray = allSightings ? Object.values(allSightings.get()) : [];
 
-      if (catalog && userData) {
+      if (creaturesArray.length > 0 && sightingsArray.length > 0) {
         // Group sightings by creature
-        const creatureGroups: Record<string, Sighting[]> = {};
-        userData.sightings.forEach((sighting: Sighting) => {
+        const creatureGroups: Record<string, any[]> = {};
+        sightingsArray.forEach((sighting: any) => {
           if (!creatureGroups[sighting.creature_id]) {
             creatureGroups[sighting.creature_id] = [];
           }
@@ -55,7 +53,7 @@ export default function DiscoveredScreen() {
 
         // Create discovered creatures list
         const discovered: DiscoveredCreature[] = Object.entries(creatureGroups).map(([creatureId, sightings]) => {
-          const creature = catalog.creatures.find((c: Creature) => c.id === creatureId);
+          const creature = creaturesArray.find((c: any) => c.id === creatureId);
           if (!creature) return null;
 
           // Sort sightings by date (oldest first) to get first sighting

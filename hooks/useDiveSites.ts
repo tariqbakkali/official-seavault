@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useDiveSitesStore } from '@/stores/diveSites/store/store';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import { Database } from '@/types/database';
 
 /**
@@ -11,15 +11,12 @@ export const useDiveSites = () => {
   const {
     diveSites,
     isLoading,
-    error,
-    fetchDiveSites,
-    getDiveSiteById,
-    createDiveSite,
+    errors,
     createSighting,
     createWishlistItem,
+    createDiveSite,
     removeWishlistItem,
-    reset
-  } = useDiveSitesStore();
+  } = useSyncedData();
 
   /**
    * Fetch all dive sites with proper error handling
@@ -27,24 +24,27 @@ export const useDiveSites = () => {
    */
   const loadDiveSites = useCallback(async () => {
     try {
-      return await fetchDiveSites();
+      // In the new implementation, data is automatically loaded by observables
+      // We just return the current data
+      return diveSites.get() || [];
     } catch (err) {
       console.error('Failed to load dive sites:', err);
       return [];
     }
-  }, [fetchDiveSites]);
+  }, [diveSites]);
 
   /**
    * Get a dive site by ID with proper error handling
    */
   const fetchDiveSiteById = useCallback(async (id: string) => {
     try {
-      return await getDiveSiteById(id);
+      const allDiveSites = diveSites.get() || [];
+      return allDiveSites.find((site: any) => site.id === id) || null;
     } catch (err) {
       console.error(`Failed to fetch dive site with id ${id}:`, err);
       return null;
     }
-  }, [getDiveSiteById]);
+  }, [diveSites]);
 
   /**
    * Create a new dive site with proper error handling
@@ -53,7 +53,9 @@ export const useDiveSites = () => {
     diveSite: Database['public']['Tables']['dive_sites']['Insert']
   ) => {
     try {
-      return await createDiveSite(diveSite);
+      // Create a new dive site using the new Legend-State implementation
+      const newDiveSite = createDiveSite(diveSite);
+      return newDiveSite;
     } catch (err) {
       console.error('Failed to create dive site:', err);
       return null;
@@ -63,8 +65,8 @@ export const useDiveSites = () => {
   return {
     // Data
     diveSites,
-    isLoading,
-    error,
+    isLoading: isLoading.diveSites,
+    error: errors.diveSites,
     
     // Actions
     loadDiveSites,
@@ -75,7 +77,5 @@ export const useDiveSites = () => {
     createSighting,
     createWishlistItem,
     removeWishlistItem,
-    
-    reset,
   };
 };

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { useDiveSites } from '@/hooks/useDiveSites';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import { formatCoordinate } from '@/utils/diveSiteUtils';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import LoadingState from '@/components/LoadingState';
@@ -11,11 +11,10 @@ import DiveSiteMarker from '@/components/DiveSiteMarker';
  * Comprehensive dive sites screen demonstrating best practices
  */
 const DiveSitesScreen = () => {
-  const { diveSites, isLoading, error, loadDiveSites } = useDiveSites();
+  const { diveSites, isLoading, errors } = useSyncedData();
 
-  useEffect(() => {
-    loadDiveSites();
-  }, [loadDiveSites]);
+  // Extract the actual data from the observable
+  const diveSitesData = diveSites.get() || [];
 
   const renderDiveSite = ({ item }: { item: any }) => (
     <View style={styles.siteCard}>
@@ -26,15 +25,19 @@ const DiveSitesScreen = () => {
     </View>
   );
 
-  if (isLoading) {
+  if (isLoading.diveSites) {
     return <LoadingState message="Loading dive sites..." />;
   }
 
-  if (error) {
+  // Convert error observable to string if needed
+  const errorMessage = typeof errors.diveSites === 'object' && errors.diveSites !== null ? 
+    (errors.diveSites.get ? errors.diveSites.get() : JSON.stringify(errors.diveSites)) : 
+    errors.diveSites;
+
+  if (errorMessage) {
     return (
       <ErrorDisplay 
-        message={error} 
-        onRetry={loadDiveSites} 
+        message={String(errorMessage)} 
       />
     );
   }
@@ -43,9 +46,9 @@ const DiveSitesScreen = () => {
     <View style={styles.container}>
       <ScreenHeader title="Dive Sites" />
       
-      {diveSites && diveSites.length > 0 ? (
+      {diveSitesData && diveSitesData.length > 0 ? (
         <FlatList
-          data={diveSites}
+          data={diveSitesData}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderDiveSite}
           contentContainerStyle={styles.listContainer}

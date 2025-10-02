@@ -14,7 +14,7 @@ export const hasUnsavedChanges = (
   return (
     fullName !== (profile.full_name || '') ||
     email !== (profile.email || '') ||
-    (avatarUri && avatarUri !== profile.avatar_url)
+    (avatarUri !== null && avatarUri !== profile.avatar_url)
   );
 };
 

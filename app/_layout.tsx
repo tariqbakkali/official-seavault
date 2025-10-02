@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
-import { useAuthStore } from '@/stores/auth';
-import { useUserStore } from '@/stores/user';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import { ActivityIndicator, View, Text } from 'react-native';
+import { supabase } from '@/services/supabase';
 import * as Sentry from 'sentry-expo';
 
 // Initialize Sentry
@@ -13,22 +13,37 @@ Sentry.init({
 });
 
 export default function RootLayout() {
-  const { initializeAuth, setupAuthListener } = useAuthStore();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isLoading = useAuthStore((state) => state.isLoading);
-  const { ensureUserProfile } = useUserStore();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { profile } = useSyncedData();
 
   useEffect(() => {
-    initializeAuth();
-    setupAuthListener();
+    // Check initial session
+    const checkInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error checking initial session:', error);
+        setIsLoading(false);
+      }
+    };
+
+    checkInitialSession();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+      setIsLoading(false);
+    });
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      ensureUserProfile();
-    }
-  }, [isAuthenticated]);
-  
   // Show loading screen while auth state is being determined
   if (isLoading) {
     return (

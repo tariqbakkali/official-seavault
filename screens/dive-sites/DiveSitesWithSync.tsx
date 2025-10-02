@@ -1,45 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { useSyncedData } from '@/hooks/useSyncedData';
-
-// Utility function to extract actual values from observable objects
-const extractObservableValues = (obj: any): any => {
-  if (!obj) return obj;
-  
-  // If it's an observable with a get method, return its value
-  if (typeof obj === 'object' && obj.get && typeof obj.get === 'function') {
-    return obj.get();
-  }
-  
-  // If it's an object, recursively extract values
-  if (typeof obj === 'object') {
-    const result: any = {};
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        result[key] = extractObservableValues(obj[key]);
-      }
-    }
-    return result;
-  }
-  
-  return obj;
-};
+import { forceSyncAll } from '@/utils/syncUtils';
 
 const DiveSitesWithSync: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { diveSites } = useSyncedData();
-  
-  // Convert dive sites object to array with actual values
-  const diveSitesArray = diveSites ? 
-    Object.values(diveSites).map(site => extractObservableValues(site)) : [];
 
+  // Convert dive sites object to array with actual values
+  const diveSitesArray = diveSites && diveSites.get() ? Object.values(diveSites.get()) : [];
+  
   const onRefresh = async () => {
     setRefreshing(true);
-    // In a real implementation, we might want to force a sync
-    // For now, we'll just wait a bit to simulate refreshing
-    setTimeout(() => {
+    try {
+      await forceSyncAll();
+    } catch (error) {
+      console.error('Error during force sync:', error);
+    } finally {
       setRefreshing(false);
-    }, 1000);
+    }
   };
 
   const renderDiveSite = ({ item }: { item: any }) => (
@@ -67,7 +46,7 @@ const DiveSitesWithSync: React.FC = () => {
       <FlatList
         data={diveSitesArray}
         renderItem={renderDiveSite}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }

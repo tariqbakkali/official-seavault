@@ -1,4 +1,5 @@
 import { Platform, Dimensions } from 'react-native';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 /**
  * Device and platform utilities
@@ -37,8 +38,14 @@ export const getSafeAreaStyle = (insets: { top: number; bottom: number }) => ({
  * Check if device supports biometric authentication
  */
 export const supportsBiometrics = async (): Promise<boolean> => {
-  // TODO: Implement biometric support check
-  return false;
+  try {
+    const hasHardware = await LocalAuthentication.hasHardwareAsync();
+    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+    return hasHardware && isEnrolled;
+  } catch (error) {
+    console.error('Error checking biometric support:', error);
+    return false;
+  }
 };
 
 /**

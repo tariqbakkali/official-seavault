@@ -10,7 +10,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ImageWithFallback } from '@/components';
-import { useCatalogStore } from '@/stores/catalog';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Plus } from 'lucide-react-native';
@@ -30,20 +30,20 @@ export default function CategoryDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
   
-  const { getCategories, getCreatures } = useCatalogStore();
+  const { categories, creatures: allCreatures, isLoading } = useSyncedData();
 
   const loadData = async () => {
     try {
       // Get all categories to find the current one
-      const categories = await getCategories();
-      const currentCategory = categories.find((cat: any) => cat.id === id);
+      const categoriesArray = categories ? Object.values(categories.get()) : [];
+      const currentCategory = categoriesArray.find((cat: any) => cat.id === id);
       setCategory(currentCategory);
 
       // Get creatures for this category
       if (id) {
-        const allCreatures = await getCreatures();
-        const categoryCreatures = allCreatures.filter(
-          (creature: any) => creature.category_id === id
+        const creaturesArray = allCreatures ? Object.values(allCreatures.get()) as Creature[] : [];
+        const categoryCreatures = creaturesArray.filter(
+          (creature: Creature) => creature.category_id === id
         );
         setCreatures(categoryCreatures);
       }
@@ -63,8 +63,10 @@ export default function CategoryDetailScreen() {
   };
 
   useEffect(() => {
-    loadData();
-  }, [id]);
+    if (!isLoading.categories && !isLoading.creatures) {
+      loadData();
+    }
+  }, [id, categories, allCreatures, isLoading.categories, isLoading.creatures]);
 
   const handleLogDive = () => {
     // Navigate to log dive screen with category pre-selected
@@ -101,10 +103,25 @@ export default function CategoryDetailScreen() {
     </TouchableOpacity>
   );
 
+  if (isLoading.categories || isLoading.creatures) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <ScreenHeader 
+          title="Loading..." 
+          onBackPress={() => router.back()}
+          showBackButton={true}
+        />
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Loading creatures...</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScreenHeader 
-        title={category?.name || 'Loading...'} 
+        title={category?.name || 'Unknown Category'} 
         onBackPress={() => router.back()}
         showBackButton={true}
       />

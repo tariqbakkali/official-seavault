@@ -1,4 +1,4 @@
-// Feedback Components (to be implemented)
+// TODO: Feedback Components
 // export { default as Toast } from './Toast';
 // export { default as Alert } from './Alert';
 

@@ -11,8 +11,8 @@ export const APP_CONFIG = {
 export const APP_FEATURES = {
   OFFLINE_SUPPORT: false,
   BACKGROUND_SYNC: false,
-  PUSH_NOTIFICATIONS: false, // TODO: Implement later
-  BIOMETRIC_AUTH: false, // TODO: Implement later
+  PUSH_NOTIFICATIONS: false, // TODO: Implement push notifications later
+  BIOMETRIC_AUTH: false, // TODO: Implement biometric authentication later
 } as const;
 
 export const PERFORMANCE = {

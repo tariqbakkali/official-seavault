@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Search, Filter } from 'lucide-react-native';
 import { Database } from '@/types/database';
-import { useDataStore } from '@/stores/data';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import ExploreDiveSiteCard from '@/screens/modal/explore/components/ExploreDiveSiteCard';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 
@@ -35,13 +35,13 @@ export default function ExploreModal() {
   });
   const insets = useSafeAreaInsets();
   
-  // Use the new data store instead of dataService
-  const { fetchDiveSites } = useDataStore();
+  // Use the new useSyncedData hook instead of useDataStore
+  const { diveSites: diveSitesData } = useSyncedData();
 
   const loadData = async () => {
     try {
-      // Fetch dive sites directly from the new store
-      const sites = await fetchDiveSites();
+      // Extract dive sites from the observable
+      const sites = diveSitesData ? Object.values(diveSitesData) : [];
       setDiveSites(sites);
     } catch (error) {
       console.error('Error loading dive sites:', error);
@@ -62,7 +62,7 @@ export default function ExploreModal() {
 
   React.useEffect(() => {
     loadData();
-  }, []);
+  }, [diveSitesData]);
 
   const handleDiveSitePress = (diveSiteId: string) => {
     router.push(`/categories/${diveSiteId}`);

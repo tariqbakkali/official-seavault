@@ -10,52 +10,40 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Heart, X } from 'lucide-react-native';
-import { useUserStore } from '@/stores/user';
-import { useCatalogStore } from '@/stores/catalog';
-import { useWishlistStore } from '@/stores/wishlist';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import { Creature } from '@/types/database';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 
-interface WishlistItem {
+interface WishlistCreature {
   creature: Creature;
-  addedDate: string;
+  wishlistItem: any;
 }
 
 export default function WishlistScreen() {
-  const [wishlistItems, setWishlistItems] = React.useState<WishlistItem[]>([]);
+  const [wishlistCreatures, setWishlistCreatures] = React.useState<WishlistCreature[]>([]);
   const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
   
-  const { fetchUserData } = useUserStore();
-  const { fetchCatalog } = useCatalogStore();
-  const { removeFromWishlist } = useWishlistStore();
+  const { creatures: allCreatures, wishlists: allWishlists, removeWishlistItem } = useSyncedData();
 
-  const loadData = async () => {
+  const loadData = () => {
     try {
-      // Fetch catalog and user data from stores
-      const catalog = await fetchCatalog();
-      const userData = await fetchUserData();
+      // Extract data from observables
+      const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
+      const wishlistsArray = allWishlists ? Object.values(allWishlists.get()) : [];
 
-      if (catalog && userData) {
-        // Create a map of wishlist items with their added dates
-        const wishlistMap = userData.wishlists.reduce((acc: Record<string, string>, wishlist) => {
-          acc[wishlist.creature_id] = wishlist.created_at;
-          return acc;
-        }, {});
+      if (creaturesArray.length > 0 && wishlistsArray.length > 0) {
+        // Create wishlist creatures list
+        const wishlistCreatures: WishlistCreature[] = wishlistsArray.map((wishlistItem: any) => {
+          const creature = creaturesArray.find((c: any) => c.id === wishlistItem.creature_id);
+          return creature ? { creature, wishlistItem } : null;
+        }).filter(Boolean) as WishlistCreature[];
 
-        // Get wishlist creatures with their added dates
-        const wishlistItemsWithDates = catalog.creatures
-          .filter(c => wishlistMap[c.id])
-          .map(creature => ({
-            creature,
-            addedDate: wishlistMap[creature.id]
-          }));
-        
-        setWishlistItems(wishlistItemsWithDates);
+        setWishlistCreatures(wishlistCreatures);
       }
     } catch (error) {
-      console.error('Error loading wishlist data:', error);
+      console.error('Error loading wishlist:', error);
     } finally {
       setLoading(false);
     }
@@ -63,9 +51,9 @@ export default function WishlistScreen() {
 
   React.useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
-  const handleRemoveFromWishlist = async (creatureId: string, creatureName: string) => {
+  const handleRemoveFromWishlist = async (wishlistId: string, creatureName: string) => {
     Alert.alert(
       'Remove from Wishlist',
       `Remove ${creatureName} from your wishlist?`,
@@ -76,15 +64,9 @@ export default function WishlistScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Find the wishlist item ID for this creature
-              const userData = await fetchUserData();
-              const wishlistItem = userData.wishlists.find(item => item.creature_id === creatureId);
-              
-              if (wishlistItem) {
-                await removeFromWishlist(wishlistItem.id);
-                // Refresh the list
-                await loadData();
-              }
+              await removeWishlistItem(wishlistId);
+              // Refresh the list
+              loadData();
             } catch (error) {
               Alert.alert('Error', 'Failed to remove from wishlist');
             }
@@ -103,31 +85,33 @@ export default function WishlistScreen() {
     });
   };
 
-  const renderWishlistCreature = ({ item }: { item: WishlistItem }) => (
-    <View style={styles.creatureCard}>
-      <ImageWithFallback
-        uri={item.creature.image_url}
-        style={styles.creatureImage}
-        containerStyle={styles.imageContainer}
-      />
-      <View style={styles.creatureInfo}>
-        <Text style={styles.creatureName}>{item.creature.name}</Text>
-        {item.creature.scientific_name && (
-          <Text style={styles.scientificName}>{item.creature.scientific_name}</Text>
-        )}
-        <Text style={styles.addedDate}>Added: {formatDate(item.addedDate)}</Text>
-        <View style={styles.pointsBadge}>
-          <Text style={styles.pointsText}>{item.creature.points} pts</Text>
+  const renderWishlistCreature = ({ item }: { item: WishlistCreature }) => {
+    return (
+      <View style={styles.creatureCard}>
+        <ImageWithFallback
+          uri={item.creature.image_url}
+          style={styles.creatureImage}
+          containerStyle={styles.imageContainer}
+        />
+        <View style={styles.creatureInfo}>
+          <Text style={styles.creatureName}>{item.creature.name}</Text>
+          {item.creature.scientific_name && (
+            <Text style={styles.scientificName}>{item.creature.scientific_name}</Text>
+          )}
+          <Text style={styles.addedDate}>Added: {formatDate(item.wishlistItem.created_at)}</Text>
+          <View style={styles.pointsBadge}>
+            <Text style={styles.pointsText}>{item.creature.points} pts</Text>
+          </View>
         </View>
+        <TouchableOpacity 
+          style={styles.removeButton}
+          onPress={() => handleRemoveFromWishlist(item.wishlistItem.id, item.creature.name)}
+        >
+          <X size={20} color="#FF3B30" />
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity 
-        style={styles.removeButton}
-        onPress={() => handleRemoveFromWishlist(item.creature.id, item.creature.name)}
-      >
-        <X size={20} color="#FF3B30" />
-      </TouchableOpacity>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -144,13 +128,13 @@ export default function WishlistScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <ScreenHeader 
-        title={`Wishlist (${wishlistItems.length})`} 
+        title={`Wishlist (${wishlistCreatures.length})`} 
         onBackPress={() => router.back()}
         showBackButton={true}
       />
 
       <FlatList
-        data={wishlistItems}
+        data={wishlistCreatures}
         keyExtractor={(item) => item.creature.id}
         renderItem={renderWishlistCreature}
         contentContainerStyle={styles.listContainer}

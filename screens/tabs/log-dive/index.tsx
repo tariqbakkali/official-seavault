@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useCatalogStore } from '../../../stores/catalog/store/store';
-import { useSightingsStore } from '../../../stores/sightings/store/store';
-import { useDiveSitesStore } from '../../../stores/diveSites/store/store';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { COLORS } from '@/constants';
 import MainLogDiveForm from './components/MainLogDiveForm';
+import { Database } from '@/types/database';
 
 // Types
 interface SelectedImage {
@@ -47,14 +46,43 @@ const LogDiveScreen = () => {
   const [showDiveSiteSearch, setShowDiveSiteSearch] = useState(false);
   const [diveSiteSearchQuery, setDiveSiteSearchQuery] = useState('');
 
-  const { catalog, fetchCatalog } = useCatalogStore();
-  const { createSighting } = useSightingsStore();
-  const { diveSites, fetchDiveSites } = useDiveSitesStore();
+  const { creatures: allCreatures, categories: allCategories, diveSites: allDiveSites, createSighting, isLoading } = useSyncedData();
+
+  // Extract data from observables
+  const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
+  const categoriesArray = allCategories ? Object.values(allCategories.get()) : [];
+
+  if (isLoading.diveSites) {
+    return (
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
+        <ScreenHeader 
+          title="Log Dive" 
+          onBackPress={handleBackPress}
+          showBackButton={shouldShowBackButton}
+        />
+        <Text style={{ color: COLORS.TEXT_PRIMARY, textAlign: 'center', marginTop: 20 }}>Loading dive sites...</Text>
+      </View>
+    );
+  }
+
+  const diveSitesArray = allDiveSites ? Object.values(allDiveSites.get()) as Database['public']['Tables']['dive_sites']['Row'][] : [];
+  
+  // Create mock catalog object to match the expected format
+  const catalog = {
+    creatures: creaturesArray as any[],
+    categories: categoriesArray as any[],
+    achievements: [] // We don't have achievements in observables
+  };
 
   // Fetch catalog data and dive sites on component mount
   useEffect(() => {
-    fetchCatalog();
-    fetchDiveSites();
+    // Data is automatically available from observables
+    // Just mark loading as complete
   }, []);
 
   // Set selected category and creature if passed from navigation
@@ -97,7 +125,7 @@ const LogDiveScreen = () => {
       };
       
       // Create the sighting
-      const result = await createSighting(sightingData as any); // Cast to any to avoid TypeScript issues
+      await createSighting(sightingData as any); // Cast to any to avoid TypeScript issues
       
       // Reset form
       setFormData({
@@ -150,7 +178,7 @@ const LogDiveScreen = () => {
       <MainLogDiveForm
         formData={formData}
         setFormData={setFormData}
-        diveSites={diveSites}
+        diveSites={diveSitesArray}
         catalog={catalog}
         selectedCategories={selectedCategories}
         setSelectedCategories={setSelectedCategories}

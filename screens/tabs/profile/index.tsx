@@ -12,14 +12,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { User, Settings, LogOut, Star, Eye, Trophy } from 'lucide-react-native';
 import { ImageWithFallback } from '@/components';
-import { useAuthStore } from '@/stores/auth';
-import { useUserStore } from '@/stores/user';
-import { useCatalogStore } from '@/stores/catalog';
-import { calculateUserStats } from '@/stores/user/utils/utils';
+import { useSyncedData } from '@/hooks/useSyncedData';
+import { calculateUserStats } from '@/services/statsService';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import { supabase } from '@/services/supabase';
 import StatsSection from './components/StatsSection';
 import CategoryProgressSection from './components/CategoryProgressSection';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { forceSyncAll } from '@/utils/syncUtils';
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -33,42 +33,69 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [userData, setUserData] = React.useState<any>(null);
   const [userStats, setUserStats] = React.useState<any>(null);
+  const [user, setUser] = React.useState<any>(null);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   
-  const { signOut, user } = useAuthStore();
-  const { fetchUserData } = useUserStore();
-  const { fetchCatalog } = useCatalogStore();
+  const { creatures: allCreatures, categories: allCategories, sightings: allSightings, wishlists: allWishlists, profile: userProfile } = useSyncedData();
 
-  const loadData = async () => {
+  const loadData = React.useCallback(() => {
     try {
-      const data = await fetchUserData();
-      const catalog = await fetchCatalog();
+      // Extract data from observables
+      const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
+      const categoriesArray = allCategories ? Object.values(allCategories.get()) : [];
+      const sightingsArray = allSightings ? Object.values(allSightings.get()) : [];
+      const wishlistsArray = allWishlists ? Object.values(allWishlists.get()) : [];
+      const profileData = userProfile && typeof userProfile === 'object' && 'get' in userProfile 
+        ? userProfile.get() 
+        : userProfile;
       
-      setUserData(data);
+      // Create mock userData object to match the expected format
+      const userData = {
+        sightings: sightingsArray,
+        wishlists: wishlistsArray,
+        profile: profileData
+      };
       
-      if (data && catalog) {
-        const stats = calculateUserStats(data, catalog);
+      setUserData(userData);
+      
+      // Create mock catalog object to match the expected format
+      const catalog = {
+        creatures: creaturesArray as any[],
+        categories: categoriesArray as any[],
+        achievements: [] // We don't have achievements in observables
+      };
+      
+      if (userData && catalog) {
+        const stats = calculateUserStats(userData, catalog);
         setUserStats(stats);
       }
     } catch (error) {
       console.error('Error loading profile data:', error);
     }
-  };
+  }, [allCreatures, allCategories, allSightings, allWishlists, userProfile]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await loadData();
+      await forceSyncAll();
     } catch (error) {
       console.error('Error during refresh:', error);
+    } finally {
+      setRefreshing(false);
     }
-    setRefreshing(false);
   };
 
   useEffect(() => {
+    // Get current user
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    
+    getCurrentUser();
     loadData();
-  }, []);
+  }, [loadData]);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -81,7 +108,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await signOut();
+              await supabase.auth.signOut();
               router.replace(ROUTES.AUTH.LOGIN);
             } catch (error) {
               console.error('Error signing out:', error);
@@ -92,6 +119,11 @@ export default function ProfileScreen() {
       ]
     );
   };
+
+  // Extract profile data safely
+  const profileData = userProfile && typeof userProfile === 'object' && 'get' in userProfile 
+    ? userProfile.get() 
+    : userProfile;
 
   const menuItems: MenuItem[] = [
     {
@@ -126,13 +158,13 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <ImageWithFallback
-              uri={userData?.profile?.avatar_url}
+              uri={profileData?.avatar_url}
               style={styles.avatar}
               fallbackColor="#333"
             />
           </View>
           <Text style={styles.name}>
-            {userData?.profile?.full_name || 'User'}
+            {profileData?.full_name || 'User'}
           </Text>
           <Text style={styles.email}>{user?.email}</Text>
         </View>
@@ -140,7 +172,7 @@ export default function ProfileScreen() {
         {/* Stats Section */}
         <StatsSection 
           uniqueCreatures={userStats?.uniqueCreatures || 0}
-          wishlistCount={userData?.wishlists?.length || 0}
+          wishlistCount={allWishlists ? Object.keys(allWishlists).length : 0}
           totalPoints={userStats?.totalPoints || 0}
         />
 

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { UserStats } from '@/stores/data';
+import { UserStats } from '@/services/statsService';
 
 interface StatsSectionProps {
   uniqueCreatures?: number;
@@ -31,7 +31,6 @@ const StatsSection: React.FC<StatsSectionProps> = ({
   );
 };
 
-// ... existing styles and export ...
 const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',

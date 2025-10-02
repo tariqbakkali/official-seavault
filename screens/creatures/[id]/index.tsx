@@ -16,10 +16,7 @@ import { Creature, Sighting, DiveSite } from '@/types/database';
 import { supabase } from '@/services/supabase';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import { formatDate, formatTime } from '@/utils/format';
-import { useCatalogStore } from '@/stores/catalog/store/store';
-import { useUserStore } from '@/stores/user';
-import { useWishlistStore } from '@/stores/wishlist';
-import { useSightingsStore } from '@/stores/sightings';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 
 const { width } = Dimensions.get('window');
@@ -39,69 +36,63 @@ export default function CreatureDetailScreen() {
   const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
   
   // Use updated observable-based store
-  const { getCreatures } = useCatalogStore();
-  const { fetchUserData } = useUserStore();
-  const { toggleWishlistItem } = useWishlistStore();
-  const { createSighting } = useSightingsStore();
+  const { creatures, wishlists, createWishlistItem, removeWishlistItem, toggleWishlistItem } = useSyncedData();
 
   React.useEffect(() => {
     loadData();
   }, [id]);
+
+  // Watch for changes in wishlists to update the UI
+  React.useEffect(() => {
+    const userWishlists = wishlists.get() || {};
+    const wishlistEntries = Object.values(userWishlists);
+    const isCreatureWishlisted = wishlistEntries.some((item: any) => 
+      item && item.creature_id === id
+    );
+    setIsWishlisted(isCreatureWishlisted);
+  }, [wishlists, id]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       
       // Fetch creature data using the new observable-based approach
-      const allCreatures = await getCreatures();
-      const creatureData = allCreatures.find((c: any) => c.id === id);
+      const allCreaturesArray = creatures.get() ? Object.values(creatures.get()) : [];
+      const creatureData = allCreaturesArray.find((c: any) => c.id === id);
       setCreature(creatureData || null);
+
+      // Check if creature is wishlisted using the wishlists observable
+      const userWishlists = wishlists.get() || {};
+      const wishlistEntries = Object.values(userWishlists);
+      const isCreatureWishlisted = wishlistEntries.some((item: any) => 
+        item && item.creature_id === id
+      );
+      setIsWishlisted(isCreatureWishlisted);
 
       // Fetch user data
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Check if creature is wishlisted
-        const { data: wishlistData, error: wishlistError } = await supabase
-          .from('wishlists')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('creature_id', id)
-          .maybeSingle();
+        // Fetch sightings for this creature using the sightings observable
+        const allSightings = sightings || {};
+        const sightingsArray = Object.values(allSightings).filter((sighting: any) => 
+          sighting && sighting.creature_id === id
+        ) as Sighting[];
+        setSightings(sightingsArray);
+        setIsSeen(sightingsArray.length > 0);
         
-        if (!wishlistError) {
-          setIsWishlisted(!!wishlistData);
-        }
-
-        // Fetch sightings for this creature
-        const { data: sightingsData, error: sightingsError } = await supabase
-          .from('sightings')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('creature_id', id)
-          .order('date', { ascending: false });
-        
-        if (!sightingsError) {
-          const sightingsArray = sightingsData || [];
-          setSightings(sightingsArray);
-          setIsSeen(sightingsArray.length > 0);
+        // Fetch dive sites for all sightings using the diveSites observable
+        if (sightingsArray.length > 0) {
+          const diveSiteIds = sightingsArray
+            .map((sighting: any) => sighting.dive_site_id)
+            .filter((id): id is string => id !== null);
           
-          // Fetch dive sites for all sightings
-          if (sightingsArray.length > 0) {
-            const diveSiteIds = sightingsArray
-              .map((sighting: any) => sighting.dive_site_id)
-              .filter((id): id is string => id !== null);
-            
-            if (diveSiteIds.length > 0) {
-              // Fetch dive sites
-              const { data: diveSitesData, error: diveSitesError } = await supabase
-                .from('dive_sites')
-                .select('*')
-                .in('id', diveSiteIds);
-              
-              if (!diveSitesError) {
-                setDiveSites(diveSitesData || []);
-              }
-            }
+          if (diveSiteIds.length > 0) {
+            // Fetch dive sites from the diveSites observable
+            const allDiveSites = diveSites || {};
+            const diveSitesArray = Object.values(allDiveSites).filter((site: any) => 
+              site && diveSiteIds.includes(site.id)
+            ) as DiveSite[];
+            setDiveSites(diveSitesArray);
           }
         }
       }
@@ -119,12 +110,13 @@ export default function CreatureDetailScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Toggle wishlist item using the store function
+      // Toggle wishlist item using the new toggleWishlistItem function
+      // This function handles both adding and removing from wishlist
       const result = await toggleWishlistItem(creature.id);
-      setIsWishlisted(result);
       
-      // Refresh user data to update stats
-      await fetchUserData();
+      // Update local state to reflect the change
+      // The result indicates whether the item was added (true) or removed (false)
+      setIsWishlisted(result);
     } catch (error) {
       Alert.alert('Error', 'Failed to update wishlist');
     }

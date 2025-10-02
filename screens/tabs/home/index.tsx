@@ -11,12 +11,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Eye, Heart, Trophy } from 'lucide-react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { useUserStore } from '@/stores/user';
-import { useCatalogStore } from '@/stores/catalog';
-import { useDataStore } from '@/stores/data';
-import { calculateUserStats } from '@/stores/user/utils/utils';
+import { useSyncedData } from '@/hooks/useSyncedData';
+import { calculateUserStats } from '@/services/statsService';
 import { ImageWithFallback } from '@/components';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY, APP_CONFIG } from '@/constants';
+import { getLeaderboardData } from '@/services/leaderboardService';
+import { forceSyncAll } from '@/utils/syncUtils';
+import { Profile, Creature, Category, Sighting, Wishlist } from '@/types/database';
 // ScreenHeader import removed
 
 interface StatCard {
@@ -53,65 +54,78 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   
   // Use the new specialized stores
-  const { fetchUserData } = useUserStore();
-  const { fetchCatalog } = useCatalogStore();
-  const { fetchLeaderboard } = useDataStore();
+  const { creatures: allCreatures, categories: allCategories, sightings: allSightings, wishlists: allWishlists, profile: userProfile, allProfiles, achievements: allAchievements } = useSyncedData();
 
-  const loadData = async () => {
+  const loadData = React.useCallback(() => {
     try {
-      // Fetch user data and catalog directly from Supabase
-      const [data, catalog, leaderboardData] = await Promise.all([
-        fetchUserData(),
-        fetchCatalog(),
-        fetchLeaderboard(5) // Fetch top 5 for home screen
-      ]);
+      // Extract data from observables with proper typing
+      const creaturesObj = allCreatures?.get() || {};
+      const categoriesObj = allCategories?.get() || {};
+      const sightingsObj = allSightings?.get() || {};
+      const wishlistsObj = allWishlists?.get() || {};
       
-      setUserData(data);
+      const creaturesArray = Object.values(creaturesObj) as Creature[];
+      const categoriesArray = Object.values(categoriesObj) as Category[];
+      const sightingsArray = Object.values(sightingsObj) as Sighting[];
+      const wishlistsArray = Object.values(wishlistsObj) as Wishlist[];
+      
+      const profileData = userProfile && typeof userProfile === 'object' && 'get' in userProfile 
+        ? userProfile.get() 
+        : userProfile;
+      const allProfilesData = allProfiles && allProfiles.get() ? allProfiles.get() as Record<string, Profile> : {};
+      
+      // Create mock userData object to match the expected format
+      const userData = {
+        sightings: sightingsArray,
+        wishlists: wishlistsArray,
+        profile: profileData
+      };
+      
+      setUserData(userData);
+      
+      // Create mock catalog object to match the expected format
+      const catalog = {
+        creatures: creaturesArray,
+        categories: categoriesArray,
+        achievements: allAchievements && allAchievements.get() ? Object.values(allAchievements.get()) : [],
+      };
       
       // Calculate user stats
-      if (data && catalog) {
-        const stats = calculateUserStats(data, catalog);
+      if (userData && catalog) {
+        const stats = calculateUserStats(userData, catalog);
         setUserStats(stats);
       }
       
-      // Process leaderboard data
-      if (leaderboardData && data?.profile?.id) {
-        const processedLeaderboard = (leaderboardData as LeaderboardEntryType[]).map((entry, index) => ({
-          user_id: entry.user_id,
-          name: entry.full_name || 'Unknown User',
-          avatar: entry.avatar_url,
-          creatures: Number(entry.creatures_discovered),
-          points: Number(entry.total_points),
-          isCurrentUser: entry.user_id === data.profile!.id
-        }));
-        setLeaderboard(processedLeaderboard);
-      }
+      // Populate leaderboard data
+      const generatedLeaderboard = getLeaderboardData(allProfilesData, sightingsArray, creaturesArray);
+      setLeaderboard(generatedLeaderboard);
     } catch (error) {
       console.error('Error loading home data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [allCreatures, allCategories, allSightings, allWishlists, userProfile, allProfiles, allAchievements]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await loadData();
+      await forceSyncAll();
     } catch (error) {
       console.error('Error during refresh:', error);
+    } finally {
+      setRefreshing(false);
     }
-    setRefreshing(false);
   };
 
   React.useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Reload data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       loadData();
-    }, [])
+    }, [loadData])
   );
 
   const stats: StatCard[] = [
@@ -124,7 +138,7 @@ export default function HomeScreen() {
     },
     {
       icon: <Heart size={24} color="#FF3B30" />,
-      value: userData?.wishlists.length || 0,
+      value: allWishlists ? Object.keys(allWishlists).length : 0,
       label: 'Wishlist',
       color: '#FF3B30',
       onPress: () => router.push(ROUTES.STATS.WISHLIST),

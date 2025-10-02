@@ -9,14 +9,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import { useCatalogStore } from '@/stores/catalog';
-import { useUserStore } from '@/stores/user';
-import { calculateUserStats } from '@/stores/user/utils/utils';
+import { useSyncedData } from '@/hooks/useSyncedData';
+import { calculateUserStats } from '@/services/statsService';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Category } from '@/types/database';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { forceSyncAll } from '@/utils/syncUtils';
 
 interface CategoryWithStats extends Category {
   seen: number;
@@ -31,21 +31,39 @@ export default function CategoriesTab() {
   const [isOffline, setIsOffline] = React.useState(false);
   const insets = useSafeAreaInsets();
   
-  const { fetchCatalog } = useCatalogStore();
-  const { fetchUserData } = useUserStore();
+  const { categories: allCategories, creatures: allCreatures, sightings: allSightings, wishlists: allWishlists, profile: userProfile } = useSyncedData();
 
-  const loadData = async () => {
+  const loadData = React.useCallback(() => {
     try {
       // Check if we're offline
       const online = navigator.onLine;
       setIsOffline(!online);
       
-      // Fetch catalog and user data
-      const catalog = await fetchCatalog();
-      const userData = await fetchUserData();
+      // Extract data from observables properly
+      const categoriesArray = allCategories ? Object.values(allCategories.get()) : [];
+      const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
+      const sightingsArray = allSightings ? Object.values(allSightings.get()) : [];
+      const wishlistsArray = allWishlists ? Object.values(allWishlists.get()) : [];
+      const profileData = userProfile && typeof userProfile === 'object' && 'get' in userProfile 
+        ? userProfile.get() 
+        : userProfile;
       
-      if (catalog?.categories) {
-        let categoriesWithStats: CategoryWithStats[] = catalog.categories.map((category: any) => ({
+      if (categoriesArray.length > 0) {
+        // Create mock userData object to match the expected format
+        const userData = {
+          sightings: sightingsArray,
+          wishlists: wishlistsArray,
+          profile: profileData
+        };
+        
+        // Create mock catalog object to match the expected format
+        const catalog = {
+          creatures: creaturesArray as any[],
+          categories: categoriesArray as any[],
+          achievements: [] // We don't have achievements in observables
+        };
+        
+        let categoriesWithStats: CategoryWithStats[] = categoriesArray.map((category: any) => ({
           ...category,
           seen: 0,
           total: 0,
@@ -57,12 +75,11 @@ export default function CategoriesTab() {
           const stats = calculateUserStats(userData, catalog);
           
           // Map categories with their stats
-          categoriesWithStats = catalog.categories.map((category: any) => {
+          categoriesWithStats = categoriesArray.map((category: any) => {
             const categoryStat = stats.categoryStats[category.id] || {
               seen: 0,
               total: 0,
-              completion: 0,
-              points: 0
+              completion: 0
             };
             
             return {
@@ -80,9 +97,9 @@ export default function CategoriesTab() {
       console.error('Error loading categories:', error);
       // Try to load from cache if online fetch fails
       try {
-        const catalog = await fetchCatalog();
-        if (catalog?.categories) {
-          const categoriesWithStats: CategoryWithStats[] = catalog.categories.map((category: any) => ({
+        const categoriesArray = allCategories ? Object.values(allCategories.get()) : [];
+        if (categoriesArray.length > 0) {
+          const categoriesWithStats: CategoryWithStats[] = categoriesArray.map((category: any) => ({
             ...category,
             seen: 0,
             total: 0,
@@ -96,27 +113,28 @@ export default function CategoriesTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [allCategories, allCreatures, allSightings, allWishlists, userProfile]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await loadData();
+      await forceSyncAll();
     } catch (error) {
       console.error('Error during refresh:', error);
+    } finally {
+      setRefreshing(false);
     }
-    setRefreshing(false);
   };
 
   React.useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Reload data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       loadData();
-    }, [])
+    }, [loadData])
   );
 
   const renderCategory = ({ item }: { item: CategoryWithStats }) => (

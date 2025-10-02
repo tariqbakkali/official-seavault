@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import CustomClusteredMapView from '@/components/CustomClusteredMapView';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
@@ -221,12 +221,14 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
                       } 
                       // If there are only a few sites (2-5), show selection dialog
                       else if (children.length <= 5) {
-                        const siteOptions = children.map((child: any) => child.properties.name);
-                        const siteIds = children.map((child: any) => child.properties.id);
+                        const siteOptions = children.map((child: any) => ({ text: child.properties.name, onPress: () => onDiveSiteSelect(child.properties.id) }));
                           
-                        // In a real app, you would show an alert or modal here
-                        // For now, we'll just select the first one as an example
-                        onDiveSiteSelect(siteIds[0]);
+                        // Show an alert to let the user choose a dive site
+                        Alert.alert(
+                          'Select a Dive Site',
+                          'Multiple dive sites are clustered here. Please choose one:',
+                          [...siteOptions, { text: 'Cancel', style: 'cancel' }]
+                        );
                       }
                       // If there are many sites, zoom in
                       else {

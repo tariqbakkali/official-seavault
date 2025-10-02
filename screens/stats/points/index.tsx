@@ -10,9 +10,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Star, Eye, Heart, Trophy } from 'lucide-react-native';
-import { useUserStore } from '@/stores/user';
-import { useCatalogStore } from '@/stores/catalog';
-import { calculateUserStats } from '@/stores/user/utils/utils';
+import { useSyncedData } from '@/hooks/useSyncedData';
+import { calculateUserStats } from '@/services/statsService';
 import { Category } from '@/types/database';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { COLORS } from '@/constants/colors';
@@ -30,21 +29,40 @@ interface CategoryStat {
 export default function PointsScreen() {
   const [userData, setUserData] = React.useState<any | null>(null);
   const [userStats, setUserStats] = React.useState<any | null>(null);
-  const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
   
-  const { fetchUserData } = useUserStore();
-  const { fetchCatalog } = useCatalogStore();
+  const { creatures: allCreatures, categories: allCategories, sightings: allSightings, wishlists: allWishlists, profile: userProfile } = useSyncedData();
 
-  const loadData = async () => {
+  const loadData = React.useCallback(() => {
     try {
-      // Fetch data directly from the stores
-      const userData = await fetchUserData();
-      const catalog = await fetchCatalog();
+      // Extract data from observables
+      const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
+      const categoriesArray = allCategories ? Object.values(allCategories.get()) : [];
+      const sightingsArray = allSightings ? Object.values(allSightings.get()) : [];
+      const wishlistsArray = allWishlists ? Object.values(allWishlists.get()) : [];
+      // Extract profile data - it might be an observable object, so we need to get its value
+      const profileData = userProfile && typeof userProfile === 'object' && 'get' in userProfile 
+        ? userProfile.get() 
+        : userProfile;
       
-      if (userData && catalog) {
+      if (creaturesArray.length > 0 && categoriesArray.length > 0) {
+        // Create mock userData object to match the expected format
+        const userData = {
+          sightings: sightingsArray,
+          wishlists: wishlistsArray,
+          profile: profileData
+        };
+        
         setUserData(userData);
+        
+        // Create mock catalog object to match the expected format
+        const catalog = {
+          creatures: creaturesArray as any[],
+          categories: categoriesArray as any[],
+          achievements: [] // We don't have achievements in observables
+        };
+        
         // Calculate user stats using the function from the store
         const stats = calculateUserStats(userData, catalog);
         setUserStats(stats);
@@ -54,11 +72,11 @@ export default function PointsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [allCreatures, allCategories, allSightings, allWishlists, userProfile]);
 
   React.useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const renderCategoryStat = ({ item }: { item: CategoryStat }) => (
     <View style={styles.categoryCard}>
@@ -153,7 +171,7 @@ export default function PointsScreen() {
           </View>
           <View style={styles.statBox}>
             <Heart size={24} color={COLORS.ERROR} />
-            <Text style={styles.statValue}>{userData?.wishlists?.length || 0}</Text>
+            <Text style={styles.statValue}>{allWishlists ? Object.keys(allWishlists).length : 0}</Text>
             <Text style={styles.statLabel}>Wishlist</Text>
           </View>
         </View>

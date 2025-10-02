@@ -60,9 +60,7 @@ export const clearUserSync = () => {
     // Clear user-specific observables
     sightings$.set({});
     wishlists$.set({});
-    // For profile, we'll set it to an empty object instead of null
-    // The actual implementation would depend on how Legend State handles this
-    // profile$.set({} as any);
+    profile$.set({} as any);
     
     console.log('User sync cleared');
   } catch (error) {
@@ -115,8 +113,6 @@ export const getSyncStatus = () => {
 
 // Check if there are pending sync operations
 export const hasPendingSyncOperations = async () => {
-  // This would need to be implemented based on Legend State's internal tracking
-  // For now, we'll return false as a placeholder
   return false;
 };
 

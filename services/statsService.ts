@@ -1,5 +1,4 @@
 import { Creature, Category } from '@/types/database';
-import { CatalogData, UserData } from '@/stores/data/types/types'; // Updated import
 
 export interface UserStats {
   totalPoints: number;
@@ -13,11 +12,21 @@ export interface UserStats {
   categoryNames: Record<string, string>;
 }
 
-// Updated function signature to accept catalog directly
-export const calculateUserStats = (userData: UserData, catalog: CatalogData): UserStats => {
-  // Use the provided catalog
-  
-  if (!catalog) {
+// Updated function signature to accept observable data directly
+export const calculateUserStats = (
+  userData: {
+    sightings: any[];
+    wishlists: any[];
+    profile: any;
+  },
+  catalog: {
+    creatures: Creature[];
+    categories: Category[];
+    achievements: any[];
+  }
+): UserStats => {
+  // Handle case where catalog is not yet loaded
+  if (!catalog || !catalog.creatures || !catalog.categories) {
     return {
       totalPoints: 0,
       uniqueCreatures: 0,

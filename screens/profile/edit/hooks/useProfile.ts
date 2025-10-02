@@ -1,8 +1,7 @@
 import * as React from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { Profile } from '@/types/database';
-import { useAuthStore } from '@/stores/auth';
-import { useDataStore } from '@/stores/data';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import { showAlert } from '@/utils/alertUtils';
 import { supabase, uploadImage } from '@/services/supabase';
 import { router } from 'expo-router';
@@ -10,7 +9,6 @@ import { AuthError } from '@supabase/auth-js';
 import { hasUnsavedChanges, validateProfileForm } from '../utils/profileUtils';
 
 export const useProfile = () => {
-  const [profile, setProfile] = React.useState<Profile | null>(null);
   const [fullName, setFullName] = React.useState('');
   const [avatarUri, setAvatarUri] = React.useState<string | null>(null);
   const [avatarUploadError, setAvatarUploadError] = React.useState(false);
@@ -20,17 +18,17 @@ export const useProfile = () => {
   const [hasUnsavedChangesState, setHasUnsavedChangesState] = React.useState(false);
   const [validationErrors, setValidationErrors] = React.useState<{[key: string]: string}>({});
 
-  const { signOut } = useAuthStore();
-  const { fetchUserData, updateUserProfile } = useDataStore();
+  const { profile, fetchUserData, updateUserProfile } = useSyncedData();
 
   // Load profile data
   const loadProfileData = React.useCallback(async () => {
     try {
-      const userData = await fetchUserData();
-      if (userData?.profile) {
-        setProfile(userData.profile);
-        setFullName(userData.profile.full_name || '');
-        setAvatarUri(userData.profile.avatar_url);
+      await fetchUserData();
+      // Get the profile data from the observable
+      const profileData = profile.get();
+      if (profileData) {
+        setFullName(profileData.full_name || '');
+        setAvatarUri(profileData.avatar_url);
         setAvatarUploadError(false);
       }
     } catch (error) {
@@ -39,14 +37,17 @@ export const useProfile = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchUserData]);
+  }, [fetchUserData, profile]);
 
   // Track changes for unsaved changes warning (without email)
   React.useEffect(() => {
+    // Get current profile data from observable
+    const profileData = profile.get();
+    
     // Only check fullName and avatar changes since email cannot be changed
-    const hasChanges = profile && (
-      fullName !== (profile.full_name || '') ||
-      avatarUri !== profile.avatar_url
+    const hasChanges = profileData && (
+      fullName !== (profileData.full_name || '') ||
+      avatarUri !== profileData.avatar_url
     );
     setHasUnsavedChangesState(!!hasChanges);
   }, [fullName, avatarUri, profile]);
@@ -96,7 +97,7 @@ export const useProfile = () => {
 
   // Handle saving profile (without email update)
   const handleSaveProfile = React.useCallback(async () => {
-    if (!profile || Object.keys(validationErrors).length > 0) {
+    if (Object.keys(validationErrors).length > 0) {
       showAlert('Validation Error', 'Please fix the errors before saving');
       return;
     }
@@ -110,10 +111,12 @@ export const useProfile = () => {
         return;
       }
 
-      let avatarUrl = profile.avatar_url;
+      // Get current profile data from observable
+      const profileData = profile.get();
+      let avatarUrl = profileData?.avatar_url || null;
 
       // Upload new avatar if changed
-      if (avatarUri && avatarUri !== profile.avatar_url && avatarUri.startsWith('file://')) {
+      if (avatarUri && avatarUri !== (profileData?.avatar_url || null) && avatarUri.startsWith('file://')) {
         const imagePath = `avatars/${user.id}/${Date.now()}.jpg`;
         const uploadedUrl = await uploadImage(avatarUri, 'avatars', imagePath);
         
@@ -132,8 +135,7 @@ export const useProfile = () => {
         // Email is not included in the update since it cannot be changed
       };
 
-      const result = await updateUserProfile(updatedProfile);
-      if (!result) throw new Error('Failed to update profile');
+      await updateUserProfile(updatedProfile);
 
       setHasUnsavedChangesState(false);
       
@@ -150,7 +152,7 @@ export const useProfile = () => {
     } finally {
       setSaving(false);
     }
-  }, [profile, validationErrors, fullName, avatarUri, updateUserProfile]);
+  }, [validationErrors, fullName, avatarUri, profile, updateUserProfile]);
 
   // Handle account deletion
   const handleDeleteAccount = React.useCallback(async () => {
@@ -159,8 +161,11 @@ export const useProfile = () => {
       'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.',
       async () => {
         try {
-          await signOut();
-          const { error } = await supabase.auth.admin.deleteUser(profile?.id || '');
+          // Get current profile data from observable to get user ID
+          const profileData = profile.get();
+          
+          await supabase.auth.signOut();
+          const { error } = await supabase.auth.admin.deleteUser(profileData?.id || '');
           if (error) throw error;
           
           showAlert('Success', 'Account deleted successfully');
@@ -170,7 +175,7 @@ export const useProfile = () => {
         }
       }
     );
-  }, [profile?.id, signOut]);
+  }, [profile]);
 
   // Handle back navigation
   const handleBack = React.useCallback(() => {
@@ -187,7 +192,7 @@ export const useProfile = () => {
 
   return {
     // State
-    profile,
+    profile: profile.get(), // Return the actual profile data, not the observable
     fullName,
     setFullName,
     avatarUri,

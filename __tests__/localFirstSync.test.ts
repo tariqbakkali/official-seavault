@@ -55,8 +55,8 @@ describe('Local-First Sync Implementation', () => {
     const testUserId = 'test-user-id';
     setCurrentUserID(testUserId);
     
-    // In a real implementation, we would verify the user ID is set correctly
-    // For now, we'll just check that the function exists and can be called
+    // TODO: Verify user ID is set correctly in a real implementation
+    // TODO: Implement more comprehensive tests for localFirstSync
     expect(setCurrentUserID).toBeDefined();
   });
 
@@ -64,11 +64,17 @@ describe('Local-First Sync Implementation', () => {
     // Set current user ID
     setCurrentUserID('test-user-id');
     
-    // Create a test sighting
+    // Create a test sighting with all required fields
     const testSighting = {
       creature_id: 'test-creature',
       date: new Date().toISOString(),
       dive_notes: 'Test dive notes',
+      image_url: null,
+      dive_site_id: null,
+      dive_type: null,
+      time_of_day: null,
+      depth: null,
+      creature_notes: null,
     };
     
     // This should not throw an error

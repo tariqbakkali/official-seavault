@@ -40,7 +40,7 @@ interface CreatureSelectionModalProps {
   setCreatureSearchQuery: (query: string) => void;
   selectedCreatures: SelectedCreature[];
   handleCreatureToggle: (creature: Creature) => void;
-  handleCreatureImagePick: (creatureId: string) => void;
+  handleCreatureImagePick: (creatureId: string, imageUri: string) => void;
   handleCreatureNotes: (creatureId: string, notes: string) => void;
 }
 
@@ -117,8 +117,8 @@ const CreatureSelectionModal: React.FC<CreatureSelectionModalProps> = ({
 
       if (!result.canceled) {
         // In a real app, you would update the state here
-        // For now, we'll just call the handler
-        handleCreatureImagePick(creatureId);
+        // TODO: Implement proper creature selection logic
+        handleCreatureImagePick(creatureId, result.assets[0].uri);
       }
     } catch (error) {
       console.error('Error picking image:', error);

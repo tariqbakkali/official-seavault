@@ -6,16 +6,14 @@ import { Creature } from '@/types/database';
 
 interface ExploreCreatureCardProps {
   creature: Creature & {
-    isDiscovered?: boolean;
     category?: string;
   };
   onPress: () => void;
+  discoveredCreatureIds: Set<string>;
 }
 
-const ExploreCreatureCard: React.FC<ExploreCreatureCardProps> = ({ creature, onPress }: { creature: ExploreCreatureCardProps['creature'], onPress: ExploreCreatureCardProps['onPress'] }) => {
-  // For now, we'll just display the card without the discovered status
-  // In a real implementation, we would check if the user has discovered this creature
-  const isDiscovered = creature.isDiscovered || false;
+const ExploreCreatureCard: React.FC<ExploreCreatureCardProps> = ({ creature, onPress, discoveredCreatureIds }: { creature: ExploreCreatureCardProps['creature'], onPress: ExploreCreatureCardProps['onPress'], discoveredCreatureIds: ExploreCreatureCardProps['discoveredCreatureIds'] }) => {
+  const isDiscovered = discoveredCreatureIds.has(creature.id);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>

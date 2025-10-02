@@ -2,17 +2,15 @@ import * as React from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-
-  KeyboardAvoidingView,
   Platform,
+  KeyboardAvoidingView,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useAuthStore } from '@/stores/auth';
 import { supabase } from '@/services/supabase';
 import { ROUTES, COLORS, DIMENSIONS, APP_CONFIG } from '@/constants';
 import { isValidEmail } from './utils/authValidation';
@@ -25,10 +23,6 @@ export default function LoginScreen() {
   const [loading, setLoading] = React.useState(false);
   const [isSignUp, setIsSignUp] = React.useState(false);
   const insets = useSafeAreaInsets();
-  
-  // Use the new auth store instead of authService
-  const { signUp, signIn } = useAuthStore();
-
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -44,11 +38,21 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       if (isSignUp) {
-        const result = await signUp(email, password); // Updated usage
-        
-        if (result) {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: email.split('@')[0], // Use part of email as name
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        if (data) {
           // Check if email confirmation is required
-          if (result.user && !result.user.email_confirmed_at) {
+          if (data.user && !data.user.email_confirmed_at) {
             showAlert(
               'Confirm Your Email',
               'Please check your email and click the confirmation link to complete your registration.',
@@ -59,15 +63,19 @@ export default function LoginScreen() {
           } else {
             // User is already signed in
             showAlert('Success', 'Account created successfully!');
-
           }
         } else {
           showAlert('Error', 'Failed to create account. Please try again.');
         }
       } else {
-        const result = await signIn(email, password); // Updated usage
-        
-        if (result) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        if (data) {
           console.log('Sign in successful');
         } else {
           showAlert('Error', 'Invalid email or password. Please try again.');

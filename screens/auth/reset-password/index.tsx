@@ -2,33 +2,32 @@ import * as React from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   ScrollView,
   Linking,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useAuthStore } from '@/stores/auth';
-import { showAlert } from '@/utils/alertUtils';
-import { APP_CONFIG } from '@/constants';
 import { supabase } from '@/services/supabase';
+import { showAlert } from '@/utils/alertUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { COLORS, DIMENSIONS, APP_CONFIG } from '@/constants';
+import { PasswordStrengthIndicator } from '@/screens/auth/reset-password/components/PasswordStrengthIndicator';
 
 export default function ResetPasswordScreen() {
   const [password, setPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
   const [passwordStrength, setPasswordStrength] = React.useState(0);
+  const [loading, setLoading] = React.useState(false);
   const [canResetPassword, setCanResetPassword] = React.useState(false);
   const [checkingReset, setCheckingReset] = React.useState(true);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { updatePassword } = useAuthStore();
 
   // Function to parse URL and set up session
   const parseUrlAndSetupSession = async (url: string) => {
@@ -68,21 +67,6 @@ export default function ResetPasswordScreen() {
               return false;
             } else {
               console.log('Session set successfully:', data);
-              
-              // Manually update the auth store state since the listener might not trigger
-              if (data?.session) {
-                useAuthStore.setState({
-                  session: data.session,
-                  user: data.session.user,
-                  isAuthenticated: true
-                });
-                console.log('Manually updated auth store state');
-              }
-              
-              // Verify the session was actually set
-              const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-              console.log('Verified session:', { session, sessionError });
-              
               return true;
             }
           } else {
@@ -210,8 +194,12 @@ export default function ResetPasswordScreen() {
 
     setLoading(true);
     try {
-      // Since the session is already set by setSession, we can directly update the password
-      await updatePassword(password);
+      // Update the user's password directly using Supabase
+      const { error } = await supabase.auth.updateUser({
+        password: password
+      });
+      
+      if (error) throw error;
       
       showAlert(
         'Success',
@@ -228,9 +216,6 @@ export default function ResetPasswordScreen() {
       setLoading(false);
     }
   };
-
-  const strengthColors = ['#FF3B30', '#FF9500', '#FFCC00', '#34C759'];
-  const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong'];
 
   // Show loading state while checking
   if (checkingReset) {
@@ -293,28 +278,7 @@ export default function ResetPasswordScreen() {
               editable={!loading}
             />
             
-            <View style={styles.passwordStrengthContainer}>
-              <View style={styles.passwordStrengthBars}>
-                {[0, 1, 2, 3].map((index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.passwordStrengthBar,
-                      {
-                        backgroundColor: index < passwordStrength 
-                          ? strengthColors[Math.min(passwordStrength - 1, 3)]
-                          : '#333'
-                      }
-                    ]}
-                  />
-                ))}
-              </View>
-              {password ? (
-                <Text style={[styles.passwordStrengthText, { color: strengthColors[Math.min(passwordStrength - 1, 3)] }]}>
-                  {passwordStrength > 0 ? strengthLabels[Math.min(passwordStrength - 1, 3)] : 'Too short'}
-                </Text>
-              ) : null}
-            </View>
+            <PasswordStrengthIndicator password={password} passwordStrength={passwordStrength} />
 
             <Text style={styles.label}>Confirm New Password</Text>
             <TextInput
@@ -404,24 +368,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     borderWidth: 1,
     borderColor: '#333',
-  },
-  passwordStrengthContainer: {
-    gap: 8,
-  },
-  passwordStrengthBars: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  passwordStrengthBar: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#333',
-  },
-  passwordStrengthText: {
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
   },
   button: {
     backgroundColor: '#007AFF',

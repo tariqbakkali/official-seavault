@@ -1,4 +1,4 @@
-// Navigation Components (to be implemented)
+// TODO: Navigation Components
 // export { default as TabBar } from './TabBar';
 // export { default as Header } from './Header';
 

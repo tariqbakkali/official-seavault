@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { useDiveSitesStore } from '@/stores/diveSites/store/store';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import { router } from 'expo-router';
+import { Database } from '@/types/database';
 
 export interface UseAddDiveSiteReturn {
   diveSiteName: string;
@@ -29,7 +30,7 @@ export const useAddDiveSite = (): UseAddDiveSiteReturn => {
   const [isSelectingCoordinates, setIsSelectingCoordinates] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   
-  const { createDiveSite } = useDiveSitesStore();
+  const { createDiveSite } = useSyncedData();
 
   /**
    * Handle coordinate selection from map tap
@@ -98,26 +99,26 @@ export const useAddDiveSite = (): UseAddDiveSiteReturn => {
       const lat = parseFloat(latitude);
       const lng = parseFloat(longitude);
       
-      // Create a new dive site
-      const newDiveSite = await createDiveSite({
+      // Create a new dive site using the new Legend-State implementation
+      createDiveSite({
         name: diveSiteName,
         latitude: lat,
         longitude: lng,
         osm_id: null
       });
       
-      if (newDiveSite) {
-        Alert.alert(
-          'Success', 
-          'Dive site added successfully!',
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
-      }
+      // Since the createDiveSite function doesn't return the created dive site,
+      // we'll just show a success message
+      Alert.alert(
+        'Success', 
+        'Dive site added successfully!',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
     } catch (error) {
       console.error('Error creating dive site:', error);
       Alert.alert('Error', 'Failed to add dive site. Please try again.');
     }
-  }, [diveSiteName, latitude, longitude, validateForm, validationErrors]);
+  }, [diveSiteName, latitude, longitude, validateForm, validationErrors, createDiveSite]);
 
   // Check if form is valid
   const isValid = validationErrors.length === 0 && 

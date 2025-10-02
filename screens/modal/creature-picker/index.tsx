@@ -13,9 +13,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Search, Filter } from 'lucide-react-native';
 import { Database } from '@/types/database';
-import { useCatalogStore } from '@/stores/catalog';
+import { useSyncedData } from '@/hooks/useSyncedData';
 import ImageWithFallback from '@/components/ImageWithFallback';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { forceSyncAll } from '@/utils/syncUtils';
 
 type Creature = Database['public']['Tables']['creatures']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -24,8 +25,6 @@ const { width } = Dimensions.get('window');
 const cardWidth = (width - 60) / 2;
 
 export default function CreaturePickerScreen() {
-  const [creatures, setCreatures] = React.useState<Creature[]>([]);
-  const [categories, setCategories] = React.useState<Category[]>([]);
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -40,36 +39,33 @@ export default function CreaturePickerScreen() {
   const params = useLocalSearchParams();
   const creatureEntryId = params.creatureEntryId as string;
   
-  const { getCreatures, getCategories } = useCatalogStore();
+  const { creatures: allCreatures, categories: allCategories } = useSyncedData();
 
-  const loadData = async () => {
+  const loadData = React.useCallback(() => {
     try {
-      const [creaturesList, categoriesList] = await Promise.all([
-        getCreatures(),
-        getCategories()
-      ]);
-      setCreatures(creaturesList);
-      setCategories(categoriesList);
+      // Data is automatically available from observables
+      // Just mark loading as complete
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await loadData();
+      await forceSyncAll();
     } catch (error) {
       console.error('Error refreshing data:', error);
+    } finally {
+      setRefreshing(false);
     }
-    setRefreshing(false);
   };
 
   React.useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const handleCreatureSelect = (creatureId: string) => {
     // Pass the selected creature back to the log dive screen
@@ -113,7 +109,10 @@ export default function CreaturePickerScreen() {
 
   // Filter creatures based on search and filters
   const filteredCreatures = React.useMemo(() => {
-    let result = [...creatures];
+    const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
+    const categoriesArray = allCategories ? Object.values(allCategories) : [];
+    
+    let result = [...creaturesArray];
     
     // Apply search filter
     if (searchQuery) {
@@ -143,7 +142,7 @@ export default function CreaturePickerScreen() {
     });
     
     return result;
-  }, [creatures, searchQuery, filterOptions]);
+  }, [allCreatures, allCategories, searchQuery, filterOptions]);
 
   if (loading) {
     return (
@@ -199,7 +198,7 @@ export default function CreaturePickerScreen() {
                 All
               </Text>
             </TouchableOpacity>
-            {categories.map(category => (
+            {allCategories && Object.values(allCategories).map(category => (
               <TouchableOpacity
                 key={category.id}
                 style={[styles.filterOption, filterOptions.category === category.id && styles.filterOptionActive]}

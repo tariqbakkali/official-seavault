@@ -1,4 +1,4 @@
-// Data Display Components (to be implemented)
+// TODO: Data Display Components
 // export { default as Card } from './Card';
 // export { default as List } from './List';
 
