@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Fish, Grid3x3, Plus, User } from 'lucide-react-native';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { TAB_CONFIG, COLORS, DIMENSIONS } from '@/constants';
 
 export default function TabLayout() {

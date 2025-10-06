@@ -36,7 +36,7 @@ export default function CreatureDetailScreen() {
   const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
   
   // Use updated observable-based store
-  const { creatures, wishlists, createWishlistItem, removeWishlistItem, toggleWishlistItem } = useSyncedData();
+  const { creatures, wishlists, toggleWishlistItem, profile } = useSyncedData();
 
   React.useEffect(() => {
     loadData();
@@ -70,8 +70,8 @@ export default function CreatureDetailScreen() {
       setIsWishlisted(isCreatureWishlisted);
 
       // Fetch user data
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      const userId = profile.get()?.id;
+      if (userId) {
         // Fetch sightings for this creature using the sightings observable
         const allSightings = sightings || {};
         const sightingsArray = Object.values(allSightings).filter((sighting: any) => 
@@ -107,8 +107,8 @@ export default function CreatureDetailScreen() {
     if (!creature) return;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const userId = profile.get()?.id;
+      if (!userId) return;
 
       // Toggle wishlist item using the new toggleWishlistItem function
       // This function handles both adding and removing from wishlist

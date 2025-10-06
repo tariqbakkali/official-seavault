@@ -10,7 +10,4 @@ export { default as ErrorDisplay } from './ErrorDisplay';
 
 // Component Categories
 export * from './ui';
-export * from './data-display';
-export * from './feedback';
 export * from './forms';
-export * from './navigation';

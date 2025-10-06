@@ -21,14 +21,17 @@ import { Database } from '../types/database';
 
 // Hook that provides all data and mutation functions with loading and error states
 export const useSyncedData = () => {
+
+
   const categories = useObservable(categories$);
   const creatures = useObservable(creatures$);
   const diveSites = useObservable(diveSites$);
   const sightings = useObservable(sightings$);
   const wishlists = useObservable(wishlists$);
   const profile = useObservable(profile$);
-  const achievements = useObservable(achievements$);
   const allProfiles = useObservable(profiles$); // Added allProfiles
+  const achievements = useObservable(achievements$);
+
 
   // Get sync states for each observable
   const categoriesSyncState = useObservable(syncState(categories$));
@@ -106,15 +109,27 @@ export const useSyncedData = () => {
   // Ensure user profile exists, creating it if necessary
   const ensureUserProfile = async (): Promise<Database['public']['Tables']['profiles']['Row'] | null> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Try to get user from profile observable first
+      const existingProfile = profile$.get();
+      let user = null;
+
+      if (existingProfile && existingProfile.id) {
+        // If profile observable has an ID, assume user is authenticated and use that ID
+        user = { id: existingProfile.id, email: existingProfile.email };
+      } else {
+        // Fallback to direct Supabase auth if profile observable is not yet populated
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        user = authUser;
+      }
+
       if (!user) return null;
 
       // Try to fetch existing profile by loading the profile observable
       await profile$.sync().load();
-      const existingProfile = profile$.get();
+      const currentProfile = profile$.get();
 
-      if (existingProfile && existingProfile.id) {
-        return existingProfile;
+      if (currentProfile && currentProfile.id) {
+        return currentProfile;
       }
 
       // Create new profile if it doesn't exist
@@ -146,7 +161,19 @@ export const useSyncedData = () => {
     profileData: Partial<Database['public']['Tables']['profiles']['Insert']>
   ): Promise<Database['public']['Tables']['profiles']['Row'] | null> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Try to get user from profile observable first
+      const existingProfile = profile$.get();
+      let user = null;
+
+      if (existingProfile && existingProfile.id) {
+        // If profile observable has an ID, assume user is authenticated and use that ID
+        user = { id: existingProfile.id, email: existingProfile.email };
+      } else {
+        // Fallback to direct Supabase auth if profile observable is not yet populated
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        user = authUser;
+      }
+
       if (!user) throw new Error('No authenticated user');
 
       const fullProfileData: Database['public']['Tables']['profiles']['Insert'] = {

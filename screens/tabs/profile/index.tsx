@@ -31,9 +31,7 @@ interface MenuItem {
 
 export default function ProfileScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
-  const [userData, setUserData] = React.useState<any>(null);
   const [userStats, setUserStats] = React.useState<any>(null);
-  const [user, setUser] = React.useState<any>(null);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   
@@ -56,8 +54,6 @@ export default function ProfileScreen() {
         wishlists: wishlistsArray,
         profile: profileData
       };
-      
-      setUserData(userData);
       
       // Create mock catalog object to match the expected format
       const catalog = {
@@ -87,13 +83,6 @@ export default function ProfileScreen() {
   };
 
   useEffect(() => {
-    // Get current user
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    
-    getCurrentUser();
     loadData();
   }, [loadData]);
 
@@ -166,7 +155,7 @@ export default function ProfileScreen() {
           <Text style={styles.name}>
             {profileData?.full_name || 'User'}
           </Text>
-          <Text style={styles.email}>{user?.email}</Text>
+          <Text style={styles.email}>{profileData?.email}</Text>
         </View>
 
         {/* Stats Section */}

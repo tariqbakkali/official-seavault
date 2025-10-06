@@ -128,7 +128,7 @@ const CustomClusteredMapView = ({
       // console.log('Generated clusters:', newClusters.length);
       setClusters(newClusters);
     } catch (error) {
-      // console.warn('Error updating clusters:', error);
+      console.warn('Error updating clusters:', error);
       setClusters(data);
     }
   };

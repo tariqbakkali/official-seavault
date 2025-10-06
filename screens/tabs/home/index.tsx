@@ -56,23 +56,24 @@ export default function HomeScreen() {
   // Use the new specialized stores
   const { creatures: allCreatures, categories: allCategories, sightings: allSightings, wishlists: allWishlists, profile: userProfile, allProfiles, achievements: allAchievements } = useSyncedData();
 
-  const loadData = React.useCallback(() => {
+  const loadData = () => {
     try {
       // Extract data from observables with proper typing
       const creaturesObj = allCreatures?.get() || {};
       const categoriesObj = allCategories?.get() || {};
       const sightingsObj = allSightings?.get() || {};
       const wishlistsObj = allWishlists?.get() || {};
-      
+       
       const creaturesArray = Object.values(creaturesObj) as Creature[];
       const categoriesArray = Object.values(categoriesObj) as Category[];
       const sightingsArray = Object.values(sightingsObj) as Sighting[];
       const wishlistsArray = Object.values(wishlistsObj) as Wishlist[];
-      
+    
       const profileData = userProfile && typeof userProfile === 'object' && 'get' in userProfile 
         ? userProfile.get() 
         : userProfile;
       const allProfilesData = allProfiles && allProfiles.get() ? allProfiles.get() as Record<string, Profile> : {};
+
       
       // Create mock userData object to match the expected format
       const userData = {
@@ -104,7 +105,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, [allCreatures, allCategories, allSightings, allWishlists, userProfile, allProfiles, allAchievements]);
+  }
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -117,16 +118,8 @@ export default function HomeScreen() {
     }
   };
 
-  React.useEffect(() => {
-    loadData();
-  }, [loadData]);
+  React.useEffect(()=> {loadData()},[]);
 
-  // Reload data when screen comes into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      loadData();
-    }, [loadData])
-  );
 
   const stats: StatCard[] = [
     {

@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  Platform,
 } from 'react-native';
 import * as ExpoImagePicker from 'expo-image-picker';
 import { Camera } from 'lucide-react-native';

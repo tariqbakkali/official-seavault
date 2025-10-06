@@ -12,9 +12,10 @@ import {
   getDiveSites,
   getSightings,
   getWishlists,
-  getProfile
+  getProfile,
+  profiles$, // Import profiles$ observable
+  achievements$, // Import achievements$ observable
 } from '../stores/syncedObservables';
-import { supabase } from '../services/supabase';
 
 /**
  * Utility functions for data synchronization in the local-first app
@@ -27,6 +28,8 @@ export const initializeSync = async () => {
     categories$.get();
     creatures$.get();
     diveSites$.get();
+    profiles$.get(); // Activate profiles observable
+    achievements$.get(); // Activate achievements observable
     
     console.log('Sync initialization completed');
   } catch (error) {
@@ -92,7 +95,10 @@ export const forceSyncAll = async () => {
     sightings$.get();
     wishlists$.get();
     profile$.get();
-    
+    profiles$.get(); // Force sync profiles observable
+    achievements$.get(); // Force sync achievements observable
+
+
     console.log('Forced sync completed');
   } catch (error) {
     console.error('Error during forced sync:', error);
@@ -108,6 +114,8 @@ export const getSyncStatus = () => {
     sightingsLoaded: getSightings() !== undefined,
     wishlistsLoaded: getWishlists() !== undefined,
     profileLoaded: getProfile() !== undefined,
+    profilesLoaded: profiles$.get() !== undefined, // Include profiles loading status
+    achievementsLoaded: achievements$.get() !== undefined, // Include achievements loading status
   };
 };
 

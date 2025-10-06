@@ -105,8 +105,8 @@ export const useProfile = () => {
     setSaving(true);
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const userId = profile.get()?.id;
+      if (!userId) {
         showAlert('Error', 'Please sign in to update profile');
         return;
       }

@@ -1,4 +1,4 @@
-import { Link, Stack, router, usePathname } from 'expo-router';
+import { Stack, router, usePathname } from 'expo-router';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,7 +11,7 @@ export default function NotFoundScreen() {
       <Stack.Screen options={{ title: 'Page Not Found' }} />
       <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <Text style={styles.title}>Page Not Found</Text>
-        <Text style={styles.text}>Sorry, the page you're looking for doesn't exist or the link is invalid.</Text>
+        <Text style={styles.text}>Sorry, the page you&#39;re looking for doesn&#39;t exist or the link is invalid.</Text>
         {pathname && (
           <Text style={styles.pathText}>Requested path: {pathname}</Text>
         )}

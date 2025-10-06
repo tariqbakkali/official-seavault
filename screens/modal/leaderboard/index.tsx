@@ -43,59 +43,40 @@ export default function LeaderboardModal() {
 
   // Fetch leaderboard data directly from Supabase
   const fetchLeaderboard = async (limit: number = 10): Promise<LeaderboardEntryType[]> => {
-    // Simple approach: get users and calculate stats in JavaScript
-    // This is less efficient but more reliable
-    
-    const { data: users, error: usersError } = await supabase
-      .from('profiles')
-      .select(`
-        id,
-        full_name,
-        avatar_url
-      `)
-      .not('full_name', 'is', null)
-      .not('full_name', 'eq', '')
-      .limit(limit);
-    
-    if (usersError) throw usersError;
-    
+    const allProfiles = profiles.get() || {};
+    const allSightings = sightings.get() || {};
+
+    const users = Object.values(allProfiles).filter(p => p.full_name && p.full_name !== '');
+
     // Calculate stats for each user
-    const leaderboardData = await Promise.all(
-      (users || []).map(async (user: any) => {
-        // Get all sightings for this user
-        const { data: sightings, error: sightingsError } = await supabase
-          .from('sightings')
-          .select(`
-            creature_id,
-            creatures (points)
-          `)
-          .eq('user_id', user.id);
-        
-        if (sightingsError) throw sightingsError;
-        
-        // Calculate unique creatures and total points
-        const uniqueCreatures = new Set(sightings?.map((s: any) => s.creature_id) || []);
-        const totalPoints = sightings?.reduce((sum: number, sighting: any) => {
-          return sum + (sighting.creatures?.points || 0);
-        }, 0) || 0;
-        
-        return {
-          user_id: user.id,
-          full_name: user.full_name,
-          avatar_url: user.avatar_url,
-          creatures_discovered: uniqueCreatures.size,
-          total_points: totalPoints
-        };
-      })
-    );
-    
+    const leaderboardData = users.map((user: any) => {
+      // Get all sightings for this user
+      const userSightings = Object.values(allSightings).filter((s: any) => s.user_id === user.id);
+
+      // Calculate unique creatures and total points
+      const uniqueCreatures = new Set(userSightings.map((s: any) => s.creature_id));
+      const totalPoints = userSightings.reduce((sum: number, sighting: any) => {
+        // Assuming creature points are available in the creatures observable
+        const creature = creatures.get()?.[sighting.creature_id];
+        return sum + (creature?.points || 0);
+      }, 0);
+
+      return {
+        user_id: user.id,
+        full_name: user.full_name,
+        avatar_url: user.avatar_url,
+        creatures_discovered: uniqueCreatures.size,
+        total_points: totalPoints
+      };
+    });
+
     // Sort by points (descending), then by creatures discovered (descending)
     return leaderboardData.sort((a, b) => {
       if (b.total_points !== a.total_points) {
         return b.total_points - a.total_points;
       }
       return b.creatures_discovered - a.creatures_discovered;
-    });
+    }).slice(0, limit);
   };
 
   const loadData = async () => {
@@ -108,17 +89,17 @@ export default function LeaderboardModal() {
       ]);
       
       // Get current user ID
-      const { data: { user } } = await supabase.auth.getUser();
+      const currentUserId = profile.get()?.id;
       
       // Process leaderboard data
-      if (leaderboardResult && user) {
+      if (leaderboardResult && currentUserId) {
         const processedData = (leaderboardResult as LeaderboardEntryType[]).map((entry, index) => ({
           id: entry.user_id,
           name: entry.full_name || 'Unknown User',
           avatar: entry.avatar_url,
           creatures: Number(entry.creatures_discovered),
           points: Number(entry.total_points),
-          isCurrentUser: entry.user_id === user.id,
+          isCurrentUser: entry.user_id === currentUserId,
           rank: index + 1
         }));
         

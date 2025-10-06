@@ -23,7 +23,7 @@ jest.mock('../services/supabase', () => ({
   }
 }));
 
-import { renderHook } from '@testing-library/react-hooks';
+import { renderHook } from '@testing-library/react-native';
 import { configureLegendState } from '../services/legendStateConfig';
 import { useSyncedData } from '../hooks/useSyncedData';
 import * as syncedObservables from '../stores/syncedObservables';
