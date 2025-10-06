@@ -17,6 +17,7 @@ import {
   achievements$, // Import achievements$ observable
   currentUserID$ // Import the observable
 } from '../stores/syncedObservables';
+import { configureLegendState } from '@/services/legendStateConfig';
 
 /**
  * Utility functions for data synchronization in the local-first app
@@ -105,6 +106,27 @@ export const forceSyncAll = async () => {
     console.error('Error during forced sync:', error);
   }
 };
+
+const synced = configureLegendState();
+
+export const onSyncPress = async () => {
+  try {
+    // Call sync on each observable to flush local changes to remote
+    await synced.sync(categories$);  
+    await synced.sync(creatures$);  
+    await synced.sync(diveSites$);
+    await synced.sync(sightings$);
+    await synced.sync(wishlists$);
+    await synced.sync(profile$);
+    await synced.sync(profiles$);
+    await synced.sync(achievements$);
+
+    console.log('Manual sync completed');
+  } catch (error) {
+    console.error('Manual sync failed:', error);
+  }
+};
+
 
 // Get sync status
 export const getSyncStatus = () => {

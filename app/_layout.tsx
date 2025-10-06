@@ -5,7 +5,7 @@ import { ActivityIndicator, View, Text } from 'react-native';
 import { supabase } from '@/services/supabase';
 import * as Sentry from 'sentry-expo';
 import { setCurrentUserID } from '@/stores/syncedObservables';
-import { forceSyncAll } from '@/utils/syncUtils';
+import { initializeApp, initializeUserSession, cleanupUserSession } from '@/utils/appInitializer';
 import 'react-native-get-random-values';
 
 // Initialize Sentry
@@ -26,16 +26,22 @@ export default function RootLayout() {
   useEffect(() => {
     const checkInitialSessionAndSync = async () => {
       try {
+        // Initialize the app
+        await initializeApp();
+        
         const { data: { session } } = await supabase.auth.getSession();
         const userId = session?.user?.id || null;
+        
+        if (userId) {
+          await initializeUserSession(userId);
+        }
+        
         setCurrentUserID(userId);
         setCurrentUserIDState(userId);
         
         // Log for debugging
         console.log('profile (current user):', profile);
         console.log('currentUserID:', userId);
-        
-        await forceSyncAll(); // Ensure all data is synchronized after session check
       } catch (error) {
         console.error('Error checking initial session or syncing data:', error);
       } finally {
@@ -49,6 +55,13 @@ export default function RootLayout() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const userId = session?.user?.id || null;
       console.log('Auth state changed:', userId);
+      
+      if (userId) {
+        initializeUserSession(userId);
+      } else {
+        cleanupUserSession();
+      }
+      
       setCurrentUserID(userId);
       setCurrentUserIDState(userId);
     });
