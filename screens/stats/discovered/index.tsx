@@ -38,8 +38,8 @@ export default function DiscoveredScreen() {
   const loadData = () => {
     try {
       // Extract data from observables
-      const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
-      const sightingsArray = allSightings ? Object.values(allSightings.get()) : [];
+      const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
+      const sightingsArray = allSightings ? Object.values(allSightings) : [];
 
       if (creaturesArray.length > 0 && sightingsArray.length > 0) {
         // Group sightings by creature

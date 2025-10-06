@@ -23,7 +23,6 @@ export default function EditProfileScreen() {
   const insets = useSafeAreaInsets();
   const {
     // State
-    profile,
     fullName,
     setFullName,
     avatarUri,

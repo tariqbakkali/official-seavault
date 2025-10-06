@@ -15,6 +15,7 @@ import {
   getProfile,
   profiles$, // Import profiles$ observable
   achievements$, // Import achievements$ observable
+  currentUserID$ // Import the observable
 } from '../stores/syncedObservables';
 
 /**

@@ -44,7 +44,7 @@ export default function CreatureDetailScreen() {
 
   // Watch for changes in wishlists to update the UI
   React.useEffect(() => {
-    const userWishlists = wishlists.get() || {};
+    const userWishlists = wishlists || {};
     const wishlistEntries = Object.values(userWishlists);
     const isCreatureWishlisted = wishlistEntries.some((item: any) => 
       item && item.creature_id === id
@@ -57,12 +57,12 @@ export default function CreatureDetailScreen() {
       setLoading(true);
       
       // Fetch creature data using the new observable-based approach
-      const allCreaturesArray = creatures.get() ? Object.values(creatures.get()) : [];
-      const creatureData = allCreaturesArray.find((c: any) => c.id === id);
+      const allCreaturesArray = creatures ? Object.values(creatures) : [];
+      const creatureData: any = allCreaturesArray.find((c: any) => c.id === id);
       setCreature(creatureData || null);
 
       // Check if creature is wishlisted using the wishlists observable
-      const userWishlists = wishlists.get() || {};
+      const userWishlists = wishlists || {};
       const wishlistEntries = Object.values(userWishlists);
       const isCreatureWishlisted = wishlistEntries.some((item: any) => 
         item && item.creature_id === id
@@ -70,7 +70,7 @@ export default function CreatureDetailScreen() {
       setIsWishlisted(isCreatureWishlisted);
 
       // Fetch user data
-      const userId = profile.get()?.id;
+      const userId = profile?.id;
       if (userId) {
         // Fetch sightings for this creature using the sightings observable
         const allSightings = sightings || {};
@@ -107,7 +107,7 @@ export default function CreatureDetailScreen() {
     if (!creature) return;
 
     try {
-      const userId = profile.get()?.id;
+      const userId = profile?.id;
       if (!userId) return;
 
       // Toggle wishlist item using the new toggleWishlistItem function

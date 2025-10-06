@@ -37,14 +37,12 @@ export default function PointsScreen() {
   const loadData = React.useCallback(() => {
     try {
       // Extract data from observables
-      const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
-      const categoriesArray = allCategories ? Object.values(allCategories.get()) : [];
-      const sightingsArray = allSightings ? Object.values(allSightings.get()) : [];
-      const wishlistsArray = allWishlists ? Object.values(allWishlists.get()) : [];
-      // Extract profile data - it might be an observable object, so we need to get its value
-      const profileData = userProfile && typeof userProfile === 'object' && 'get' in userProfile 
-        ? userProfile.get() 
-        : userProfile;
+      const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
+      const categoriesArray = allCategories ? Object.values(allCategories) : [];
+      const sightingsArray = allSightings ? Object.values(allSightings) : [];
+      const wishlistsArray = allWishlists ? Object.values(allWishlists) : [];
+      // Extract profile data - it's now already unwrapped
+      const profileData = userProfile;
       
       if (creaturesArray.length > 0 && categoriesArray.length > 0) {
         // Create mock userData object to match the expected format

@@ -6,6 +6,7 @@ import { supabase } from '@/services/supabase';
 import * as Sentry from 'sentry-expo';
 import { setCurrentUserID } from '@/stores/syncedObservables';
 import { forceSyncAll } from '@/utils/syncUtils';
+import 'react-native-get-random-values';
 
 // Initialize Sentry
 Sentry.init({
@@ -17,13 +18,23 @@ Sentry.init({
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useSyncedData();
-  const currentUserID = profile?.id; // Derive currentUserID from the profile observable
-
+  const [currentUserID, setCurrentUserIDState] = useState<string | null>(null);
+  
+  // Get the current user's profile from the profile object
+  // The profile should be the current user's profile, not all profiles
+  
   useEffect(() => {
     const checkInitialSessionAndSync = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        setCurrentUserID(session?.user?.id || null);
+        const userId = session?.user?.id || null;
+        setCurrentUserID(userId);
+        setCurrentUserIDState(userId);
+        
+        // Log for debugging
+        console.log('profile (current user):', profile);
+        console.log('currentUserID:', userId);
+        
         await forceSyncAll(); // Ensure all data is synchronized after session check
       } catch (error) {
         console.error('Error checking initial session or syncing data:', error);
@@ -37,7 +48,9 @@ export default function RootLayout() {
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const userId = session?.user?.id || null;
+      console.log('Auth state changed:', userId);
       setCurrentUserID(userId);
+      setCurrentUserIDState(userId);
     });
 
     // Cleanup subscription
@@ -56,6 +69,9 @@ export default function RootLayout() {
     );
   }
   
+  // Determine if user is authenticated based on whether we have a current user ID
+  const isAuthenticated = !!currentUserID;
+  
   return (
     <Stack
       screenOptions={{
@@ -63,11 +79,11 @@ export default function RootLayout() {
       }}
     >
 
-      <Stack.Protected guard={!currentUserID}>
+      <Stack.Protected guard={!isAuthenticated}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
 
-      <Stack.Protected guard={!!currentUserID}>
+      <Stack.Protected guard={isAuthenticated}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="profile/edit" />
         <Stack.Screen name="profile/change-password" />

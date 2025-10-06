@@ -13,12 +13,15 @@ export type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Achievement = Database['public']['Tables']['achievements']['Row'];
 
-// User ID tracking
-let currentUserID: string | null = null;
+// User ID tracking - using an observable to make it reactive
+export const currentUserID$ = observable<string | null>(null);
 
 export const setCurrentUserID = (userId: string | null) => {
-  currentUserID = userId;
+  currentUserID$.set(userId);
 };
+
+// Helper function to get current user ID
+export const getCurrentUserID = () => currentUserID$.get();
 
 // Synced observables for read-only data (catalog)
 export const categories$ = observable(createSyncedObservable({
@@ -63,36 +66,45 @@ export const diveSites$ = observable(createSyncedObservable({
 export const sightings$ = observable(createSyncedObservable({
   supabase,
   collection: 'sightings',
-  filter: (select: any) => currentUserID ? select.eq('user_id', currentUserID) : select,
+  filter: (select: any) => {
+    const userId = currentUserID$.get();
+    return userId ? select.eq('user_id', userId) : select;
+  },
   actions: ['read', 'create', 'update', 'delete'],
   persist: { name: 'sightings', retrySync: true },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
-  realtime: currentUserID ? { filter: `user_id=eq.${currentUserID}` } : false,
+  realtime: true, // Enable realtime for all, filtering will be done by Supabase
 }));
 
 // Wishlists observable - user-specific
 export const wishlists$ = observable(createSyncedObservable({
   supabase,
   collection: 'wishlists',
-  filter: (select: any) => currentUserID ? select.eq('user_id', currentUserID) : select,
+  filter: (select: any) => {
+    const userId = currentUserID$.get();
+    return userId ? select.eq('user_id', userId) : select;
+  },
   actions: ['read', 'create', 'delete'],
   persist: { name: 'wishlists', retrySync: true },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
-  realtime: currentUserID ? { filter: `user_id=eq.${currentUserID}` } : false,
+  realtime: true, // Enable realtime for all, filtering will be done by Supabase
 }));
 
 // Profile observable - user-specific
 export const profile$ = observable(createSyncedObservable({
   supabase,
   collection: 'profiles',
-  filter: (select: any) => currentUserID ? select.eq('id', currentUserID) : select,
+  filter: (select: any) => {
+    const userId = currentUserID$.get();
+    return userId ? select.eq('id', userId) : select;
+  },
   actions: ['read', 'update'],
   persist: { name: 'profile', retrySync: true },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
-  realtime: currentUserID ? { filter: `id=eq.${currentUserID}` } : false,
+  realtime: true, // Enable realtime for all, filtering will be done by Supabase
 }));
 
 export const profiles$ = observable(createSyncedObservable({
@@ -115,7 +127,8 @@ export const getProfile = () => profile$.get();
 
 // Utility functions for creating new records
 export const createSighting = (sightingData: Omit<Sighting, 'id' | 'created_at' | 'user_id'>) => {
-  if (!currentUserID) {
+  const userId = currentUserID$.get();
+  if (!userId) {
     throw new Error('User must be logged in to create sightings');
   }
   
@@ -124,13 +137,14 @@ export const createSighting = (sightingData: Omit<Sighting, 'id' | 'created_at' 
   sightings$[id].set({
     ...sightingData,
     id,
-    user_id: currentUserID,
+    user_id: userId,
     created_at: new Date().toISOString(),
   } as Sighting);
 };
 
 export const createWishlistItem = (creatureId: string) => {
-  if (!currentUserID) {
+  const userId = currentUserID$.get();
+  if (!userId) {
     throw new Error('User must be logged in to create wishlist items');
   }
   
@@ -138,14 +152,15 @@ export const createWishlistItem = (creatureId: string) => {
   
   wishlists$[id].set({
     id,
-    user_id: currentUserID,
+    user_id: userId,
     creature_id: creatureId,
     created_at: new Date().toISOString(),
   } as Wishlist);
 };
 
 export const createDiveSite = (diveSiteData: Omit<DiveSite, 'id' | 'created_at'>) => {
-  if (!currentUserID) {
+  const userId = currentUserID$.get();
+  if (!userId) {
     throw new Error('User must be logged in to create dive sites');
   }
   
@@ -164,7 +179,8 @@ export const removeWishlistItem = (wishlistId: string) => {
 
 // Toggle wishlist item - adds if not in wishlist, removes if already in wishlist
 export const toggleWishlistItem = async (creatureId: string): Promise<boolean> => {
-  if (!currentUserID) {
+  const userId = currentUserID$.get();
+  if (!userId) {
     throw new Error('User must be logged in to toggle wishlist items');
   }
   
@@ -190,7 +206,8 @@ export const toggleWishlistItem = async (creatureId: string): Promise<boolean> =
 
 // Function to update user profile
 export const updateUserProfile = async (updates: Partial<Profile>) => {
-  if (!currentUserID) {
+  const userId = currentUserID$.get();
+  if (!userId) {
     throw new Error('User must be logged in to update profile');
   }
   
@@ -201,9 +218,6 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
   profile$.set({
     ...currentProfile,
     ...updates,
-    id: currentUserID, // Ensure the ID remains correct
+    id: userId, // Ensure the ID remains correct
   });
-  
-  // Sync the changes to Supabase
-  await profile$.sync().save();
 };

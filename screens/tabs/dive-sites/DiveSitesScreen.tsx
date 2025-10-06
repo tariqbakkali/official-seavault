@@ -14,7 +14,7 @@ const DiveSitesScreen = () => {
   const { diveSites, isLoading, errors } = useSyncedData();
 
   // Extract the actual data from the observable
-  const diveSitesData = diveSites.get() || [];
+  const diveSitesData = diveSites || [];
 
   const renderDiveSite = ({ item }: { item: any }) => (
     <View style={styles.siteCard}>
@@ -31,7 +31,7 @@ const DiveSitesScreen = () => {
 
   // Convert error observable to string if needed
   const errorMessage = typeof errors.diveSites === 'object' && errors.diveSites !== null ? 
-    (errors.diveSites.get ? errors.diveSites.get() : JSON.stringify(errors.diveSites)) : 
+    JSON.stringify(errors.diveSites) : 
     errors.diveSites;
 
   if (errorMessage) {

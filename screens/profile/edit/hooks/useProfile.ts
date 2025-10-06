@@ -25,7 +25,7 @@ export const useProfile = () => {
     try {
       await fetchUserData();
       // Get the profile data from the observable
-      const profileData = profile.get();
+      const profileData = profile;
       if (profileData) {
         setFullName(profileData.full_name || '');
         setAvatarUri(profileData.avatar_url);
@@ -42,7 +42,7 @@ export const useProfile = () => {
   // Track changes for unsaved changes warning (without email)
   React.useEffect(() => {
     // Get current profile data from observable
-    const profileData = profile.get();
+    const profileData = profile;
     
     // Only check fullName and avatar changes since email cannot be changed
     const hasChanges = profileData && (
@@ -105,19 +105,20 @@ export const useProfile = () => {
     setSaving(true);
     
     try {
-      const userId = profile.get()?.id;
+      const userId = profile?.id;
       if (!userId) {
         showAlert('Error', 'Please sign in to update profile');
         return;
       }
 
       // Get current profile data from observable
-      const profileData = profile.get();
+      const profileData = profile;
       let avatarUrl = profileData?.avatar_url || null;
 
       // Upload new avatar if changed
       if (avatarUri && avatarUri !== (profileData?.avatar_url || null) && avatarUri.startsWith('file://')) {
-        const imagePath = `avatars/${user.id}/${Date.now()}.jpg`;
+        const userId = profile?.id;
+        const imagePath = `avatars/${userId}/${Date.now()}.jpg`;
         const uploadedUrl = await uploadImage(avatarUri, 'avatars', imagePath);
         
         if (uploadedUrl) {
@@ -162,7 +163,7 @@ export const useProfile = () => {
       async () => {
         try {
           // Get current profile data from observable to get user ID
-          const profileData = profile.get();
+          const profileData = profile;
           
           await supabase.auth.signOut();
           const { error } = await supabase.auth.admin.deleteUser(profileData?.id || '');
@@ -192,7 +193,7 @@ export const useProfile = () => {
 
   return {
     // State
-    profile: profile.get(), // Return the actual profile data, not the observable
+    profile: profile, // Return the actual profile data, not the observable
     fullName,
     setFullName,
     avatarUri,

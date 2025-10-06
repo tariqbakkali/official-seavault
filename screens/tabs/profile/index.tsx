@@ -40,13 +40,11 @@ export default function ProfileScreen() {
   const loadData = React.useCallback(() => {
     try {
       // Extract data from observables
-      const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
-      const categoriesArray = allCategories ? Object.values(allCategories.get()) : [];
-      const sightingsArray = allSightings ? Object.values(allSightings.get()) : [];
-      const wishlistsArray = allWishlists ? Object.values(allWishlists.get()) : [];
-      const profileData = userProfile && typeof userProfile === 'object' && 'get' in userProfile 
-        ? userProfile.get() 
-        : userProfile;
+      const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
+      const categoriesArray = allCategories ? Object.values(allCategories) : [];
+      const sightingsArray = allSightings ? Object.values(allSightings) : [];
+      const wishlistsArray = allWishlists ? Object.values(allWishlists) : [];
+      const profileData = userProfile;
       
       // Create mock userData object to match the expected format
       const userData = {
@@ -110,9 +108,7 @@ export default function ProfileScreen() {
   };
 
   // Extract profile data safely
-  const profileData = userProfile && typeof userProfile === 'object' && 'get' in userProfile 
-    ? userProfile.get() 
-    : userProfile;
+  const profileData = userProfile;
 
   const menuItems: MenuItem[] = [
     {

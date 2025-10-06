@@ -59,20 +59,18 @@ export default function HomeScreen() {
   const loadData = () => {
     try {
       // Extract data from observables with proper typing
-      const creaturesObj = allCreatures?.get() || {};
-      const categoriesObj = allCategories?.get() || {};
-      const sightingsObj = allSightings?.get() || {};
-      const wishlistsObj = allWishlists?.get() || {};
+      const creaturesObj = allCreatures || {};
+      const categoriesObj = allCategories || {};
+      const sightingsObj = allSightings || {};
+      const wishlistsObj = allWishlists || {};
        
       const creaturesArray = Object.values(creaturesObj) as Creature[];
       const categoriesArray = Object.values(categoriesObj) as Category[];
       const sightingsArray = Object.values(sightingsObj) as Sighting[];
       const wishlistsArray = Object.values(wishlistsObj) as Wishlist[];
     
-      const profileData = userProfile && typeof userProfile === 'object' && 'get' in userProfile 
-        ? userProfile.get() 
-        : userProfile;
-      const allProfilesData = allProfiles && allProfiles.get() ? allProfiles.get() as Record<string, Profile> : {};
+      const profileData = userProfile;
+      const allProfilesData = allProfiles || {};
 
       
       // Create mock userData object to match the expected format
@@ -88,7 +86,7 @@ export default function HomeScreen() {
       const catalog = {
         creatures: creaturesArray,
         categories: categoriesArray,
-        achievements: allAchievements && allAchievements.get() ? Object.values(allAchievements.get()) : [],
+        achievements: allAchievements ? Object.values(allAchievements) : [],
       };
       
       // Calculate user stats

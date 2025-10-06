@@ -26,7 +26,7 @@ export const useDiveSites = () => {
     try {
       // In the new implementation, data is automatically loaded by observables
       // We just return the current data
-      return diveSites.get() || [];
+      return diveSites || [];
     } catch (err) {
       console.error('Failed to load dive sites:', err);
       return [];
@@ -38,7 +38,7 @@ export const useDiveSites = () => {
    */
   const fetchDiveSiteById = useCallback(async (id: string) => {
     try {
-      const allDiveSites = diveSites.get() || [];
+      const allDiveSites = diveSites || [];
       return allDiveSites.find((site: any) => site.id === id) || null;
     } catch (err) {
       console.error(`Failed to fetch dive site with id ${id}:`, err);

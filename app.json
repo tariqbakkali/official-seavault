@@ -14,7 +14,10 @@
     },
     "android": {
       "package": "com.seavault.app",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -43,6 +46,9 @@
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhxcWVidm96cHZ3cG9weHRpeHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwOTQwODUsImV4cCI6MjA3MzY3MDA4NX0.WYn1ISKphuoVM92XKiVrywxpPrBGvIuV3tGP88Y6Wqc",
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "61041964-a99c-4b5e-874e-5250ca4e93e1"
       }
     },
     "assetBundlePatterns": [

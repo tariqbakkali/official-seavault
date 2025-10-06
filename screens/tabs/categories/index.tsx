@@ -40,13 +40,11 @@ export default function CategoriesTab() {
       setIsOffline(!online);
       
       // Extract data from observables properly
-      const categoriesArray = allCategories ? Object.values(allCategories.get()) : [];
-      const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
-      const sightingsArray = allSightings ? Object.values(allSightings.get()) : [];
-      const wishlistsArray = allWishlists ? Object.values(allWishlists.get()) : [];
-      const profileData = userProfile && typeof userProfile === 'object' && 'get' in userProfile 
-        ? userProfile.get() 
-        : userProfile;
+      const categoriesArray = allCategories ? Object.values(allCategories) : [];
+      const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
+      const sightingsArray = allSightings ? Object.values(allSightings) : [];
+      const wishlistsArray = allWishlists ? Object.values(allWishlists) : [];
+      const profileData = userProfile;
       
       if (categoriesArray.length > 0) {
         // Create mock userData object to match the expected format
@@ -97,7 +95,7 @@ export default function CategoriesTab() {
       console.error('Error loading categories:', error);
       // Try to load from cache if online fetch fails
       try {
-        const categoriesArray = allCategories ? Object.values(allCategories.get()) : [];
+        const categoriesArray = allCategories ? Object.values(allCategories) : [];
         if (categoriesArray.length > 0) {
           const categoriesWithStats: CategoryWithStats[] = categoriesArray.map((category: any) => ({
             ...category,

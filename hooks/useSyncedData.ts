@@ -1,4 +1,4 @@
-import { useObservable } from '@legendapp/state/react';
+import { use$, useObservable } from '@legendapp/state/react';
 import { syncState } from '@legendapp/state';
 import { 
   categories$, 
@@ -21,19 +21,19 @@ import { Database } from '../types/database';
 
 // Hook that provides all data and mutation functions with loading and error states
 export const useSyncedData = () => {
-
-
-  const categories = useObservable(categories$);
-  const creatures = useObservable(creatures$);
-  const diveSites = useObservable(diveSites$);
-  const sightings = useObservable(sightings$);
-  const wishlists = useObservable(wishlists$);
-  const profile = useObservable(profile$);
-  const allProfiles = useObservable(profiles$); // Added allProfiles
-  const achievements = useObservable(achievements$);
-
+  const categories = use$(categories$);
+  const creatures = use$(creatures$);
+  const diveSites = use$(diveSites$);
+  const sightings = use$(sightings$);
+  const wishlists = use$(wishlists$);
+  // For profile, we need to handle it specially to ensure we get the current user's profile
+  const profile = use$(profile$);
+  const allProfiles = use$(profiles$); // Added allProfiles
+  const achievements = use$(achievements$);
 
   // Get sync states for each observable
+  // For sync states, we need to use useObservable because we need the observable objects
+  // to access their properties like isLoaded
   const categoriesSyncState = useObservable(syncState(categories$));
   const creaturesSyncState = useObservable(syncState(creatures$));
   const diveSitesSyncState = useObservable(syncState(diveSites$));
@@ -71,16 +71,17 @@ export const useSyncedData = () => {
   const fetchCatalog = async () => {
     // Trigger loading of catalog data if not already loaded
     if (!categoriesSyncState.isLoaded.get()) {
-      await categories$.sync().load();
+      // For synced observables, accessing the value triggers sync
+      categories$.get();
     }
     if (!creaturesSyncState.isLoaded.get()) {
-      await creatures$.sync().load();
+      creatures$.get();
     }
     if (!achievementsSyncState.isLoaded.get()) {
-      await achievements$.sync().load();
+      achievements$.get();
     }
-    if (!profilesSyncState.isLoaded.get()) { // Added profiles$.sync().load()
-      await profiles$.sync().load();
+    if (!profilesSyncState.isLoaded.get()) {
+      profiles$.get();
     }
   };
 
@@ -88,13 +89,13 @@ export const useSyncedData = () => {
   const fetchUserData = async () => {
     // Trigger loading of user data if not already loaded
     if (!profileSyncState.isLoaded.get()) {
-      await profile$.sync().load();
+      profile$.get();
     }
     if (!sightingsSyncState.isLoaded.get()) {
-      await sightings$.sync().load();
+      sightings$.get();
     }
     if (!wishlistsSyncState.isLoaded.get()) {
-      await wishlists$.sync().load();
+      wishlists$.get();
     }
   };
 
@@ -102,7 +103,7 @@ export const useSyncedData = () => {
   const fetchDiveSites = async () => {
     // Trigger loading of dive sites if not already loaded
     if (!diveSitesSyncState.isLoaded.get()) {
-      await diveSites$.sync().load();
+      diveSites$.get();
     }
   };
 
@@ -125,7 +126,6 @@ export const useSyncedData = () => {
       if (!user) return null;
 
       // Try to fetch existing profile by loading the profile observable
-      await profile$.sync().load();
       const currentProfile = profile$.get();
 
       if (currentProfile && currentProfile.id) {
@@ -145,9 +145,6 @@ export const useSyncedData = () => {
 
       // Set the profile in the observable
       profile$.set(newProfile as Database['public']['Tables']['profiles']['Row']);
-      
-      // Sync to Supabase
-      await profile$.sync().save();
       
       return profile$.get();
     } catch (error) {
@@ -188,9 +185,6 @@ export const useSyncedData = () => {
 
       // Set the profile in the observable
       profile$.set(fullProfileData as Database['public']['Tables']['profiles']['Row']);
-      
-      // Sync to Supabase
-      await profile$.sync().save();
       
       // Refresh user data after creating profile
       await fetchUserData();

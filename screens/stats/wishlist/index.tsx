@@ -30,8 +30,8 @@ export default function WishlistScreen() {
   const loadData = () => {
     try {
       // Extract data from observables
-      const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
-      const wishlistsArray = allWishlists ? Object.values(allWishlists.get()) : [];
+      const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
+      const wishlistsArray = allWishlists ? Object.values(allWishlists) : [];
 
       if (creaturesArray.length > 0 && wishlistsArray.length > 0) {
         // Create wishlist creatures list

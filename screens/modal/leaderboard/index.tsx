@@ -39,25 +39,27 @@ export default function LeaderboardModal() {
   const insets = useSafeAreaInsets();
   
   // Use the new useSyncedData hook instead of useDataStore
-  const { fetchUserData, fetchCatalog } = useSyncedData();
+  const { fetchUserData, fetchCatalog, allProfiles, sightings, creatures, profile } = useSyncedData();
 
   // Fetch leaderboard data directly from Supabase
   const fetchLeaderboard = async (limit: number = 10): Promise<LeaderboardEntryType[]> => {
-    const allProfiles = profiles.get() || {};
-    const allSightings = sightings.get() || {};
+    const allProfilesData = allProfiles || {};
+    const allSightingsData = sightings || {};
+    const allCreaturesData = creatures || {};
 
-    const users = Object.values(allProfiles).filter(p => p.full_name && p.full_name !== '');
+    const users = Object.values(allProfilesData).filter((p: any) => p.full_name && p.full_name !== '');
 
     // Calculate stats for each user
     const leaderboardData = users.map((user: any) => {
       // Get all sightings for this user
-      const userSightings = Object.values(allSightings).filter((s: any) => s.user_id === user.id);
+      const userSightings = Object.values(allSightingsData).filter((s: any) => s.user_id === user.id);
 
       // Calculate unique creatures and total points
       const uniqueCreatures = new Set(userSightings.map((s: any) => s.creature_id));
+      const creatureEntries = Object.values(allCreaturesData);
       const totalPoints = userSightings.reduce((sum: number, sighting: any) => {
         // Assuming creature points are available in the creatures observable
-        const creature = creatures.get()?.[sighting.creature_id];
+        const creature: any = creatureEntries.find((c: any) => c.id === sighting.creature_id);
         return sum + (creature?.points || 0);
       }, 0);
 
@@ -89,7 +91,7 @@ export default function LeaderboardModal() {
       ]);
       
       // Get current user ID
-      const currentUserId = profile.get()?.id;
+      const currentUserId = profile?.id;
       
       // Process leaderboard data
       if (leaderboardResult && currentUserId) {

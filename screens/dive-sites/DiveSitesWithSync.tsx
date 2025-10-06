@@ -8,7 +8,7 @@ const DiveSitesWithSync: React.FC = () => {
   const { diveSites } = useSyncedData();
 
   // Convert dive sites object to array with actual values
-  const diveSitesArray = diveSites && diveSites.get() ? Object.values(diveSites.get()) : [];
+  const diveSitesArray = diveSites ? Object.values(diveSites) : [];
   
   const onRefresh = async () => {
     setRefreshing(true);

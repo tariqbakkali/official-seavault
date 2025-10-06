@@ -24,7 +24,7 @@ const AddDiveSiteScreen = () => {
   // Prepare data for clustering - SuperCluster expects GeoJSON format
   // Filter out sites without valid coordinates
   const validSites = useMemo(() => {
-    const diveSitesData = diveSites.get() || [];
+    const diveSitesData = diveSites || [];
     return diveSitesData
       ?.filter((site: DiveSite) => hasValidCoordinates(site))
       .map((site: DiveSite) => ({

@@ -35,15 +35,15 @@ export default function CategoryDetailScreen() {
   const loadData = async () => {
     try {
       // Get all categories to find the current one
-      const categoriesArray = categories ? Object.values(categories.get()) : [];
+      const categoriesArray = categories ? Object.values(categories) : [];
       const currentCategory = categoriesArray.find((cat: any) => cat.id === id);
       setCategory(currentCategory);
 
       // Get creatures for this category
       if (id) {
-        const creaturesArray = allCreatures ? Object.values(allCreatures.get()) as Creature[] : [];
+        const creaturesArray = allCreatures ? Object.values(allCreatures) as any[] : [];
         const categoryCreatures = creaturesArray.filter(
-          (creature: Creature) => creature.category_id === id
+          (creature: any) => creature.category_id === id
         );
         setCreatures(categoryCreatures);
       }

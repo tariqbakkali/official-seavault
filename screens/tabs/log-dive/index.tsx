@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSyncedData } from '@/hooks/useSyncedData';
@@ -48,29 +48,27 @@ const LogDiveScreen = () => {
 
   const { creatures: allCreatures, categories: allCategories, diveSites: allDiveSites, createSighting, isLoading } = useSyncedData();
 
+  // Determine if we should show back button based on navigation source
+  const shouldShowBackButton = source === 'creature';
+
+  const handleBackPress = () => {
+    // Clear selected categories before navigating back
+    setSelectedCategories([]);
+    
+    if (shouldShowBackButton && selectedCreature) {
+      // Navigate back to the specific creature details screen
+      router.push(`/creatures/${selectedCreature}`);
+    } else {
+      // Default back navigation for other cases
+      router.back();
+    }
+  };
+
   // Extract data from observables
-  const creaturesArray = allCreatures ? Object.values(allCreatures.get()) : [];
-  const categoriesArray = allCategories ? Object.values(allCategories.get()) : [];
+  const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
+  const categoriesArray = allCategories ? Object.values(allCategories) : [];
 
-  if (isLoading.diveSites) {
-    return (
-      <View style={[styles.container, { 
-        paddingTop: insets.top, 
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right
-      }]}>
-        <ScreenHeader 
-          title="Log Dive" 
-          onBackPress={handleBackPress}
-          showBackButton={shouldShowBackButton}
-        />
-        <Text style={{ color: COLORS.TEXT_PRIMARY, textAlign: 'center', marginTop: 20 }}>Loading dive sites...</Text>
-      </View>
-    );
-  }
-
-  const diveSitesArray = allDiveSites ? Object.values(allDiveSites.get()) as Database['public']['Tables']['dive_sites']['Row'][] : [];
+  const diveSitesArray = allDiveSites ? Object.values(allDiveSites) as Database['public']['Tables']['dive_sites']['Row'][] : [];
   
   // Create mock catalog object to match the expected format
   const catalog = {
@@ -143,25 +141,28 @@ const LogDiveScreen = () => {
       setSelectedImage(null);
       setSelectedCategories([]); // Clear category selections
     } catch (error) {
+      console.error('Error submitting dive log:', error);
       alert('Error submitting dive log. Please try again.');
     }
   };
 
-  // Determine if we should show back button based on navigation source
-  const shouldShowBackButton = source === 'creature';
-
-  const handleBackPress = () => {
-    // Clear selected categories before navigating back
-    setSelectedCategories([]);
-    
-    if (shouldShowBackButton && selectedCreature) {
-      // Navigate back to the specific creature details screen
-      router.push(`/creatures/${selectedCreature}`);
-    } else {
-      // Default back navigation for other cases
-      router.back();
-    }
-  };
+  if (isLoading.diveSites) {
+    return (
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
+        <ScreenHeader 
+          title="Log Dive" 
+          onBackPress={handleBackPress}
+          showBackButton={shouldShowBackButton}
+        />
+        <Text style={{ color: COLORS.TEXT_PRIMARY, textAlign: 'center', marginTop: 20 }}>Loading dive sites...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { 
