@@ -44,7 +44,8 @@ export default function ProfileScreen() {
       const categoriesArray = allCategories ? Object.values(allCategories) : [];
       const sightingsArray = allSightings ? Object.values(allSightings) : [];
       const wishlistsArray = allWishlists ? Object.values(allWishlists) : [];
-      const profileData = userProfile;
+      const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
+
       
       // Create mock userData object to match the expected format
       const userData = {

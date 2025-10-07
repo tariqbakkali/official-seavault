@@ -12,8 +12,8 @@ import {
   createSighting,
   createWishlistItem,
   createDiveSite,
+  toggleWishlistItem, // Added toggleWishlistItem
   removeWishlistItem,
-  toggleWishlistItem,
   updateUserProfile
 } from '../stores/syncedObservables';
 import { supabase } from '../services/supabase';

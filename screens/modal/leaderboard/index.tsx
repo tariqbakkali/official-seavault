@@ -39,7 +39,10 @@ export default function LeaderboardModal() {
   const insets = useSafeAreaInsets();
   
   // Use the new useSyncedData hook instead of useDataStore
-  const { fetchUserData, fetchCatalog, allProfiles, sightings, creatures, profile } = useSyncedData();
+  let { fetchUserData, fetchCatalog, allProfiles, sightings, creatures, profile } = useSyncedData();
+
+  profile = profile ? Object.values(profile)[0] : undefined;
+
 
   // Fetch leaderboard data directly from Supabase
   const fetchLeaderboard = async (limit: number = 10): Promise<LeaderboardEntryType[]> => {

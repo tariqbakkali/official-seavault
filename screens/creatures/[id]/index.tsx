@@ -18,6 +18,7 @@ import ImageWithFallback from '@/components/ImageWithFallback';
 import { formatDate, formatTime } from '@/utils/format';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { toggleWishlistItem } from '@/stores/syncedObservables';
 
 const { width } = Dimensions.get('window');
 
@@ -36,7 +37,9 @@ export default function CreatureDetailScreen() {
   const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
   
   // Use updated observable-based store
-  const { creatures, wishlists, toggleWishlistItem, profile } = useSyncedData();
+  let { creatures, wishlists, profile } = useSyncedData();
+  profile = profile ? Object.values(profile)[0] : undefined;
+
 
   React.useEffect(() => {
     loadData();
@@ -105,7 +108,7 @@ export default function CreatureDetailScreen() {
 
   const handleWishlistToggle = async () => {
     if (!creature) return;
-
+    
     try {
       const userId = profile?.id;
       if (!userId) return;
