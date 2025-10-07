@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
+import NetInfo from '@react-native-community/netinfo';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { COLORS } from '@/constants';
+import { showAlert } from '@/utils/alertUtils';
 import MainLogDiveForm from './components/MainLogDiveForm';
 import { Database } from '@/types/database';
 
@@ -125,6 +127,26 @@ const LogDiveScreen = () => {
       // Create the sighting
       await createSighting(sightingData as any); // Cast to any to avoid TypeScript issues
       
+      // Check network status to determine if saved offline or online
+      const networkState = await NetInfo.fetch();
+      console.log('Network state:', networkState); // Debug log
+      const isOnline = networkState.isConnected && networkState.isInternetReachable !== false;
+      
+      console.log('Is online:', isOnline); // Debug log
+      
+      // Show appropriate success message
+      if (isOnline) {
+        showAlert(
+          'Dive Log Saved',
+          'Your dive log has been saved successfully and synchronized with the cloud.'
+        );
+      } else {
+        showAlert(
+          'Dive Log Saved Offline',
+          'Your dive log has been saved locally and will be synchronized when you\'re back online.'
+        );
+      }
+      
       // Reset form
       setFormData({
         diveSiteId: null,
@@ -142,7 +164,7 @@ const LogDiveScreen = () => {
       setSelectedCategories([]); // Clear category selections
     } catch (error) {
       console.error('Error submitting dive log:', error);
-      alert('Error submitting dive log. Please try again.');
+      showAlert('Error', 'Error submitting dive log. Please try again.');
     }
   };
 

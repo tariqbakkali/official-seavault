@@ -36,11 +36,20 @@ export default function PointsScreen() {
 
   const loadData = React.useCallback(() => {
     try {
+      setLoading(true);
       // Extract data from observables
-      const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
-      const categoriesArray = allCategories ? Object.values(allCategories) : [];
-      const sightingsArray = allSightings ? Object.values(allSightings) : [];
-      const wishlistsArray = allWishlists ? Object.values(allWishlists) : [];
+      const creaturesArray = allCreatures ? Object.values(allCreatures).filter(
+        (c: any) => c && typeof c === 'object' && c.id && typeof c.id === 'string'
+      ) : [];
+      const categoriesArray = allCategories ? Object.values(allCategories).filter(
+        (c: any) => c && typeof c === 'object' && c.id && typeof c.id === 'string'
+      ) : [];
+      const sightingsArray = allSightings ? Object.values(allSightings).filter(
+        (s: any) => s && typeof s === 'object' && s.id && typeof s.id === 'string'
+      ) : [];
+      const wishlistsArray = allWishlists ? Object.values(allWishlists).filter(
+        (w: any) => w && typeof w === 'object' && w.id && typeof w.id === 'string'
+      ) : [];
       // Extract profile data - it's now already unwrapped
       const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
       
@@ -114,25 +123,59 @@ export default function PointsScreen() {
   );
 
   // Prepare category stats data for FlatList
-  const categoryStatsData = userStats?.categoryStats 
-    ? Object.entries(userStats.categoryStats).map(([categoryId, stat]: [string, any]) => {
-        // Get the full category object from the catalog
-        const category = userStats.categories?.find((cat: any) => cat.id === categoryId) || {
-          id: categoryId,
-          name: userStats.categoryNames?.[categoryId] || 'Unknown Category',
-          created_at: new Date().toISOString(),
-          image_url: null
-        };
-        
-        return {
-          category,
-          points: stat.points || 0,
-          creatures: stat.seen || 0,
-          completion: stat.completion || 0,
-          totalCreatures: stat.total || 0
-        };
-      })
-    : [];
+  const categoryStatsData: CategoryStat[] = React.useMemo(() => {
+    if (!userStats?.categoryStats || !allCategories) {
+      return [];
+    }
+    
+    // Get all categories as an array and filter out invalid ones
+    const categoriesArray = allCategories ? Object.values(allCategories).filter(
+      (category: any): category is Category => 
+        category && 
+        typeof category === 'object' && 
+        category.id && 
+        typeof category.id === 'string' &&
+        category.name && 
+        typeof category.name === 'string' &&
+        category.created_at && 
+        typeof category.created_at === 'string'
+    ) : [];
+    
+    // Map categories with their stats
+    const mappedData: CategoryStat[] = categoriesArray.map((category) => {
+      const categoryStat = userStats.categoryStats[category.id] || {
+        seen: 0,
+        total: 0,
+        completion: 0,
+        points: 0
+      };
+      
+      // Ensure we have a valid Category object
+      const validCategory: Category = {
+        id: category.id,
+        name: category.name,
+        created_at: category.created_at,
+        image_url: category.image_url || null
+      };
+      
+      return {
+        category: validCategory,
+        points: categoryStat.points || 0,
+        creatures: categoryStat.seen || 0,
+        completion: categoryStat.completion || 0,
+        totalCreatures: categoryStat.total || 0
+      };
+    }).filter((item): item is CategoryStat => {
+      if (!item.category) return false;
+      if (typeof item.category !== 'object') return false;
+      if (!item.category.id) return false;
+      if (typeof item.category.id !== 'string') return false;
+      return true;
+    }); // Type guard to ensure proper typing
+    
+    // Sort by points descending
+    return mappedData.sort((a, b) => b.points - a.points);
+  }, [userStats, allCategories]);
 
   if (loading) {
     return (
@@ -191,7 +234,7 @@ export default function PointsScreen() {
           </View>
         }
         ListHeaderComponent={
-          categoryStatsData.length > 0 ? (
+          (categoryStatsData.length > 0) === true ? (
             <Text style={styles.sectionTitle}>
               Categories ({categoryStatsData.length})
             </Text>

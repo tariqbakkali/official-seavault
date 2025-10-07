@@ -17,7 +17,6 @@ import {
   profiles$, // Import profiles$ observable
   achievements$, // Import achievements$ observable
 } from '../stores/syncedObservables';
-import { configureLegendState } from '@/services/legendStateConfig';
 
 /**
  * Utility functions for data synchronization in the local-first app

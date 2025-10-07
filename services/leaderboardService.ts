@@ -1,4 +1,4 @@
-import { Profile, Sighting, Creature } from '@/stores/syncedObservables';
+import { Profile, Sighting, Creature } from '@/types/database';
 
 interface LeaderboardEntry {
   user_id: string;
@@ -49,7 +49,13 @@ export const getLeaderboardData = (
       creatures: stats.creatures.size,
       points: stats.points,
     }))
-    .sort((a, b) => b.points - a.points);
+    .sort((a, b) => {
+      // Sort by points first (descending), then by creatures discovered (descending)
+      if (b.points !== a.points) {
+        return b.points - a.points;
+      }
+      return b.creatures - a.creatures;
+    });
 
   return leaderboard;
 };

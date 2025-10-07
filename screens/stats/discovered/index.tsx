@@ -10,17 +10,18 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Calendar } from 'lucide-react-native';
-import { Creature, Sighting } from '@/types/database';
 import { useSyncedData } from '@/hooks/useSyncedData';
-import ImageWithFallback from '@/components/ImageWithFallback';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import ImageWithFallback from '@/components/ImageWithFallback';
+import { formatDate } from '@/utils/format';
+import { DIMENSIONS } from '@/constants/dimensions';
 
-const { width } = Dimensions.get('window');
-const cardWidth = width - 40;
+// Calculate card width based on screen size
+const cardWidth = DIMENSIONS.SCREEN_WIDTH - 40;
 
 interface DiscoveredCreature {
-  creature: Creature;
-  firstSighting: Sighting;
+  creature: any;
+  firstSighting: any;
   totalSightings: number;
 }
 
@@ -31,61 +32,73 @@ export default function DiscoveredScreen() {
   
   const { creatures: allCreatures, sightings: allSightings } = useSyncedData();
 
-  React.useEffect(() => {
-    loadData();
-  }, [allCreatures, allSightings]);
-
-  const loadData = () => {
+  const loadData = React.useCallback(() => {
     try {
+      setLoading(true);
       // Extract data from observables
-      const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
-      const sightingsArray = allSightings ? Object.values(allSightings) : [];
-
-      if (creaturesArray.length > 0 && sightingsArray.length > 0) {
-        // Group sightings by creature
-        const creatureGroups: Record<string, any[]> = {};
-        sightingsArray.forEach((sighting: any) => {
-          if (!creatureGroups[sighting.creature_id]) {
-            creatureGroups[sighting.creature_id] = [];
-          }
-          creatureGroups[sighting.creature_id].push(sighting);
+      const creaturesArray = allCreatures ? Object.values(allCreatures).filter(
+        (c: any) => c && typeof c === 'object' && c.id && typeof c.id === 'string'
+      ) : [];
+      const sightingsArray = allSightings ? Object.values(allSightings).filter(
+        (s: any) => s && typeof s === 'object' && s.id && typeof s.id === 'string'
+      ) : [];
+      
+      if (creaturesArray.length > 0) {
+        // Create a map of creature ID to creature for quick lookup
+        const creatureMap = new Map<string, any>();
+        creaturesArray.forEach((creature: any) => {
+          creatureMap.set(creature.id, creature);
         });
-
-        // Create discovered creatures list
-        const discovered: DiscoveredCreature[] = Object.entries(creatureGroups).map(([creatureId, sightings]) => {
-          const creature = creaturesArray.find((c: any) => c.id === creatureId);
-          if (!creature) return null;
-
-          // Sort sightings by date (oldest first) to get first sighting
-          const sortedSightings = sightings.sort((a, b) => a.date.localeCompare(b.date));
-          
-          return {
-            creature,
-            firstSighting: sortedSightings[0],
-            totalSightings: sightings.length
-          };
-        }).filter(Boolean) as DiscoveredCreature[];
-
-        // Sort by first sighting date (most recent first)
-        discovered.sort((a, b) => b.firstSighting.date.localeCompare(a.firstSighting.date));
-
+        
+        // Group sightings by creature ID
+        const sightingsByCreature: Record<string, any[]> = {};
+        sightingsArray.forEach((sighting: any) => {
+          if (sighting.creature_id) {
+            if (!sightingsByCreature[sighting.creature_id]) {
+              sightingsByCreature[sighting.creature_id] = [];
+            }
+            sightingsByCreature[sighting.creature_id].push(sighting);
+          }
+        });
+        
+        // Create discovered creatures array with first sighting and total count
+        const discovered: DiscoveredCreature[] = [];
+        Object.keys(sightingsByCreature).forEach((creatureId: string) => {
+          const creature = creatureMap.get(creatureId);
+          if (creature) {
+            const sightings = sightingsByCreature[creatureId];
+            // Sort sightings by date to find the first one
+            sightings.sort((a: any, b: any) => 
+              new Date(a.date).getTime() - new Date(b.date).getTime()
+            );
+            const firstSighting = sightings[0];
+            const totalSightings = sightings.length;
+            
+            discovered.push({
+              creature,
+              firstSighting,
+              totalSightings
+            });
+          }
+        });
+        
+        // Sort by first sighting date (newest first)
+        discovered.sort((a, b) => 
+          new Date(b.firstSighting.date).getTime() - new Date(a.firstSighting.date).getTime()
+        );
+        
         setDiscoveredCreatures(discovered);
       }
     } catch (error) {
-      console.error('Error loading discovered creatures:', error);
+      console.error('Error loading discovered data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [allCreatures, allSightings]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
+  React.useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const renderDiscoveredCreature = ({ item }: { item: DiscoveredCreature }) => (
     <TouchableOpacity
@@ -96,6 +109,7 @@ export default function DiscoveredScreen() {
         uri={item.creature.image_url}
         style={styles.creatureImage}
         containerStyle={styles.imageContainer}
+        showOfflineIndicator={true}
       />
       <View style={styles.creatureInfo}>
         <Text style={styles.creatureName}>{item.creature.name}</Text>
@@ -128,6 +142,23 @@ export default function DiscoveredScreen() {
           onBackPress={() => router.back()}
           showBackButton={true}
         />
+      </View>
+    );
+  }
+
+  // Show empty state if no discovered creatures
+  if (discoveredCreatures.length === 0) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <ScreenHeader 
+          title="Discovered (0)" 
+          onBackPress={() => router.back()}
+          showBackButton={true}
+        />
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No discoveries yet</Text>
+          <Text style={styles.emptySubtext}>Start logging dives to discover marine life</Text>
+        </View>
       </View>
     );
   }
@@ -169,10 +200,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: 'hidden',
     flexDirection: 'row',
+    minHeight: 100, // Ensure minimum height
   },
   imageContainer: {
     width: 100,
     height: 100,
+    backgroundColor: '#3a3a3a', // Add background color
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   creatureImage: {
     width: '100%',
@@ -226,5 +261,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#fff',
     fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
 });

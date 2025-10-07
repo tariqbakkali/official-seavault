@@ -8,6 +8,7 @@ export interface UserStats {
     seen: number;
     total: number;
     completion: number;
+    points: number; // Add points to category stats
   }>;
   categoryNames: Record<string, string>;
 }
@@ -56,7 +57,7 @@ export const calculateUserStats = (
   });
   
   // Create category stats
-  const categoryStats: Record<string, { seen: number; total: number; completion: number }> = {};
+  const categoryStats: Record<string, { seen: number; total: number; completion: number; points: number }> = {};
   const categoryNames: Record<string, string> = {};
   
   // Initialize category stats with zeros
@@ -65,14 +66,19 @@ export const calculateUserStats = (
     categoryStats[category.id] = {
       seen: 0,
       total: 0,
-      completion: 0
+      completion: 0,
+      points: 0 // Initialize points to 0
     };
   });
   
-  // Count total creatures per category
+  // Count total creatures per category and calculate category points
   catalog.creatures.forEach((creature: Creature) => {
     if (categoryStats[creature.category_id]) {
       categoryStats[creature.category_id].total += 1;
+      // Add creature points to category total if the creature has been seen
+      if (seenCreatureIds.has(creature.id)) {
+        categoryStats[creature.category_id].points += creature.points || 0;
+      }
     }
   });
   

@@ -56,7 +56,7 @@ export default function HomeScreen() {
   // Use the new specialized stores
   const { creatures: allCreatures, categories: allCategories, sightings: allSightings, wishlists: allWishlists, profile: userProfile, allProfiles, achievements: allAchievements } = useSyncedData();
 
-  const loadData = () => {
+  const loadData = React.useCallback(() => {
     try {
       // Extract data from observables with proper typing
       const creaturesObj = allCreatures || {};
@@ -103,7 +103,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [allCreatures, allCategories, allSightings, allWishlists, userProfile, allProfiles, allAchievements]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -116,7 +116,15 @@ export default function HomeScreen() {
     }
   };
 
-  React.useEffect(()=> {loadData()},[]);
+  React.useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
 
   const stats: StatCard[] = [

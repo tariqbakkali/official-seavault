@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import CustomClusteredMapView from '@/components/CustomClusteredMapView';
@@ -19,7 +19,6 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
   onDiveSiteSelect,
 }) => {
   const mapRef = useRef<MapView>(null);
-  const clusteredMapRef = useRef<MapView>(null);
 
   // Helper function to calculate initial region focused on area with most dive sites
   const calculateInitialRegionForDenseArea = (sites: any[]) => {
@@ -51,6 +50,28 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
     // If no sites in Netherlands, still default to Europe view for better context
     return europeRegion;
   };
+
+  // When selected dive site changes, animate to the new site
+  useEffect(() => {
+    if (selectedDiveSiteId) {
+      // Use a delay to ensure the map is fully initialized
+      const timeoutId = setTimeout(() => {
+        if (mapRef.current) {
+          const selectedSite = diveSites?.find(site => site.id === selectedDiveSiteId);
+          if (selectedSite && selectedSite.latitude && selectedSite.longitude) {
+            mapRef.current.animateToRegion({
+              latitude: selectedSite.latitude,
+              longitude: selectedSite.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }, 1000);
+          }
+        }
+      }, 300); // Increased delay to ensure map is ready
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [selectedDiveSiteId, diveSites]);
 
   return (
     <View style={styles.mapCard}>
@@ -239,18 +260,10 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
                           latitudeDelta: initialRegion.latitudeDelta * 0.5,
                           longitudeDelta: initialRegion.longitudeDelta * 0.5,
                         };
-                        // Animate to the region using the map ref
-                        if (clusteredMapRef.current && typeof clusteredMapRef.current.animateToRegion === 'function') {
-                          clusteredMapRef.current.animateToRegion(currentRegion, 500);
-                        }
                       }
                     }
                   } catch (error) {
                     console.warn('Error handling cluster press:', error);
-                    // Fallback: just zoom in using the map ref
-                    if (clusteredMapRef.current && typeof clusteredMapRef.current.animateToRegion === 'function') {
-                      clusteredMapRef.current.animateToRegion(initialRegion, 500);
-                    }
                   }
                 }}
                 onPress={(event: any) => {

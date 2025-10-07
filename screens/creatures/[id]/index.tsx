@@ -37,13 +37,12 @@ export default function CreatureDetailScreen() {
   const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
   
   // Use updated observable-based store
-  let { creatures, wishlists, profile } = useSyncedData();
-  profile = profile ? Object.values(profile)[0] : undefined;
-
+  const { creatures, wishlists, sightings: allSightings, diveSites: allDiveSites, profile } = useSyncedData();
+  const userProfile = profile ? Object.values(profile)[0] : undefined;
 
   React.useEffect(() => {
     loadData();
-  }, [id]);
+  }, [id, creatures, allSightings, allDiveSites, wishlists, userProfile]);
 
   // Watch for changes in wishlists to update the UI
   React.useEffect(() => {
@@ -55,7 +54,7 @@ export default function CreatureDetailScreen() {
     setIsWishlisted(isCreatureWishlisted);
   }, [wishlists, id]);
 
-  const loadData = async () => {
+  const loadData = React.useCallback(() => {
     try {
       setLoading(true);
       
@@ -73,11 +72,11 @@ export default function CreatureDetailScreen() {
       setIsWishlisted(isCreatureWishlisted);
 
       // Fetch user data
-      const userId = profile?.id;
+      const userId = userProfile && typeof userProfile === 'object' && userProfile.hasOwnProperty('id') ? (userProfile as any).id : undefined;
       if (userId) {
         // Fetch sightings for this creature using the sightings observable
-        const allSightings = sightings || {};
-        const sightingsArray = Object.values(allSightings).filter((sighting: any) => 
+        const allSightingsArray = allSightings ? Object.values(allSightings) : [];
+        const sightingsArray = allSightingsArray.filter((sighting: any) => 
           sighting && sighting.creature_id === id
         ) as Sighting[];
         setSightings(sightingsArray);
@@ -87,12 +86,12 @@ export default function CreatureDetailScreen() {
         if (sightingsArray.length > 0) {
           const diveSiteIds = sightingsArray
             .map((sighting: any) => sighting.dive_site_id)
-            .filter((id): id is string => id !== null);
+            .filter((id): id is string => id !== null && id !== undefined);
           
           if (diveSiteIds.length > 0) {
             // Fetch dive sites from the diveSites observable
-            const allDiveSites = diveSites || {};
-            const diveSitesArray = Object.values(allDiveSites).filter((site: any) => 
+            const allDiveSitesArray = allDiveSites ? Object.values(allDiveSites) : [];
+            const diveSitesArray = allDiveSitesArray.filter((site: any) => 
               site && diveSiteIds.includes(site.id)
             ) as DiveSite[];
             setDiveSites(diveSitesArray);
@@ -104,13 +103,17 @@ export default function CreatureDetailScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, creatures, allSightings, allDiveSites, wishlists, userProfile]);
+
+  React.useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleWishlistToggle = async () => {
     if (!creature) return;
     
     try {
-      const userId = profile?.id;
+      const userId = userProfile && typeof userProfile === 'object' && userProfile.hasOwnProperty('id') ? (userProfile as any).id : undefined;
       if (!userId) return;
 
       // Toggle wishlist item using the new toggleWishlistItem function
@@ -243,6 +246,7 @@ export default function CreatureDetailScreen() {
               uri={item.image_url}
               style={styles.sightingImage}
               containerStyle={styles.sightingImageWrapper}
+              showOfflineIndicator={true}
             />
           </View>
         )}
@@ -340,6 +344,7 @@ export default function CreatureDetailScreen() {
                           uri={sighting.image_url}
                           style={styles.sightingImageInGroup}
                           containerStyle={styles.sightingImageWrapperInGroup}
+                          showOfflineIndicator={true}
                         />
                       </View>
                     )}
@@ -380,6 +385,7 @@ export default function CreatureDetailScreen() {
             uri={creature.image_url}
             style={styles.heroImage}
             containerStyle={styles.imageWrapper}
+            showOfflineIndicator={true}
           />
         </View>
 
