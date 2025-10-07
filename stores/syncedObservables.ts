@@ -68,7 +68,8 @@ export const sightings$ = observable(createSyncedObservable({
   collection: 'sightings',
   filter: (select: any) => {
     const userId = currentUserID$.get();
-    return userId ? select.eq('user_id', userId) : select;
+    if (!userId)  return select.eq('id', 'no auth'); 
+    return select.eq('user_id', userId);
   },
   actions: ['read', 'create', 'update', 'delete'],
   persist: { name: 'sightings', retrySync: true },
@@ -83,7 +84,8 @@ export const wishlists$ = observable(createSyncedObservable({
   collection: 'wishlists',
   filter: (select: any) => {
     const userId = currentUserID$.get();
-    return userId ? select.eq('user_id', userId) : select;
+    if (!userId)  return select.eq('id', 'no auth'); 
+    return select.eq('user_id', userId);
   },
   actions: ['read', 'create', 'delete'],
   persist: { name: 'wishlists', retrySync: true },
@@ -98,14 +100,15 @@ export const profile$ = observable(createSyncedObservable({
   collection: 'profiles',
   filter: (select: any) => {
     const userId = currentUserID$.get();
-    return userId ? select.eq('id', userId) : select;
+    if (!userId)  return select.eq('id', 'no auth'); 
+    return select.eq('id', userId);
   },
   actions: ['read', 'update'],
   persist: { name: 'profile', retrySync: true },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all, filtering will be done by Supabase
-}));
+}))
 
 export const profiles$ = observable(createSyncedObservable({
   supabase,
@@ -180,6 +183,7 @@ export const removeWishlistItem = (wishlistId: string) => {
 // Toggle wishlist item - adds if not in wishlist, removes if already in wishlist
 export const toggleWishlistItem = async (creatureId: string): Promise<boolean> => {
   const userId = currentUserID$.get();
+
   if (!userId) {
     throw new Error('User must be logged in to toggle wishlist items');
   }

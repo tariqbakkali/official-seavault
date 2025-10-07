@@ -5,7 +5,8 @@ import { ActivityIndicator, View, Text } from 'react-native';
 import { supabase } from '@/services/supabase';
 import * as Sentry from 'sentry-expo';
 import { setCurrentUserID } from '@/stores/syncedObservables';
-import { initializeApp, initializeUserSession, cleanupUserSession } from '@/utils/appInitializer';
+import { forceSyncAll } from '@/utils/syncUtils';
+import { initializeApp, initializeUserSession, cleanupUserSession } from '@/utils/appInitializer'; // Import app initializer functions
 import 'react-native-get-random-values';
 
 // Initialize Sentry
@@ -26,12 +27,13 @@ export default function RootLayout() {
   useEffect(() => {
     const checkInitialSessionAndSync = async () => {
       try {
-        // Initialize the app
+        // Initialize the app using the app initializer
         await initializeApp();
         
         const { data: { session } } = await supabase.auth.getSession();
         const userId = session?.user?.id || null;
         
+        // Initialize user session if user is logged in
         if (userId) {
           await initializeUserSession(userId);
         }
@@ -40,8 +42,8 @@ export default function RootLayout() {
         setCurrentUserIDState(userId);
         
         // Log for debugging
-        console.log('profile (current user):', profile);
-        console.log('currentUserID:', userId);
+        
+        await forceSyncAll(); // Ensure all data is synchronized after session check
       } catch (error) {
         console.error('Error checking initial session or syncing data:', error);
       } finally {
@@ -57,8 +59,10 @@ export default function RootLayout() {
       console.log('Auth state changed:', userId);
       
       if (userId) {
+        // Initialize user session when user logs in
         initializeUserSession(userId);
       } else {
+        // Clean up user session when user logs out
         cleanupUserSession();
       }
       

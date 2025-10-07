@@ -1,4 +1,5 @@
 import { when } from '@legendapp/state';
+import { configureLegendState } from '../services/legendStateConfig';
 import { 
   categories$, 
   creatures$, 
@@ -15,7 +16,6 @@ import {
   getProfile,
   profiles$, // Import profiles$ observable
   achievements$, // Import achievements$ observable
-  currentUserID$ // Import the observable
 } from '../stores/syncedObservables';
 import { configureLegendState } from '@/services/legendStateConfig';
 
@@ -26,12 +26,16 @@ import { configureLegendState } from '@/services/legendStateConfig';
 // Initialize all synced observables
 export const initializeSync = async () => {
   try {
-    // Activate all observables to start syncing
-    categories$.get();
-    creatures$.get();
-    diveSites$.get();
-    profiles$.get(); // Activate profiles observable
-    achievements$.get(); // Activate achievements observable
+    // Get the configured synced instance
+    // const synced = configureLegendState();
+    configureLegendState();
+    
+    // // Sync catalog data
+    // await synced.sync(categories$);
+    // await synced.sync(creatures$);
+    // await synced.sync(diveSites$);
+    // await synced.sync(profiles$);
+    // await synced.sync(achievements$);
     
     console.log('Sync initialization completed');
   } catch (error) {
@@ -44,11 +48,16 @@ export const initializeUserSync = async (userId: string) => {
   try {
     // Set the current user ID
     setCurrentUserID(userId);
+
+    configureLegendState();
     
-    // Activate user-specific observables
-    sightings$.get();
-    wishlists$.get();
-    profile$.get();
+    // // Get the configured synced instance
+    // const synced = configureLegendState();
+    
+    // // Sync user-specific data
+    // await synced.sync(sightings$);
+    // await synced.sync(wishlists$);
+    // await synced.sync(profile$);
     
     console.log(`User sync initialized for user: ${userId}`);
   } catch (error) {

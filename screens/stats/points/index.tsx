@@ -42,7 +42,7 @@ export default function PointsScreen() {
       const sightingsArray = allSightings ? Object.values(allSightings) : [];
       const wishlistsArray = allWishlists ? Object.values(allWishlists) : [];
       // Extract profile data - it's now already unwrapped
-      const profileData = userProfile;
+      const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
       
       if (creaturesArray.length > 0 && categoriesArray.length > 0) {
         // Create mock userData object to match the expected format

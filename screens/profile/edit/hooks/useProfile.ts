@@ -18,7 +18,9 @@ export const useProfile = () => {
   const [hasUnsavedChangesState, setHasUnsavedChangesState] = React.useState(false);
   const [validationErrors, setValidationErrors] = React.useState<{[key: string]: string}>({});
 
-  const { profile, fetchUserData, updateUserProfile } = useSyncedData();
+  let { profile, fetchUserData, updateUserProfile } = useSyncedData();
+  profile = profile ? Object.values(profile)[0] : undefined;
+
 
   // Load profile data
   const loadProfileData = React.useCallback(async () => {

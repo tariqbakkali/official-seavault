@@ -1,4 +1,4 @@
-import { initializeSync } from './syncUtils';
+import { initializeSync, initializeUserSync } from './syncUtils';
 import { configureLegendState } from '../services/legendStateConfig';
 import { supabase } from '../services/supabase';
 import { setCurrentUserID } from '../stores/syncedObservables';
@@ -32,7 +32,8 @@ export const initializeUserSession = async (userId: string) => {
     setCurrentUserID(userId);
     
     // Initialize user-specific data sync
-    // This will be triggered automatically when observables are accessed
+    await initializeUserSync(userId);
+    
     console.log(`User session initialized for user: ${userId}`);
   } catch (error) {
     console.error('Error initializing user session:', error);

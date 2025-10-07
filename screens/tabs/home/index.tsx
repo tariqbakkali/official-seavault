@@ -68,8 +68,8 @@ export default function HomeScreen() {
       const categoriesArray = Object.values(categoriesObj) as Category[];
       const sightingsArray = Object.values(sightingsObj) as Sighting[];
       const wishlistsArray = Object.values(wishlistsObj) as Wishlist[];
-    
-      const profileData = userProfile;
+
+      const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
       const allProfilesData = allProfiles || {};
 
       
