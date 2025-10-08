@@ -1,5 +1,4 @@
 import { when } from '@legendapp/state';
-import { configureLegendState } from '../services/legendStateConfig';
 import { 
   categories$, 
   creatures$, 
@@ -17,6 +16,7 @@ import {
   profiles$, // Import profiles$ observable
   achievements$, // Import achievements$ observable
 } from '../stores/syncedObservables';
+// import { customSynced } from '@/services/legendStateConfig';
 
 /**
  * Utility functions for data synchronization in the local-first app
@@ -26,8 +26,7 @@ import {
 export const initializeSync = async () => {
   try {
     // Get the configured synced instance
-    // const synced = configureLegendState();
-    configureLegendState();
+    onSyncPress();
     
     // // Sync catalog data
     // await synced.sync(categories$);
@@ -48,15 +47,14 @@ export const initializeUserSync = async (userId: string) => {
     // Set the current user ID
     setCurrentUserID(userId);
 
-    configureLegendState();
+    onSyncPress();
     
     // // Get the configured synced instance
-    // const synced = configureLegendState();
     
     // // Sync user-specific data
-    // await synced.sync(sightings$);
-    // await synced.sync(wishlists$);
-    // await synced.sync(profile$);
+    // customSynced();
+    // customSynced(wishlists$);
+    // customSynced(profile$);
     
     console.log(`User sync initialized for user: ${userId}`);
   } catch (error) {
@@ -115,19 +113,18 @@ export const forceSyncAll = async () => {
   }
 };
 
-const synced = configureLegendState();
 
 export const onSyncPress = async () => {
   try {
     // Call sync on each observable to flush local changes to remote
-    await synced.sync(categories$);  
-    await synced.sync(creatures$);  
-    await synced.sync(diveSites$);
-    await synced.sync(sightings$);
-    await synced.sync(wishlists$);
-    await synced.sync(profile$);
-    await synced.sync(profiles$);
-    await synced.sync(achievements$);
+    // customSynced(categories$);  
+    // customSynced(creatures$);  
+    // customSynced(diveSites$);
+    // customSynced(sightings$);
+    // customSynced(wishlists$);
+    // customSynced(profile$);
+    // customSynced(profiles$);
+    // customSynced(achievements$);
 
     console.log('Manual sync completed');
   } catch (error) {

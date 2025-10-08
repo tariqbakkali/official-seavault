@@ -112,41 +112,50 @@ export const useSyncedData = () => {
     try {
       // Try to get user from profile observable first
       const existingProfile = profile$.get();
-      let user = null;
+      let user: { id: string; email: string | null } | null = null;
 
-      if (existingProfile && existingProfile.id) {
-        // If profile observable has an ID, assume user is authenticated and use that ID
-        user = { id: existingProfile.id, email: existingProfile.email };
+      if (existingProfile && Object.keys(existingProfile).length > 0) {
+        // Extract the actual profile object from the observable structure
+        const profileObj = Object.values(existingProfile)[0];
+        if (profileObj && profileObj.id) {
+          // If profile observable has an ID, assume user is authenticated and use that ID
+          user = { id: profileObj.id, email: profileObj.email };
+        }
       } else {
         // Fallback to direct Supabase auth if profile observable is not yet populated
         const { data: { user: authUser } } = await supabase.auth.getUser();
-        user = authUser;
+        user = authUser ? { id: authUser.id, email: authUser.email || null } : null;
       }
 
       if (!user) return null;
 
       // Try to fetch existing profile by loading the profile observable
       const currentProfile = profile$.get();
+      // Extract the actual profile object from the observable structure
+      const userProfile = currentProfile ? Object.values(currentProfile)[0] : undefined;
 
-      if (currentProfile && currentProfile.id) {
-        return currentProfile;
+      if (userProfile && userProfile.id) {
+        return userProfile;
       }
 
       // Create new profile if it doesn't exist
       const newProfile: Database['public']['Tables']['profiles']['Insert'] = {
         id: user.id,
         email: user.email || null,
-        full_name: user.user_metadata?.full_name || null,
-        avatar_url: user.user_metadata?.avatar_url || null,
+        full_name: null, // We don't have user metadata here
+        avatar_url: null, // We don't have user metadata here
         membership_tier: null,
         is_premium: null,
         has_seen_onboarding: null,
       };
 
-      // Set the profile in the observable
-      profile$.set(newProfile as Database['public']['Tables']['profiles']['Row']);
+      // Set the profile in the observable using the correct structure
+      profile$.assign!({
+        [user.id]: newProfile as Database['public']['Tables']['profiles']['Row']
+      });
       
-      return profile$.get();
+      const updatedProfile = profile$.get();
+      return updatedProfile ? Object.values(updatedProfile)[0] : null;
     } catch (error) {
       console.error('Error ensuring user profile:', error);
       return null;
@@ -160,20 +169,25 @@ export const useSyncedData = () => {
     try {
       // Try to get user from profile observable first
       const existingProfile = profile$.get();
-      let user = null;
+      let user: { id: string; email: string | null } | null = null;
 
-      if (existingProfile && existingProfile.id) {
-        // If profile observable has an ID, assume user is authenticated and use that ID
-        user = { id: existingProfile.id, email: existingProfile.email };
+      if (existingProfile && Object.keys(existingProfile).length > 0) {
+        // Extract the actual profile object from the observable structure
+        const profileObj = Object.values(existingProfile)[0];
+        if (profileObj && profileObj.id) {
+          // If profile observable has an ID, assume user is authenticated and use that ID
+          user = { id: profileObj.id, email: profileObj.email };
+        }
       } else {
         // Fallback to direct Supabase auth if profile observable is not yet populated
         const { data: { user: authUser } } = await supabase.auth.getUser();
-        user = authUser;
+        user = authUser ? { id: authUser.id, email: authUser.email || null } : null;
       }
 
       if (!user) throw new Error('No authenticated user');
 
-      const fullProfileData: Database['public']['Tables']['profiles']['Insert'] = {
+      // Create the profile data with the correct structure
+      const fullProfileData: Database['public']['Tables']['profiles']['Row'] = {
         id: user.id,
         email: user.email || null,
         full_name: profileData.full_name || null,
@@ -181,15 +195,19 @@ export const useSyncedData = () => {
         membership_tier: profileData.membership_tier || null,
         is_premium: profileData.is_premium || null,
         has_seen_onboarding: profileData.has_seen_onboarding || null,
+        created_at: new Date().toISOString(),
       };
 
-      // Set the profile in the observable
-      profile$.set(fullProfileData as Database['public']['Tables']['profiles']['Row']);
+      // Set the profile in the observable using the correct structure
+      profile$.assign!({
+        [user.id]: fullProfileData
+      });
       
       // Refresh user data after creating profile
       await fetchUserData();
       
-      return profile$.get();
+      const updatedProfile = profile$.get();
+      return updatedProfile ? Object.values(updatedProfile)[0] : null;
     } catch (error) {
       console.error('Error creating profile:', error);
       return null;

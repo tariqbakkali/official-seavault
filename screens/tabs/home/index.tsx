@@ -56,6 +56,7 @@ export default function HomeScreen() {
   // Use the new specialized stores
   const { creatures: allCreatures, categories: allCategories, sightings: allSightings, wishlists: allWishlists, profile: userProfile, allProfiles, achievements: allAchievements } = useSyncedData();
 
+
   const loadData = React.useCallback(() => {
     try {
       // Extract data from observables with proper typing

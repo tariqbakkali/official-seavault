@@ -124,7 +124,9 @@ export default function CreatureDetailScreen() {
       // The result indicates whether the item was added (true) or removed (false)
       setIsWishlisted(result);
     } catch (error) {
+      console.error('Error toggling wishlist:', error);
       Alert.alert('Error', 'Failed to update wishlist');
+      
     }
   };
 

@@ -1,5 +1,4 @@
 import { initializeSync, initializeUserSync } from './syncUtils';
-import { configureLegendState } from '../services/legendStateConfig';
 import { supabase } from '../services/supabase';
 import { setCurrentUserID } from '../stores/syncedObservables';
 
@@ -11,7 +10,7 @@ import { setCurrentUserID } from '../stores/syncedObservables';
 export const initializeApp = async () => {
   try {
     // Configure Legend-State
-    configureLegendState();
+    // configureLegendState();
     
     // Initialize catalog data sync
     await initializeSync();

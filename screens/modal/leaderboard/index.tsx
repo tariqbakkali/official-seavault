@@ -41,8 +41,7 @@ export default function LeaderboardModal() {
   // Use the new useSyncedData hook instead of useDataStore
   let { fetchUserData, fetchCatalog, allProfiles, sightings, creatures, profile } = useSyncedData();
 
-  profile = profile ? Object.values(profile)[0] : undefined;
-
+  const userProfile = profile ? Object.values(profile)[0] : undefined;
 
   // Fetch leaderboard data directly from Supabase
   const fetchLeaderboard = async (limit: number = 10): Promise<LeaderboardEntryType[]> => {
@@ -94,7 +93,7 @@ export default function LeaderboardModal() {
       ]);
       
       // Get current user ID
-      const currentUserId = profile?.id;
+      const currentUserId = userProfile?.id;
       
       // Process leaderboard data
       if (leaderboardResult && currentUserId) {

@@ -109,7 +109,7 @@ export default function ProfileScreen() {
   };
 
   // Extract profile data safely
-  const profileData = userProfile;
+  const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
 
   const menuItems: MenuItem[] = [
     {

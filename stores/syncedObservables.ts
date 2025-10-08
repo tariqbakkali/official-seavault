@@ -1,8 +1,8 @@
 import { observable } from '@legendapp/state';
-import { createSyncedObservable } from '../services/legendStateConfig';
 import { supabase } from '../services/supabase';
 import { Database } from '../types/database';
 import { v4 as uuidv4 } from 'uuid';
+import { customSynced } from '@/services/legendStateConfig';
 
 // Types for our observables
 export type Creature = Database['public']['Tables']['creatures']['Row'];
@@ -24,7 +24,7 @@ export const setCurrentUserID = (userId: string | null) => {
 export const getCurrentUserID = () => currentUserID$.get();
 
 // Synced observables for read-only data (catalog)
-export const categories$ = observable(createSyncedObservable({
+export const categories$ = observable(customSynced({
   supabase,
   collection: 'categories',
   actions: ['read'],
@@ -33,7 +33,7 @@ export const categories$ = observable(createSyncedObservable({
   fieldCreatedAt: 'created_at',
 }));
 
-export const creatures$ = observable(createSyncedObservable({
+export const creatures$ = observable(customSynced({
   supabase,
   collection: 'creatures',
   actions: ['read'],
@@ -42,7 +42,7 @@ export const creatures$ = observable(createSyncedObservable({
   fieldCreatedAt: 'created_at',
 }));
 
-export const achievements$ = observable(createSyncedObservable({
+export const achievements$ = observable(customSynced({
   supabase,
   collection: 'achievements',
   actions: ['read'],
@@ -51,7 +51,7 @@ export const achievements$ = observable(createSyncedObservable({
   fieldCreatedAt: 'created_at',
 }));
 
-export const diveSites$ = observable(createSyncedObservable({
+export const diveSites$ = observable(customSynced({
   supabase,
   collection: 'dive_sites',
   actions: ['read'],
@@ -63,7 +63,7 @@ export const diveSites$ = observable(createSyncedObservable({
 // These will be initialized with user ID filter when user logs in
 
 // Sightings observable - user-specific
-export const sightings$ = observable(createSyncedObservable({
+export const sightings$ = observable(customSynced({
   supabase,
   collection: 'sightings',
   filter: (select: any) => {
@@ -79,7 +79,7 @@ export const sightings$ = observable(createSyncedObservable({
 }));
 
 // Wishlists observable - user-specific
-export const wishlists$ = observable(createSyncedObservable({
+export const wishlists$ = observable(customSynced({
   supabase,
   collection: 'wishlists',
   filter: (select: any) => {
@@ -87,15 +87,32 @@ export const wishlists$ = observable(createSyncedObservable({
     if (!userId)  return select.eq('id', 'no auth'); 
     return select.eq('user_id', userId);
   },
-  actions: ['read', 'create', 'delete'],
+  actions: ['read', 'update', 'delete'],
+  update: async (input: any) => {
+
+    console.log({input})
+    // Custom Supabase create function for wishlists
+    const { data, error } = await supabase
+      .from('wishlists')
+      .insert(input)
+      .select()
+      .single();
+    
+    if (error) {
+      throw new Error(`Failed to create wishlist item: ${error.message}`);
+    }
+    
+    return { data, error: null };
+  },
   persist: { name: 'wishlists', retrySync: true },
-  changesSince: 'last-sync',
-  fieldCreatedAt: 'created_at',
+  retry:{infinite: true},
+  // changesSince: 'last-sync',
+  // fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all, filtering will be done by Supabase
 }));
 
 // Profile observable - user-specific
-export const profile$ = observable(createSyncedObservable({
+export const profile$ = observable(customSynced({
   supabase,
   collection: 'profiles',
   filter: (select: any) => {
@@ -110,7 +127,7 @@ export const profile$ = observable(createSyncedObservable({
   realtime: true, // Enable realtime for all, filtering will be done by Supabase
 }))
 
-export const profiles$ = observable(createSyncedObservable({
+export const profiles$ = observable(customSynced({
   supabase,
   collection: 'profiles',
   actions: ['read'],
@@ -145,7 +162,7 @@ export const createSighting = (sightingData: Omit<Sighting, 'id' | 'created_at' 
   } as Sighting);
 };
 
-export const createWishlistItem = (creatureId: string) => {
+export const createWishlistItem = async (creatureId: string) => {
   const userId = currentUserID$.get();
   if (!userId) {
     throw new Error('User must be logged in to create wishlist items');
@@ -153,12 +170,23 @@ export const createWishlistItem = (creatureId: string) => {
   
   const id = uuidv4();
   
-  wishlists$[id].set({
+  // Create the wishlist item data for insert
+  const wishlistItemData = {
     id,
     user_id: userId,
     creature_id: creatureId,
     created_at: new Date().toISOString(),
-  } as Wishlist);
+  };
+  
+  try {
+    // Set the data in the observable which will trigger the create action
+    (wishlists$ as any)[id].set(wishlistItemData);
+    
+    return wishlistItemData;
+  } catch (error: any) {
+    console.error('Error creating wishlist item:', error);
+    throw error;
+  }
 };
 
 export const createDiveSite = (diveSiteData: Omit<DiveSite, 'id' | 'created_at'>) => {
@@ -177,7 +205,8 @@ export const createDiveSite = (diveSiteData: Omit<DiveSite, 'id' | 'created_at'>
 };
 
 export const removeWishlistItem = (wishlistId: string) => {
-  delete wishlists$[wishlistId];
+  // Use Legend State's delete method instead of direct deletion
+  (wishlists$ as any)[wishlistId].delete();
 };
 
 // Toggle wishlist item - adds if not in wishlist, removes if already in wishlist
@@ -204,6 +233,7 @@ export const toggleWishlistItem = async (creatureId: string): Promise<boolean> =
   } else {
     // Add to wishlist
     createWishlistItem(creatureId);
+    // We can't easily wait for the creation to complete, so we assume it works
     return true; // Item added
   }
 };
@@ -216,12 +246,26 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
   }
   
   // Get the current profile data
-  const currentProfile = profile$.get() || {};
+  const currentProfile = profile$.get();
+  
+  // Get the existing profile object for this user, or create a default one
+  const existingUserProfile = currentProfile?.[userId];
+  
+  // Create the updated profile object
+  const updatedProfile = {
+    id: userId,
+    email: existingUserProfile?.email ?? null,
+    full_name: existingUserProfile?.full_name ?? null,
+    avatar_url: existingUserProfile?.avatar_url ?? null,
+    membership_tier: existingUserProfile?.membership_tier ?? null,
+    created_at: existingUserProfile?.created_at ?? new Date().toISOString(),
+    is_premium: existingUserProfile?.is_premium ?? null,
+    has_seen_onboarding: existingUserProfile?.has_seen_onboarding ?? null,
+    ...updates,
+  } as Profile;
   
   // Update the profile observable with the new data
-  profile$.set({
-    ...currentProfile,
-    ...updates,
-    id: userId, // Ensure the ID remains correct
+  profile$.assign!({
+    [userId]: updatedProfile
   });
 };
