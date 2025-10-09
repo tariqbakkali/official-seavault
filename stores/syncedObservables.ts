@@ -54,9 +54,20 @@ export const achievements$ = observable(customSynced({
 export const diveSites$ = observable(customSynced({
   supabase,
   collection: 'dive_sites',
-  actions: ['read'],
+  actions: ['read', 'update'],
   persist: { name: 'dive_sites' },
   changesSince: 'last-sync',
+  update: async (input: any) => {
+    const { data, error } = await supabase
+      .from('dive_sites')
+      .insert(input)
+      .select()
+      .single();
+      if (error) {
+        throw new Error(`Failed to update dive site: ${error.message}`);
+      } 
+  return { data, error: null };
+  },
 }));
 
 // Synced observables for user-specific data
@@ -74,6 +85,19 @@ export const sightings$ = observable(customSynced({
   actions: ['read', 'create', 'update', 'delete'],
   persist: { name: 'sightings', retrySync: true },
   changesSince: 'last-sync',
+  update: async (input: any) => {
+    // Custom Supabase update function for sightings
+    const { data, error } = await supabase
+      .from('sightings')
+      .insert(input)
+      .select()
+      .single();
+    
+    if (error) {
+      throw new Error(`Failed to update sighting: ${error.message}`);
+    }
+    return { data, error: null };
+  },
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all, filtering will be done by Supabase
 }));
@@ -154,7 +178,7 @@ export const createSighting = (sightingData: Omit<Sighting, 'id' | 'created_at' 
   
   const id = uuidv4();
   
-  sightings$[id].set({
+  (sightings$ as any)[id].set({
     ...sightingData,
     id,
     user_id: userId,
@@ -197,7 +221,7 @@ export const createDiveSite = (diveSiteData: Omit<DiveSite, 'id' | 'created_at'>
   
   const id = uuidv4();
   
-  diveSites$[id].set({
+  (diveSites$ as any)[id].set({
     ...diveSiteData,
     id,
     created_at: new Date().toISOString(),
