@@ -18,8 +18,10 @@
     "verify-policies": "node scripts/verify-policies.js",
     "verify-database-simple": "node scripts/verify-database-simple.js",
     "start": "expo start",
-    "android": "eas build --platform android --profile",
-    "ios": "eas build --platform android --profile"
+    "android dev build": "eas build --platform android --profile development",
+    "ios dev build": "eas build --platform ios --profile development",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -40,7 +42,6 @@
     "expo-blur": "~15.0.0",
     "expo-camera": "~17.0.0",
     "expo-constants": "~18.0.9",
-    "expo-dev-client": "~6.0.13",
     "expo-device": "~8.0.9",
     "expo-font": "~14.0.0",
     "expo-haptics": "~15.0.0",

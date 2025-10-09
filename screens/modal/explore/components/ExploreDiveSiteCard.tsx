@@ -23,7 +23,7 @@ const cardWidth = (width - 60) / 2;
 export default function ExploreDiveSiteCard({ diveSite, onPress }: ExploreDiveSiteCardProps) {
   // Generate a static map URL (you'll need to replace YOUR_API_KEY with an actual Google Maps API key)
   const mapUrl = diveSite.latitude && diveSite.longitude 
-    ? `https://maps.googleapis.com/maps/api/staticmap?center=${diveSite.latitude},${diveSite.longitude}&zoom=10&size=400x400&key=YOUR_API_KEY`
+    ? `https://maps.googleapis.com/maps/api/staticmap?center=${diveSite.latitude},${diveSite.longitude}&zoom=10&size=400x400&key=${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}`
     : null;
 
   return (
