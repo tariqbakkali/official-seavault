@@ -40,8 +40,23 @@ export default function ExploreModal() {
 
   const loadData = async () => {
     try {
-      // Extract dive sites from the observable
-      const sites = diveSitesData ? Object.values(diveSitesData) : [];
+      // Extract dive sites from the observable with proper typing
+      let sites: DiveSite[] = [];
+      if (diveSitesData) {
+        // Handle both object format (with ID keys) and array format
+        if (Array.isArray(diveSitesData)) {
+          sites = diveSitesData as DiveSite[];
+        } else {
+          // Extract values and filter out null/undefined entries
+          sites = Object.values(diveSitesData)
+            .filter((site): site is DiveSite => 
+              site !== null && 
+              site !== undefined && 
+              typeof site === 'object' && 
+              'id' in site
+            ) as DiveSite[];
+        }
+      }
       setDiveSites(sites);
     } catch (error) {
       console.error('Error loading dive sites:', error);
@@ -86,7 +101,12 @@ export default function ExploreModal() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <ScreenHeader 
           title="Explore" 
           onBackPress={() => router.back()}
@@ -100,7 +120,12 @@ export default function ExploreModal() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
       <ScreenHeader 
         title="Explore" 
         onBackPress={() => router.back()}

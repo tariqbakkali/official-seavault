@@ -14,7 +14,22 @@ const DiveSitesScreen = () => {
   const { diveSites, isLoading, errors } = useSyncedData();
 
   // Extract the actual data from the observable
-  const diveSitesData = diveSites || [];
+  // The Legend State observable returns an object with keys as IDs and values as the actual data
+  const diveSitesData = React.useMemo(() => {
+    if (!diveSites) return [];
+    
+    // If diveSites is an object with ID keys, extract the values
+    if (typeof diveSites === 'object' && !Array.isArray(diveSites)) {
+      return Object.values(diveSites).filter(site => site !== null && site !== undefined);
+    }
+    
+    // If it's already an array, return as is
+    if (Array.isArray(diveSites)) {
+      return diveSites;
+    }
+    
+    return [];
+  }, [diveSites]);
 
   const renderDiveSite = ({ item }: { item: any }) => (
     <View style={styles.siteCard}>
@@ -49,7 +64,7 @@ const DiveSitesScreen = () => {
       {diveSitesData && diveSitesData.length > 0 ? (
         <FlatList
           data={diveSitesData}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
           renderItem={renderDiveSite}
           contentContainerStyle={styles.listContainer}
         />

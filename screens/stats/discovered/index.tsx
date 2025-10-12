@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { Calendar } from 'lucide-react-native';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import ImageWithFallback from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components';
 import { formatDate } from '@/utils/format';
 import { DIMENSIONS } from '@/constants/dimensions';
 
@@ -124,7 +124,12 @@ export default function DiscoveredScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <ScreenHeader 
           title="Loading..." 
           onBackPress={() => router.back()}
@@ -137,7 +142,12 @@ export default function DiscoveredScreen() {
   // Show empty state if no discovered creatures
   if (discoveredCreatures.length === 0) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <ScreenHeader 
           title="Discovered (0)" 
           onBackPress={() => router.back()}
@@ -152,7 +162,12 @@ export default function DiscoveredScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
       <ScreenHeader 
         title={`Discovered (${discoveredCreatures.length})`} 
         onBackPress={() => router.back()}

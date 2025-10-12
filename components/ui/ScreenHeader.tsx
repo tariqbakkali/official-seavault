@@ -69,10 +69,13 @@ const styles = StyleSheet.create({
     marginLeft: DIMENSIONS.SPACE_MD,
   },
   actionButton: {
-    padding: DIMENSIONS.SPACE_SM,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: COLORS.PRIMARY,
+    borderRadius: 6,
   },
   actionButtonText: {
-    color: COLORS.PRIMARY,
+    color: '#fff',
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD,
   },

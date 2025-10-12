@@ -6,9 +6,11 @@ import {
   diveSites$, 
   currentUserSightings$,
   allUsersSightings$,
+  allUsersAchievements$,
   wishlists$, 
   profile$,
   achievements$,
+  userAchievements$,
   profiles$, // Added profiles$
   createSighting,
   createWishlistItem,
@@ -17,7 +19,8 @@ import {
   removeWishlistItem,
   updateUserProfile,
   getCurrentUserSightings,
-  getAllUsersSightings
+  getAllUsersSightings,
+  getAllUsersAchievements
 } from '../stores/syncedObservables';
 import { supabase } from '../services/supabase';
 import { Database } from '../types/database';
@@ -29,11 +32,13 @@ export const useSyncedData = () => {
   const diveSites = use$(diveSites$);
   const currentUserSightings = use$(currentUserSightings$);
   const allUsersSightings = use$(allUsersSightings$);
+  const allUsersAchievements = use$(allUsersAchievements$);
   const wishlists = use$(wishlists$);
   // For profile, we need to handle it specially to ensure we get the current user's profile
   const profile = use$(profile$);
   const allProfiles = use$(profiles$); // Added allProfiles
   const achievements = use$(achievements$);
+  const userAchievements = use$(userAchievements$);
 
   // Get sync states for each observable
   // For sync states, we need to use useObservable because we need the observable objects
@@ -43,9 +48,11 @@ export const useSyncedData = () => {
   const diveSitesSyncState = useObservable(syncState(diveSites$));
   const currentUserSightingsSyncState = useObservable(syncState(currentUserSightings$));
   const allUsersSightingsSyncState = useObservable(syncState(allUsersSightings$));
+  const allUsersAchievementsSyncState = useObservable(syncState(allUsersAchievements$));
   const wishlistsSyncState = useObservable(syncState(wishlists$));
   const profileSyncState = useObservable(syncState(profile$));
   const achievementsSyncState = useObservable(syncState(achievements$));
+  const userAchievementsSyncState = useObservable(syncState(userAchievements$));
   const profilesSyncState = useObservable(syncState(profiles$)); // Added profilesSyncState
 
   // Loading states
@@ -55,9 +62,11 @@ export const useSyncedData = () => {
     diveSites: !diveSitesSyncState.isLoaded,
     currentUserSightings: !currentUserSightingsSyncState.isLoaded,
     allUsersSightings: !allUsersSightingsSyncState.isLoaded,
+    allUsersAchievements: !allUsersAchievementsSyncState.isLoaded,
     wishlists: !wishlistsSyncState.isLoaded,
     profile: !profileSyncState.isLoaded,
     achievements: !achievementsSyncState.isLoaded,
+    userAchievements: !userAchievementsSyncState.isLoaded,
     allProfiles: !profilesSyncState.isLoaded, // Added allProfiles loading state
   };
 
@@ -68,9 +77,11 @@ export const useSyncedData = () => {
     diveSites: diveSitesSyncState.error,
     currentUserSightings: currentUserSightingsSyncState.error,
     allUsersSightings: allUsersSightingsSyncState.error,
+    allUsersAchievements: allUsersAchievementsSyncState.error,
     wishlists: wishlistsSyncState.error,
     profile: profileSyncState.error,
     achievements: achievementsSyncState.error,
+    userAchievements: userAchievementsSyncState.error,
     allProfiles: profilesSyncState.error, // Added allProfiles error state
   };
 
@@ -228,9 +239,11 @@ export const useSyncedData = () => {
     diveSites,
     currentUserSightings,
     allUsersSightings,
+    allUsersAchievements,
     wishlists,
     profile,
     achievements,
+    userAchievements,
     allProfiles,
     
     // Loading states

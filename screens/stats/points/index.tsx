@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Star, Eye, Heart, Trophy } from 'lucide-react-native';
+import { Star, Eye, Heart, Trophy, Fish } from 'lucide-react-native';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
 import { Category } from '@/types/database';
@@ -30,9 +30,17 @@ export default function PointsScreen() {
   const [userData, setUserData] = React.useState<any | null>(null);
   const [userStats, setUserStats] = React.useState<any | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const insets = useSafeAreaInsets();
   
-  const { creatures: allCreatures, categories: allCategories, sightings: allSightings, wishlists: allWishlists, profile: userProfile } = useSyncedData();
+  // Fixed the property names to match what useSyncedData actually returns
+  const { 
+    creatures: allCreatures, 
+    categories: allCategories, 
+    currentUserSightings, // Changed from 'sightings' to 'currentUserSightings'
+    wishlists: allWishlists, 
+    profile: userProfile,
+    userAchievements: allUserAchievements,
+    achievements: allAchievements // Added missing achievements
+  } = useSyncedData();
 
   const loadData = React.useCallback(() => {
     try {
@@ -44,7 +52,8 @@ export default function PointsScreen() {
       const categoriesArray = allCategories ? Object.values(allCategories).filter(
         (c: any) => c && typeof c === 'object' && c.id && typeof c.id === 'string'
       ) : [];
-      const sightingsArray = allSightings ? Object.values(allSightings).filter(
+      // Fixed to use currentUserSightings instead of allSightings
+      const sightingsArray = currentUserSightings ? Object.values(currentUserSightings).filter(
         (s: any) => s && typeof s === 'object' && s.id && typeof s.id === 'string'
       ) : [];
       const wishlistsArray = allWishlists ? Object.values(allWishlists).filter(
@@ -52,6 +61,12 @@ export default function PointsScreen() {
       ) : [];
       // Extract profile data - it's now already unwrapped
       const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
+      
+      // Get user achievements
+      const userAchievementsArray = allUserAchievements ? Object.values(allUserAchievements) : [];
+      
+      // Get all achievements for catalog
+      const achievementsArray = allAchievements ? Object.values(allAchievements) : [];
       
       if (creaturesArray.length > 0 && categoriesArray.length > 0) {
         // Create mock userData object to match the expected format
@@ -61,17 +76,15 @@ export default function PointsScreen() {
           profile: profileData
         };
         
-        setUserData(userData);
-        
         // Create mock catalog object to match the expected format
         const catalog = {
           creatures: creaturesArray as any[],
           categories: categoriesArray as any[],
-          achievements: [] // We don't have achievements in observables
+          achievements: achievementsArray as any[] // Added achievements to catalog
         };
         
         // Calculate user stats using the function from the store
-        const stats = calculateUserStats(userData, catalog);
+        const stats = calculateUserStats(userData, catalog, userAchievementsArray);
         setUserStats(stats);
       }
     } catch (error) {
@@ -79,7 +92,7 @@ export default function PointsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [allCreatures, allCategories, allSightings, allWishlists, userProfile]);
+  }, [allCreatures, allCategories, currentUserSightings, allWishlists, userProfile, allUserAchievements, allAchievements]);
 
   React.useEffect(() => {
     loadData();
@@ -111,7 +124,7 @@ export default function PointsScreen() {
       
       <View style={styles.categoryStats}>
         <View style={styles.statItem}>
-          <Eye size={16} color={COLORS.TEXT_TERTIARY} />
+          <Fish size={16} color={COLORS.TEXT_TERTIARY} />
           <Text style={styles.statValue}>{item.creatures}</Text>
         </View>
         <View style={styles.statItem}>
@@ -177,71 +190,136 @@ export default function PointsScreen() {
     return mappedData.sort((a, b) => b.points - a.points);
   }, [userStats, allCategories]);
 
+  // Calculate achievement points
+  const achievementPoints = React.useMemo(() => {
+    if (!userStats || !allUserAchievements || !allAchievements) return 0;
+    
+    // Create a map of achievement IDs to achievement objects for quick lookup
+    const achievementMap = new Map<string, any>();
+    const achievementsArray = Object.values(allAchievements);
+    achievementsArray.forEach((achievement: any) => {
+      achievementMap.set(achievement.id, achievement);
+    });
+    
+    // Calculate total points from achievements
+    let totalAchievementPoints = 0;
+    const userAchievementsArray = Object.values(allUserAchievements);
+    userAchievementsArray.forEach((userAchievement: any) => {
+      const achievement = achievementMap.get(userAchievement.achievement_id);
+      if (achievement && achievement.points) {
+        totalAchievementPoints += achievement.points;
+      }
+    });
+    
+    return totalAchievementPoints;
+  }, [userStats, allUserAchievements, allAchievements]);
+
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <SafeAreaView style={styles.container}>
         <ScreenHeader 
           title="Loading..." 
           onBackPress={() => router.back()}
           showBackButton={true}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
+  // Header component for FlatList
+  const renderHeader = () => (
+    <View style={styles.statsHeader}>
+      {/* Total Points Section */}
+      <View style={styles.pointsSummaryContainer}>
+        <View style={styles.pointsSummaryCard}>
+          <Star size={36} color={COLORS.SECONDARY} />
+          <View style={styles.pointsTextContainer}>
+            <Text style={styles.totalPoints}>{userStats?.totalPoints || 0}</Text>
+            <Text style={styles.pointsLabel}>Total Points</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Points Breakdown Section */}
+      <View style={styles.pointsBreakdownContainer}>
+        <Text style={styles.sectionTitle}>Points Breakdown</Text>
+        <View style={styles.breakdownGrid}>
+          <View style={styles.breakdownItem}>
+            <View style={styles.breakdownIconContainer}>
+              <Fish size={24} color={COLORS.PRIMARY} />
+            </View>
+            <View style={styles.breakdownTextContainer}>
+              <Text style={styles.breakdownValue}>{userStats?.uniqueCreatures || 0}</Text>
+              <Text style={styles.breakdownLabel}>Species Found</Text>
+            </View>
+          </View>
+          
+          <View style={styles.breakdownItem}>
+            <View style={styles.breakdownIconContainer}>
+              <Trophy size={24} color={COLORS.SECONDARY} />
+            </View>
+            <View style={styles.breakdownTextContainer}>
+              <Text style={styles.breakdownValue}>{achievementPoints}</Text>
+              <Text style={styles.breakdownLabel}>Achievements</Text>
+            </View>
+          </View>
+          
+          <View style={styles.breakdownItem}>
+            <View style={styles.breakdownIconContainer}>
+              <Heart size={24} color={COLORS.ERROR} />
+            </View>
+            <View style={styles.breakdownTextContainer}>
+              <Text style={styles.breakdownValue}>{allWishlists ? Object.keys(allWishlists).length : 0}</Text>
+              <Text style={styles.breakdownLabel}>Wishlist</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Category Section Title */}
+      {categoryStatsData.length > 0 && (
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            Categories ({categoryStatsData.length})
+          </Text>
+          <View style={styles.sectionDivider} />
+        </View>
+      )}
+    </View>
+  );
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <SafeAreaView style={styles.container}>
       <ScreenHeader 
         title="Points" 
         onBackPress={() => router.back()}
         showBackButton={true}
       />
-
-      <View style={styles.statsHeader}>
-        <View style={styles.pointsContainer}>
-          <Star size={32} color={COLORS.SECONDARY} />
-          <Text style={styles.totalPoints}>{userStats?.totalPoints || 0}</Text>
-          <Text style={styles.pointsLabel}>Total Points</Text>
-        </View>
-        
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Eye size={24} color={COLORS.PRIMARY} />
-            <Text style={styles.statValue}>{userStats?.uniqueCreatures || 0}</Text>
-            <Text style={styles.statLabel}>Unique</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Heart size={24} color={COLORS.ERROR} />
-            <Text style={styles.statValue}>{allWishlists ? Object.keys(allWishlists).length : 0}</Text>
-            <Text style={styles.statLabel}>Wishlist</Text>
-          </View>
-        </View>
-      </View>
-
+      
       <FlatList
         data={categoryStatsData}
         keyExtractor={(item) => item.category.id}
         renderItem={renderCategoryStat}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={renderHeader}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Star size={48} color={COLORS.TEXT_DISABLED} />
-            <Text style={styles.emptyTitle}>No points yet</Text>
+            <Star size={60} color={COLORS.TEXT_DISABLED} />
+            <Text style={styles.emptyTitle}>No Points Yet</Text>
             <Text style={styles.emptySubtitle}>
-              Start discovering marine life to earn points
+              Start discovering marine life to earn points and track your progress
             </Text>
+            <TouchableOpacity 
+              style={styles.exploreButton}
+              onPress={() => router.push('/(tabs)/categories')}
+            >
+              <Text style={styles.exploreButtonText}>Explore Categories</Text>
+            </TouchableOpacity>
           </View>
         }
-        ListHeaderComponent={
-          (categoryStatsData.length > 0) === true ? (
-            <Text style={styles.sectionTitle}>
-              Categories ({categoryStatsData.length})
-            </Text>
-          ) : null
-        }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -254,58 +332,117 @@ const styles = StyleSheet.create({
     paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
     paddingBottom: DIMENSIONS.SPACE_LG,
   },
-  pointsContainer: {
+  pointsSummaryContainer: {
     alignItems: 'center',
-    marginBottom: DIMENSIONS.SPACE_XXL,
-    marginTop: DIMENSIONS.SPACE_LG,
+    marginVertical: DIMENSIONS.SPACE_XL,
+  },
+  pointsSummaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: DIMENSIONS.RADIUS_LG,
+    padding: DIMENSIONS.SPACE_XL,
+    width: '100%',
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  pointsTextContainer: {
+    marginLeft: DIMENSIONS.SPACE_LG,
   },
   totalPoints: {
-    fontSize: TYPOGRAPHY.SIZE_HERO,
-    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+    fontSize: 48,
+    fontWeight: '800',
     color: COLORS.TEXT_PRIMARY,
-    marginVertical: DIMENSIONS.SPACE_SM,
   },
   pointsLabel: {
     fontSize: TYPOGRAPHY.SIZE_LG,
     color: COLORS.TEXT_SECONDARY,
+    marginTop: DIMENSIONS.SPACE_XS,
   },
-  statsRow: {
+  pointsBreakdownContainer: {
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: DIMENSIONS.RADIUS_LG,
+    padding: DIMENSIONS.SPACE_LG,
+    
+    marginBottom: DIMENSIONS.SPACE_LG,
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  sectionHeader: {
+    marginBottom: DIMENSIONS.SPACE_MD,
+  },
+  sectionTitle: {
+    fontSize: TYPOGRAPHY.SIZE_XL,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+    color: COLORS.TEXT_PRIMARY,
+    marginBottom: DIMENSIONS.SPACE_MD,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: COLORS.BORDER_PRIMARY,
+    marginBottom: DIMENSIONS.SPACE_LG,
+  },
+  breakdownGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
+  },
+  breakdownItem: {
+    alignItems: 'center',
+    flex: 1,
+    paddingHorizontal: DIMENSIONS.SPACE_SM,
+  },
+  breakdownIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.SURFACE_SECONDARY,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: DIMENSIONS.SPACE_SM,
+  },
+  breakdownTextContainer: {
+    alignItems: 'center',
+  },
+  breakdownValue: {
+    fontSize: TYPOGRAPHY.SIZE_XL,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+    color: COLORS.TEXT_PRIMARY,
+  },
+  breakdownLabel: {
+    fontSize: TYPOGRAPHY.SIZE_SM,
+    color: COLORS.TEXT_SECONDARY,
+    marginTop: DIMENSIONS.SPACE_XS,
+    textAlign: 'center',
+  },
+  listContainer: {
+    paddingBottom: 100,
+  },
+  categoryCard: {
     backgroundColor: COLORS.SURFACE,
     borderRadius: DIMENSIONS.RADIUS_LG,
     padding: DIMENSIONS.SPACE_LG,
     marginHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-  },
-  statBox: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: TYPOGRAPHY.SIZE_XL,
-    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
-    color: COLORS.TEXT_PRIMARY,
-    marginVertical: DIMENSIONS.SPACE_XS,
-  },
-  statLabel: {
-    fontSize: TYPOGRAPHY.SIZE_SM,
-    color: COLORS.TEXT_SECONDARY,
-  },
-  listContainer: {
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    paddingBottom: 100,
-  },
-  sectionTitle: {
-    fontSize: TYPOGRAPHY.SIZE_LG,
-    fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD,
-    color: COLORS.TEXT_SECONDARY,
     marginBottom: DIMENSIONS.SPACE_MD,
-    marginTop: DIMENSIONS.SPACE_SM,
-  },
-  categoryCard: {
-    backgroundColor: COLORS.SURFACE,
-    borderRadius: DIMENSIONS.RADIUS_MD,
-    padding: DIMENSIONS.SPACE_LG,
-    marginBottom: DIMENSIONS.SPACE_MD,
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   categoryHeader: {
     flexDirection: 'row',
@@ -320,14 +457,14 @@ const styles = StyleSheet.create({
   },
   categoryPoints: {
     fontSize: TYPOGRAPHY.SIZE_LG,
-    fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
     color: COLORS.SECONDARY,
   },
   progressContainer: {
     marginBottom: DIMENSIONS.SPACE_MD,
   },
   progressBarBackground: {
-    height: 8,
+    height: 10,
     backgroundColor: COLORS.SURFACE_SECONDARY,
     borderRadius: DIMENSIONS.RADIUS_FULL,
     overflow: 'hidden',
@@ -341,6 +478,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: COLORS.TEXT_SECONDARY,
+    textAlign: 'center',
   },
   categoryStats: {
     flexDirection: 'row',
@@ -354,14 +492,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: DIMENSIONS.SPACE_XS,
   },
+  statValue: {
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+    color: COLORS.TEXT_PRIMARY,
+    marginLeft: DIMENSIONS.SPACE_XS,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: DIMENSIONS.SPACE_XXXL,
+    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
   },
   emptyTitle: {
-    fontSize: TYPOGRAPHY.SIZE_LG,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
     color: COLORS.TEXT_PRIMARY,
     marginTop: DIMENSIONS.SPACE_LG,
@@ -373,5 +518,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: TYPOGRAPHY.LINE_HEIGHT_MD,
     paddingHorizontal: DIMENSIONS.SPACE_LG,
+    marginBottom: DIMENSIONS.SPACE_XL,
+  },
+  exploreButton: {
+    backgroundColor: COLORS.PRIMARY,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingVertical: DIMENSIONS.SPACE_MD,
+    paddingHorizontal: DIMENSIONS.SPACE_LG,
+  },
+  exploreButtonText: {
+    color: COLORS.TEXT_PRIMARY,
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
   },
 });

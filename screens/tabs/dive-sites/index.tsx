@@ -1,10 +1,12 @@
-import React, { useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import * as Location from 'expo-location';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { hasValidCoordinates } from '@/utils/diveSiteUtils';
-import FormField from '@/components/forms/FormField';
+import AutocompleteField from '@/components/forms/AutocompleteField';
 import FormSection from '@/components/ui/FormSection';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
@@ -18,13 +20,41 @@ const AddDiveSiteScreen = () => {
   const [isSelectingCoordinates, setIsSelectingCoordinates] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [selectedCoordinate, setSelectedCoordinate] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [initialRegion, setInitialRegion] = useState({
+    latitude: 52,
+    longitude: 5,
+    latitudeDelta: 5,
+    longitudeDelta: 5,
+  });
+  
+  // Debug state changes
+  useEffect(() => {
+    console.log('[DEBUG] AddDiveSiteScreen: diveSiteName changed to', diveSiteName);
+  }, [diveSiteName]);
+  
+  useEffect(() => {
+    console.log('[DEBUG] AddDiveSiteScreen: selectedCoordinate changed to', selectedCoordinate);
+  }, [selectedCoordinate]);
   
   const { diveSites, createDiveSite } = useSyncedData();
 
   // Prepare data for clustering - SuperCluster expects GeoJSON format
   // Filter out sites without valid coordinates
   const validSites = useMemo(() => {
-    const diveSitesData = diveSites || [];
+    // Extract the actual data from the observable
+    let diveSitesData: any[] = [];
+    
+    if (diveSites) {
+      // If diveSites is an object with ID keys, extract the values
+      if (typeof diveSites === 'object' && !Array.isArray(diveSites)) {
+        diveSitesData = Object.values(diveSites).filter(site => site !== null && site !== undefined);
+      } 
+      // If it's already an array, use as is
+      else if (Array.isArray(diveSites)) {
+        diveSitesData = diveSites;
+      }
+    }
+    
     return diveSitesData
       ?.filter((site: DiveSite) => hasValidCoordinates(site))
       .map((site: DiveSite) => ({
@@ -41,12 +71,132 @@ const AddDiveSiteScreen = () => {
       })) || [];
   }, [diveSites]);
 
-  // Calculate initial region focused on Netherlands shores
-  const initialRegion = {
-    latitude: 52,
-    longitude: 5,
-    latitudeDelta: 5,
-    longitudeDelta: 5,
+  /**
+   * Handle suggestion selection from Google Places API
+   */
+  const handleSuggestionSelect = useCallback(async (suggestion: any) => {
+    console.log('[DEBUG] AddDiveSiteScreen: handleSuggestionSelect called with', suggestion);
+    try {
+      // Get API key from environment
+      const apiKey = Constants.expoConfig?.extra?.GOOGLE_MAPS_API_KEY;
+      
+      if (!apiKey) {
+        console.warn('[DEBUG] AddDiveSiteScreen: Google Maps API key not found');
+        Alert.alert('Error', 'Google Maps API key not configured.');
+        return;
+      }
+
+      console.log('[DEBUG] AddDiveSiteScreen: API key found, proceeding with place details fetch');
+      
+      // Fetch place details to get coordinates
+      const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${suggestion.place_id}&key=${apiKey}`;
+      console.log('[DEBUG] AddDiveSiteScreen: Fetching place details from', detailsUrl);
+      
+      const response = await fetch(detailsUrl);
+      const data = await response.json();
+      console.log('[DEBUG] AddDiveSiteScreen: Place details response received', data);
+      
+      if (data.result && data.result.geometry && data.result.geometry.location) {
+        const { lat, lng } = data.result.geometry.location;
+        console.log('[DEBUG] AddDiveSiteScreen: Coordinates found in response', { lat, lng });
+        
+        // Ensure coordinates are valid numbers
+        const latitude = parseFloat(lat.toString());
+        const longitude = parseFloat(lng.toString());
+        
+        console.log('[DEBUG] AddDiveSiteScreen: Parsed coordinates', { latitude, longitude });
+        
+        if (isNaN(latitude) || isNaN(longitude)) {
+          console.error('[DEBUG] AddDiveSiteScreen: Invalid coordinates after parsing', { lat, lng });
+          Alert.alert('Error', 'Invalid coordinates received. Please try another location.');
+          return;
+        }
+        
+        // Set the dive site name first
+        console.log('[DEBUG] AddDiveSiteScreen: Setting dive site name to', suggestion.description);
+        setDiveSiteName(suggestion.description);
+        console.log('[DEBUG] AddDiveSiteScreen: Dive site name set successfully');
+        
+        // Then set the coordinates
+        console.log('[DEBUG] AddDiveSiteScreen: Setting latitude to', latitude.toString());
+        setLatitude(latitude.toString());
+        console.log('[DEBUG] AddDiveSiteScreen: Latitude set successfully');
+        
+        console.log('[DEBUG] AddDiveSiteScreen: Setting longitude to', longitude.toString());
+        setLongitude(longitude.toString());
+        console.log('[DEBUG] AddDiveSiteScreen: Longitude set successfully');
+        
+        // Set the selected coordinate to show the marker on the map
+        const coordinate = { latitude, longitude };
+        console.log('[DEBUG] AddDiveSiteScreen: Setting selected coordinate to', coordinate);
+        setSelectedCoordinate(coordinate);
+        console.log('[DEBUG] AddDiveSiteScreen: Selected coordinate set successfully');
+        
+        // Update initial region to focus on the selected location
+        const newRegion = {
+          latitude,
+          longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+        console.log('[DEBUG] AddDiveSiteScreen: Setting initial region to', newRegion);
+        setInitialRegion(newRegion);
+        console.log('[DEBUG] AddDiveSiteScreen: Initial region set successfully');
+        
+        // Show confirmation
+        console.log('[DEBUG] AddDiveSiteScreen: Showing success alert');
+        Alert.alert(
+          'Location Found', 
+          `Coordinates for "${suggestion.description}" have been set`,
+          [{ text: 'OK' }]
+        );
+        console.log('[DEBUG] AddDiveSiteScreen: Success alert shown');
+      } else {
+        console.warn('[DEBUG] AddDiveSiteScreen: No geometry data found in place details response', data);
+        Alert.alert('Error', 'Could not fetch location details. Please try another location.');
+      }
+    } catch (err) {
+      console.error('[DEBUG] AddDiveSiteScreen: Error fetching place details', err);
+      Alert.alert('Error', 'Could not fetch location details. Please enter coordinates manually.');
+    }
+    console.log('[DEBUG] AddDiveSiteScreen: handleSuggestionSelect completed');
+  }, []);
+
+  /**
+   * Get user's current location
+   */
+  const getCurrentLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Permission to access location was denied');
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+      
+      setLatitude(latitude.toString());
+      setLongitude(longitude.toString());
+      setSelectedCoordinate({ latitude, longitude });
+      
+      // Update initial region to focus on current location
+      setInitialRegion({
+        latitude,
+        longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+      
+      Alert.alert(
+        'Current Location', 
+        `Your current location has been set\nLatitude: ${latitude.toFixed(6)}\nLongitude: ${longitude.toFixed(6)}`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error getting current location:', error);
+      Alert.alert('Error', 'Could not get current location. Please try again.');
+    }
   };
 
   /**
@@ -159,7 +309,20 @@ const AddDiveSiteScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
-      <ScrollView style={styles.container}>
+      <ScrollView 
+        style={styles.container} 
+        keyboardShouldPersistTaps="handled"
+        scrollEnabled={true}
+        nestedScrollEnabled={true}
+        // Allow the map to handle gestures by not intercepting them
+        onStartShouldSetResponderCapture={(e) => {
+          // Allow map gestures to work properly
+          return false;
+        }}
+        // Additional gesture handling for better map interaction
+        onMoveShouldSetResponderCapture={() => false}
+        onResponderTerminationRequest={() => false}
+      >
         <ScreenHeader 
           title="Add New Dive Site"
           onBackPress={() => router.back()}
@@ -169,16 +332,24 @@ const AddDiveSiteScreen = () => {
         />
         
         <View style={styles.content}>
-          {/* Dive Site Name */}
-          <FormSection title="">
-            <FormField
+          {/* Dive Site Name with Autocomplete */}
+          <FormSection title="Dive Site Information">
+            <AutocompleteField
               label="Dive Site Name"
               value={diveSiteName}
-              onChangeText={setDiveSiteName}
-              placeholder="Enter dive site name"
+              onChangeText={(text) => {
+                console.log('[DEBUG] AddDiveSiteScreen: Autocomplete text changed to', text);
+                setDiveSiteName(text);
+              }}
+              placeholder="Search for dive site location"
               required
               error={getNameError()}
+              onSuggestionSelect={handleSuggestionSelect}
             />
+            
+            <TouchableOpacity style={styles.currentLocationButton} onPress={getCurrentLocation}>
+              <Text style={styles.currentLocationText}>Use Current Location</Text>
+            </TouchableOpacity>
           </FormSection>
           
           {/* Map for Coordinate Selection */}
@@ -190,15 +361,6 @@ const AddDiveSiteScreen = () => {
             handleMapPress={handleMapPress}
             handleMarkerDragEnd={handleMarkerDragEnd}
             selectedCoordinate={selectedCoordinate}
-          />
-          
-          {/* Manual Coordinate Entry */}
-          <ManualCoordinateEntrySection
-            latitude={latitude}
-            setLatitude={setLatitude}
-            longitude={longitude}
-            setLongitude={setLongitude}
-            validationErrors={validationErrors}
           />
         </View>
       </ScrollView>
@@ -218,11 +380,17 @@ const styles = StyleSheet.create({
   content: {
     padding: DIMENSIONS.PADDING_HORIZONTAL,
   },
-  helperText: {
-    fontSize: TYPOGRAPHY.SIZE_SM,
-    color: COLORS.TEXT_TERTIARY,
-    fontStyle: 'italic',
-    marginTop: DIMENSIONS.SPACE_XS,
+  currentLocationButton: {
+    backgroundColor: COLORS.PRIMARY,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  currentLocationText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

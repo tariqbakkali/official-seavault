@@ -67,7 +67,13 @@ const DiveTypeDepthSection: React.FC<DiveTypeDepthSectionProps> = ({
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.modalContent}>
+          <ScrollView 
+            style={styles.modalContent}
+            // Allow maps to handle gestures by not intercepting them
+            onStartShouldSetResponderCapture={() => false}
+            onMoveShouldSetResponderCapture={() => false}
+            onResponderTerminationRequest={() => false}
+          >
             <TouchableOpacity
               style={styles.modalItem}
               onPress={() => {

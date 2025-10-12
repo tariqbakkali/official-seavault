@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import { GoogleMaps, AppleMaps } from 'expo-maps';
 import CustomClusteredMapView from '@/components/CustomClusteredMapView';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { Database } from '@/types/database';
@@ -18,8 +18,6 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
   onDeselectDiveSite,
   onDiveSiteSelect,
 }) => {
-  const mapRef = useRef<MapView>(null);
-
   // Helper function to calculate initial region focused on area with most dive sites
   const calculateInitialRegionForDenseArea = (sites: any[]) => {
     // Europe region to show a broader view
@@ -51,28 +49,6 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
     return europeRegion;
   };
 
-  // When selected dive site changes, animate to the new site
-  useEffect(() => {
-    if (selectedDiveSiteId) {
-      // Use a delay to ensure the map is fully initialized
-      const timeoutId = setTimeout(() => {
-        if (mapRef.current) {
-          const selectedSite = diveSites?.find(site => site.id === selectedDiveSiteId);
-          if (selectedSite && selectedSite.latitude && selectedSite.longitude) {
-            mapRef.current.animateToRegion({
-              latitude: selectedSite.latitude,
-              longitude: selectedSite.longitude,
-              latitudeDelta: 0.0922,
-              longitudeDelta: 0.0421,
-            }, 1000);
-          }
-        }
-      }, 300); // Increased delay to ensure map is ready
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [selectedDiveSiteId, diveSites]);
-
   return (
     <View style={styles.mapCard}>
       <View style={styles.mapHeader}>
@@ -92,25 +68,35 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
           (() => {
             const selectedSite = diveSites?.find(site => site.id === selectedDiveSiteId);
             if (selectedSite && selectedSite.latitude && selectedSite.longitude) {
+              // Convert initial region to camera position
+              const cameraPosition = {
+                coordinates: {
+                  latitude: selectedSite.latitude,
+                  longitude: selectedSite.longitude,
+                },
+                zoom: 15, // Zoom in for a single site
+              };
+              
+              // Platform-specific map view
+              const MapViewComponent = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
+              
+              // Create marker
+              const markers = [{
+                id: selectedSite.id,
+                coordinates: { 
+                  latitude: selectedSite.latitude, 
+                  longitude: selectedSite.longitude 
+                },
+                title: selectedSite.name,
+              }];
+              
               return (
-                <MapView
-                  ref={mapRef}
+                <MapViewComponent
                   style={styles.map}
-                  initialRegion={{
-                    latitude: selectedSite.latitude,
-                    longitude: selectedSite.longitude,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
-                  }}
-                >
-                  <Marker
-                    coordinate={{
-                      latitude: selectedSite.latitude,
-                      longitude: selectedSite.longitude,
-                    }}
-                    title={selectedSite.name}
-                  />
-                </MapView>
+                  cameraPosition={cameraPosition}
+                  markers={markers}
+                  onMarkerClick={() => onDiveSiteSelect(selectedSite.id)}
+                />
               );
             } else {
               return (
@@ -162,18 +148,15 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
                 return null;
               }
               
-              return (
-                <Marker
-                  key={data.properties.id}
-                  coordinate={{
-                    latitude: latitude,
-                    longitude: longitude,
-                  }}
-                  title={data.properties.name}
-                  pinColor="#007AFF"
-                  onPress={() => onDiveSiteSelect(data.properties.id)}
-                />
-              );
+              // Create marker data
+              const markerData = {
+                id: data.properties.id,
+                title: data.properties.name,
+                coordinates: { latitude, longitude },
+                onPress: () => onDiveSiteSelect(data.properties.id),
+              };
+              
+              return markerData;
             };
 
             // Render function for clusters
@@ -196,32 +179,15 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
               const pointCount = cluster && cluster.properties && cluster.properties.point_count ? 
                                 cluster.properties.point_count : 0;
 
-              return (
-                <Marker 
-                  key={`cluster-${cluster.properties?.cluster_id || 'unknown'}`}
-                  coordinate={{
-                    latitude: latitude,
-                    longitude: longitude,
-                  }}
-                  onPress={onPress}
-                >
-                  <View style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: '#007AFF',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                    <Text style={{
-                      color: '#FFFFFF',
-                      fontWeight: 'bold',
-                    }}>
-                      {pointCount}
-                    </Text>
-                  </View>
-                </Marker>
-              );
+              // Create marker data for cluster
+              const clusterMarkerData = {
+                id: `cluster-${cluster.properties?.cluster_id || 'unknown'}`,
+                title: `${pointCount} sites`,
+                coordinates: { latitude, longitude },
+                onPress: onPress,
+              };
+              
+              return clusterMarkerData;
             };
 
             return (

@@ -5,11 +5,11 @@ import CustomClusteredMapView from '@/components/CustomClusteredMapView';
 interface MapContainerProps {
   data: any[];
   initialRegion: any;
-  renderMarker: (data: any) => React.ReactNode;
+  renderMarker: (data: any) => any; // Return marker data object instead of React component
   clusteringEnabled?: boolean;
   onPress?: (event: any) => void;
   onMarkerDragEnd?: (event: any) => void;
-  selectedCoordinate?: { latitude: number; longitude: number } | null; // Add selectedCoordinate prop
+  selectedCoordinate?: { latitude: number; longitude: number } | null;
   style?: object;
   helperText?: string;
 }
@@ -24,22 +24,36 @@ const MapContainer: React.FC<MapContainerProps> = ({
   clusteringEnabled = true,
   onPress,
   onMarkerDragEnd,
-  selectedCoordinate, // Add selectedCoordinate prop
+  selectedCoordinate,
   style,
   helperText
 }) => {
+  console.log('[DEBUG] MapContainer: Received props', { data, initialRegion, selectedCoordinate, clusteringEnabled });
   return (
     <View style={[styles.container, style]}>
-      <View style={styles.mapWrapper}>
+      <View 
+        style={styles.mapWrapper}
+        // Prevent parent ScrollView from intercepting touch events
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onStartShouldSetResponderCapture={() => false}
+        onMoveShouldSetResponderCapture={() => false}
+        // Ensure the map exclusively handles all touch events
+        onResponderTerminationRequest={() => false}
+        onResponderGrant={() => true}
+        onResponderMove={() => true}
+        onResponderRelease={() => true}
+      >
         <CustomClusteredMapView
+          key={selectedCoordinate ? `${selectedCoordinate.latitude}-${selectedCoordinate.longitude}` : 'no-selection'}
           style={styles.map}
           data={data}
           initialRegion={initialRegion}
           renderMarker={renderMarker}
-          clusteringEnabled={clusteringEnabled}
+          clusteringEnabled={clusteringEnabled && data.length > 10}
           onPress={onPress}
           onMarkerDragEnd={onMarkerDragEnd}
-          selectedCoordinate={selectedCoordinate} // Pass selectedCoordinate prop
+          selectedCoordinate={selectedCoordinate}
         />
       </View>
       {helperText && <Text style={styles.helperText}>{helperText}</Text>}
@@ -67,6 +81,8 @@ const styles = StyleSheet.create({
     color: '#999',
     fontStyle: 'italic',
     marginTop: 5,
+    padding: 8,
+    backgroundColor: '#1a1a1a',
   },
 });
 

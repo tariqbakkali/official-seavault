@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { COLORS } from '@/constants';
 
 interface MapToggleButtonProps {
   isSelecting: boolean;
@@ -17,7 +18,7 @@ const MapToggleButton: React.FC<MapToggleButtonProps> = ({
     <TouchableOpacity 
       style={[
         styles.toggleButton, 
-        { backgroundColor: isSelecting ? '#0056b3' : '#333' }
+        { backgroundColor: isSelecting ? COLORS.PRIMARY : '#333' }
       ]}
       onPress={onPress}
     >
@@ -32,15 +33,15 @@ const MapToggleButton: React.FC<MapToggleButtonProps> = ({
 
 const styles = StyleSheet.create({
   toggleButton: {
-    padding: 15,
+    padding: 12,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 12,
     alignItems: 'center',
   },
   toggleText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 

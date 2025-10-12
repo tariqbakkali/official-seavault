@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { COLORS, DIMENSIONS } from '@/constants';
 
 interface FormSectionProps {
   title: string;
@@ -18,7 +19,9 @@ const FormSection: React.FC<FormSectionProps> = ({
   return (
     <View style={[styles.section, style]}>
       {title ? <Text style={styles.title}>{title}</Text> : null}
-      {children}
+      <View style={styles.content}>
+        {children}
+      </View>
     </View>
   );
 };
@@ -29,9 +32,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#fff',
-    marginBottom: 10,
+    marginBottom: 12,
+  },
+  content: {
+    // Add any additional styling for content if needed
   },
 });
 

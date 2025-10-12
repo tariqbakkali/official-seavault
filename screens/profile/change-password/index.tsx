@@ -50,7 +50,12 @@ export default function ChangePasswordScreen() {
 
   return (
     <KeyboardAvoidingView 
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.header}>
@@ -61,7 +66,14 @@ export default function ChangePasswordScreen() {
         <View style={{ width: 24 }} />
       </View>
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        // Allow maps to handle gestures by not intercepting them
+        onStartShouldSetResponderCapture={() => false}
+        onMoveShouldSetResponderCapture={() => false}
+        onResponderTerminationRequest={() => false}
+      >
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Update Your Password</Text>
           <Text style={styles.sectionSubtitle}>Enter your current password and a new password</Text>

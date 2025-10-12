@@ -15,7 +15,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-console.log({supabaseUrl, supabaseAnonKey})
 
 // ✅ Create Supabase client with AsyncStorage for React Native
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {

@@ -11,14 +11,15 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Heart, Plus, Calendar, MapPin, Clock } from 'lucide-react-native';
+import { Heart, Plus, Calendar, MapPin, Clock, Trophy } from 'lucide-react-native';
 import { Creature, Sighting, DiveSite } from '@/types/database';
 import { supabase } from '@/services/supabase';
-import ImageWithFallback from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components';
 import { formatDate, formatTime } from '@/utils/format';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { toggleWishlistItem } from '@/stores/syncedObservables';
+import { ROUTES } from '@/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -37,7 +38,7 @@ export default function CreatureDetailScreen() {
   const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
   
   // Use updated observable-based store
-  const { creatures, wishlists, allUsersSightings, diveSites: allDiveSites, profile } = useSyncedData();
+  const { creatures, wishlists, allUsersSightings, diveSites: allDiveSites, profile, userAchievements: allUserAchievements } = useSyncedData();
   const userProfile = profile ? Object.values(profile)[0] : undefined;
 
   React.useEffect(() => {
@@ -198,173 +199,33 @@ export default function CreatureDetailScreen() {
           </View>
         </View>
         
-        <View style={styles.sightingDetailsContainer}>
-          {diveSite && (
-            <View style={styles.sightingDetailRow}>
-              <MapPin size={16} color="#007AFF" />
-              <View style={styles.sightingDetailContent}>
-                <Text style={styles.sightingDetailLabel}>Dive Site</Text>
-                <Text style={styles.sightingDetailValue}>{diveSite.name}</Text>
-              </View>
-            </View>
-          )}
-          
-          {item.dive_type && (
-            <View style={styles.sightingDetailRow}>
-              <Text style={styles.sightingDetailLabel}>Dive Type</Text>
-              <Text style={styles.sightingDetailValue}>{item.dive_type}</Text>
-            </View>
-          )}
-          
-          {item.depth && (
-            <View style={styles.sightingDetailRow}>
-              <Text style={styles.sightingDetailLabel}>Depth</Text>
-              <Text style={styles.sightingDetailValue}>{item.depth}m</Text>
-            </View>
-          )}
-        </View>
-        
-        {(item.creature_notes || item.dive_notes) && (
-          <View style={styles.notesContainer}>
-            {item.creature_notes && (
-              <View style={styles.noteSection}>
-                <Text style={styles.noteLabel}>Creature Notes</Text>
-                <Text style={styles.noteText}>{item.creature_notes}</Text>
-              </View>
-            )}
-            
-            {item.dive_notes && (
-              <View style={styles.noteSection}>
-                <Text style={styles.noteLabel}>Dive Notes</Text>
-                <Text style={styles.noteText}>{item.dive_notes}</Text>
-              </View>
-            )}
+        {diveSite && (
+          <View style={styles.diveSiteInfo}>
+            <MapPin size={16} color="#666" />
+            <Text style={styles.diveSiteName}>{diveSite.name}</Text>
           </View>
         )}
         
-        {item.image_url && (
-          <View style={styles.sightingImageContainer}>
-            <ImageWithFallback
-              uri={item.image_url}
-              style={styles.sightingImage}
-              containerStyle={styles.sightingImageWrapper}
-              showOfflineIndicator={true}
-            />
+        {item.dive_notes && (
+          <View style={styles.notesSection}>
+            <Text style={styles.notesLabel}>Notes</Text>
+            <Text style={styles.notesText}>{item.dive_notes}</Text>
           </View>
         )}
       </View>
     );
   };
 
-  // Render sightings grouped by dive site
-  const renderSightingsByDiveSite = () => {
-    const groupedSightings = groupSightingsByDiveSite();
-    const diveSiteKeys = Object.keys(groupedSightings);
-    
+  if (loading) {
     return (
-      <View style={styles.sightingsByDiveSiteContainer}>
-        {diveSiteKeys.map((diveSiteId) => {
-          const group = groupedSightings[diveSiteId];
-          const diveSite = group.diveSite;
-          
-          return (
-            <View key={diveSiteId} style={styles.diveSiteGroup}>
-              {diveSite && (
-                <View style={styles.diveSiteHeader}>
-                  <MapPin size={18} color="#007AFF" />
-                  <Text style={styles.diveSiteName}>{diveSite.name}</Text>
-                  <View style={styles.sightingCountBadge}>
-                    <Text style={styles.sightingCountText}>{group.sightings.length}</Text>
-                  </View>
-                </View>
-              )}
-              
-              <View style={styles.sightingsListContainer}>
-                {group.sightings.map((sighting, index) => (
-                  <View 
-                    key={sighting.id} 
-                    style={[
-                      styles.sightingCardInGroup, 
-                      index !== group.sightings.length - 1 && styles.sightingCardWithDivider
-                    ]}
-                  >
-                    <View style={styles.sightingHeaderInGroup}>
-                      <View style={styles.sightingDateInfoInGroup}>
-                        <View style={styles.dateRow}>
-                          <Calendar size={14} color="#007AFF" />
-                          <Text style={styles.sightingDateInGroup}>{formatDate(sighting.date)}</Text>
-                        </View>
-                        {sighting.time_of_day && (
-                          <View style={styles.dateRow}>
-                            <Clock size={14} color="#666" />
-                            <Text style={styles.sightingTimeInGroup}>{formatTime(sighting.time_of_day)}</Text>
-                          </View>
-                        )}
-                      </View>
-                      <View style={styles.sightingIndex}>
-                        <Text style={styles.sightingIndexText}>#{group.sightings.length - index}</Text>
-                      </View>
-                    </View>
-                    
-                    <View style={styles.sightingDetailsContainerInGroup}>
-                      {sighting.dive_type && (
-                        <View style={styles.sightingDetailRowInGroup}>
-                          <Text style={styles.sightingDetailLabelInGroup}>Dive Type</Text>
-                          <Text style={styles.sightingDetailValueInGroup}>{sighting.dive_type}</Text>
-                        </View>
-                      )}
-                      
-                      {sighting.depth && (
-                        <View style={styles.sightingDetailRowInGroup}>
-                          <Text style={styles.sightingDetailLabelInGroup}>Depth</Text>
-                          <Text style={styles.sightingDetailValueInGroup}>{sighting.depth}m</Text>
-                        </View>
-                      )}
-                    </View>
-                    
-                    {(sighting.creature_notes || sighting.dive_notes) && (
-                      <View style={styles.notesContainerInGroup}>
-                        {sighting.creature_notes && (
-                          <View style={styles.noteSectionInGroup}>
-                            <Text style={styles.noteLabelInGroup}>Creature Notes</Text>
-                            <Text style={styles.noteTextInGroup}>{sighting.creature_notes}</Text>
-                          </View>
-                        )}
-                        
-                        {sighting.dive_notes && (
-                          <View style={styles.noteSectionInGroup}>
-                            <Text style={styles.noteLabelInGroup}>Dive Notes</Text>
-                            <Text style={styles.noteTextInGroup}>{sighting.dive_notes}</Text>
-                          </View>
-                        )}
-                      </View>
-                    )}
-                    
-                    {sighting.image_url && (
-                      <View style={styles.sightingImageContainerInGroup}>
-                        <ImageWithFallback
-                          uri={sighting.image_url}
-                          style={styles.sightingImageInGroup}
-                          containerStyle={styles.sightingImageWrapperInGroup}
-                          showOfflineIndicator={true}
-                        />
-                      </View>
-                    )}
-                  </View>
-                ))}
-              </View>
-            </View>
-          );
-        })}
-      </View>
-    );
-  };
-
-  if (loading || !creature) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <ScreenHeader 
-          title="Creature Details"
+          title="Loading..." 
           onBackPress={() => router.back()}
           showBackButton={true}
         />
@@ -372,151 +233,202 @@ export default function CreatureDetailScreen() {
     );
   }
 
-  const statsData = [
-    { label: 'Length', value: creature.length },
-    { label: 'Weight', value: creature.weight },
-    { label: 'Diet', value: creature.diet },
-    { label: 'Lifespan', value: creature.lifespan },
-  ].filter(stat => stat.value && stat.value.trim());
-
-  return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.imageContainer}>
-          <ImageWithFallback
-            uri={creature.image_url}
-            style={styles.heroImage}
-            containerStyle={styles.imageWrapper}
-            showOfflineIndicator={true}
-          />
-        </View>
-
+  if (!creature) {
+    return (
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <ScreenHeader 
-          title={creature.name}
+          title="Creature Not Found" 
           onBackPress={() => router.back()}
           showBackButton={true}
         />
-
-        <View style={styles.content}>
-          <View style={styles.titleSection}>
-            <Text style={styles.creatureName}>{creature.name}</Text>
-            {creature.scientific_name && (
-              <Text style={styles.scientificName}>{creature.scientific_name}</Text>
-            )}
-          </View>
-
-          <View style={styles.badgeRow}>
-            {creature.class && (
-              <View style={[styles.badge, styles.classBadge]}>
-                <Text style={styles.badgeText}>{creature.class}</Text>
-              </View>
-            )}
-            {creature.points > 0 && (
-              <View style={[styles.badge, styles.pointsBadge]}>
-                <Text style={styles.badgeText}>{creature.points} pts</Text>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'about' && styles.activeTab]}
-              onPress={() => setActiveTab('about')}
-            >
-              <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>
-                About
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'sightings' && styles.activeTab]}
-              onPress={() => setActiveTab('sightings')}
-            >
-              <Text style={[styles.tabText, activeTab === 'sightings' && styles.activeTabText]}>
-                Sightings ({sightings.length})
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {activeTab === 'about' && (
-            <View style={styles.tabContent}>
-              {creature.description && creature.description.trim() && (
-                <Text style={styles.description}>{creature.description}</Text>
-              )}
-
-              {statsData.length > 0 && (
-                <View style={styles.statsContainer}>
-                  {statsData.map((stat, index) => (
-                    <View key={index} style={styles.statCard}>
-                      <Text style={styles.statValue}>{stat.value}</Text>
-                      <Text style={styles.statLabel}>{stat.label}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {creature.habitat && creature.habitat.trim() && (
-                <View style={styles.infoSection}>
-                  <Text style={styles.infoTitle}>Habitat</Text>
-                  <Text style={styles.infoText}>{creature.habitat}</Text>
-                </View>
-              )}
-
-              {creature.depth_range && creature.depth_range.trim() && (
-                <View style={styles.infoSection}>
-                  <Text style={styles.infoTitle}>Depth Range</Text>
-                  <Text style={styles.infoText}>{creature.depth_range}</Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {activeTab === 'sightings' && (
-            <View style={styles.tabContent}>
-              {sightings.length === 0 ? (
-                <View style={styles.noSightingsContainer}>
-                  <Calendar size={48} color="#666" />
-                  <Text style={styles.noSightingsTitle}>No sightings yet</Text>
-                  <Text style={styles.noSightingsSubtitle}>
-                    Log a dive to record your first sighting of this creature
-                  </Text>
-                </View>
-              ) : sightings.length === 1 ? (
-                // For single sighting, use the original rendering
-                <FlatList
-                  data={sightings}
-                  keyExtractor={(item) => item.id}
-                  renderItem={renderSighting}
-                  showsVerticalScrollIndicator={false}
-                  scrollEnabled={false}
-                  contentContainerStyle={styles.sightingsList}
-                />
-              ) : (
-                // For multiple sightings, use the grouped rendering
-                <ScrollView showsVerticalScrollIndicator={false} style={styles.sightingsScrollView}>
-                  {renderSightingsByDiveSite()}
-                </ScrollView>
-              )}
-            </View>
-          )}
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Creature not found</Text>
         </View>
-      </ScrollView>
+      </View>
+    );
+  }
 
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.wishlistButton, isWishlisted && styles.wishlistActive]}
-          onPress={handleWishlistToggle}
-        >
-          <Heart size={20} color={isWishlisted ? '#fff' : '#FF3B30'} fill={isWishlisted ? '#fff' : 'none'} />
-        </TouchableOpacity>
+  const groupedSightings = groupSightingsByDiveSite();
+  const unlockedAchievements = allUserAchievements ? Object.values(allUserAchievements).length : 0;
+
+  return (
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
+      <ScreenHeader 
+        title={creature.name} 
+        onBackPress={() => router.back()}
+        showBackButton={true}
+      />
+      
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Creature Image */}
+        <View style={styles.imageContainer}>
+          <ImageWithFallback
+            uri={creature.image_url}
+            style={styles.image}
+            fallbackColor="#333"
+            showOfflineIndicator={true}
+          />
+        </View>
         
-        <TouchableOpacity
-          style={[styles.actionButton, styles.addSightingButton]}
+        {/* Creature Info */}
+        <View style={styles.infoContainer}>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{creature.name}</Text>
+            <TouchableOpacity 
+              style={[styles.heartButton, isWishlisted && styles.heartButtonActive]}
+              onPress={handleWishlistToggle}
+            >
+              <Heart 
+                size={24} 
+                color={isWishlisted ? "#FF3B30" : "#666"} 
+                fill={isWishlisted ? "#FF3B30" : "none"} 
+              />
+            </TouchableOpacity>
+          </View>
+          
+          {creature.scientific_name && (
+            <Text style={styles.scientificName}>{creature.scientific_name}</Text>
+          )}
+          
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{creature.points}</Text>
+              <Text style={styles.statLabel}>Points</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{sightings.length}</Text>
+              <Text style={styles.statLabel}>Sightings</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{unlockedAchievements}</Text>
+              <Text style={styles.statLabel}>Achievements</Text>
+            </View>
+          </View>
+        </View>
+        
+        {/* Tab Navigation */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'about' && styles.activeTab]}
+            onPress={() => setActiveTab('about')}
+          >
+            <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>
+              About
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'sightings' && styles.activeTab]}
+            onPress={() => setActiveTab('sightings')}
+          >
+            <Text style={[styles.tabText, activeTab === 'sightings' && styles.activeTabText]}>
+              Sightings ({sightings.length})
+            </Text>
+          </TouchableOpacity>
+        </View>
+        
+        {/* Tab Content */}
+        {activeTab === 'about' ? (
+          <View style={styles.tabContent}>
+            {creature.description && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Description</Text>
+                <Text style={styles.sectionText}>{creature.description}</Text>
+              </View>
+            )}
+            
+            <View style={styles.detailsGrid}>
+              {creature.habitat && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Habitat</Text>
+                  <Text style={styles.detailValue}>{creature.habitat}</Text>
+                </View>
+              )}
+              
+              {creature.diet && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Diet</Text>
+                  <Text style={styles.detailValue}>{creature.diet}</Text>
+                </View>
+              )}
+              
+              {creature.depth_range && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Depth Range</Text>
+                  <Text style={styles.detailValue}>{creature.depth_range}</Text>
+                </View>
+              )}
+              
+              {creature.length && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Length</Text>
+                  <Text style={styles.detailValue}>{creature.length}</Text>
+                </View>
+              )}
+              
+              {creature.weight && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Weight</Text>
+                  <Text style={styles.detailValue}>{creature.weight}</Text>
+                </View>
+              )}
+              
+              {creature.lifespan && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Lifespan</Text>
+                  <Text style={styles.detailValue}>{creature.lifespan}</Text>
+                </View>
+              )}
+              
+              {creature.class && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Class</Text>
+                  <Text style={styles.detailValue}>{creature.class}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        ) : (
+          <View style={styles.tabContent}>
+            {sightings.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No sightings recorded yet</Text>
+                <Text style={styles.emptySubtext}>Be the first to spot this creature!</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={sightings}
+                keyExtractor={(item) => item.id}
+                renderItem={renderSighting}
+                contentContainerStyle={styles.sightingsList}
+                scrollEnabled={false}
+                showsVerticalScrollIndicator={false}
+              />
+            )}
+          </View>
+        )}
+        
+        {/* Action Button */}
+        <TouchableOpacity 
+          style={styles.actionButton}
           onPress={handleAddSighting}
         >
           <Plus size={20} color="#fff" />
-          <Text style={styles.addSightingText}>Add Sighting</Text>
+          <Text style={styles.actionButtonText}>Log a Dive</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -530,145 +442,128 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   imageContainer: {
-    position: 'relative',
-    height: 300,
-  },
-  imageWrapper: {
     width: '100%',
-    height: '100%',
+    height: width * 0.6,
+    backgroundColor: '#333',
   },
-  heroImage: {
+  image: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  content: {
+  infoContainer: {
     padding: 20,
+    backgroundColor: '#1a1a1a',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    marginBottom: 20,
   },
-  titleSection: {
-    marginBottom: 16,
+  nameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  creatureName: {
+  name: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 4,
+  },
+  heartButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#333',
+  },
+  heartButtonActive: {
+    backgroundColor: 'rgba(255, 59, 48, 0.2)',
   },
   scientificName: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#666',
     fontStyle: 'italic',
+    marginBottom: 16,
   },
-  badgeRow: {
+  statsRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 24,
-  },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    justifyContent: 'space-around',
+    backgroundColor: '#2a2a2a',
     borderRadius: 16,
-  },
-  classBadge: {
-    backgroundColor: '#1a1a1a',
-    borderWidth: 1,
-    borderColor: '#007AFF',
-  },
-  pointsBadge: {
-    backgroundColor: '#007AFF',
-  },
-  badgeText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-    marginBottom: 24,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomColor: '#007AFF',
-  },
-  tabText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  activeTabText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  tabContent: {
-    minHeight: 200,
-  },
-  description: {
-    fontSize: 16,
-    color: '#ccc',
-    lineHeight: 24,
-    marginBottom: 24,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  statCard: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
     padding: 16,
-    width: (width - 52) / 2,
-    marginBottom: 12,
+  },
+  statItem: {
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#fff',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
     color: '#666',
   },
-  infoSection: {
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#1a1a1a',
+    marginHorizontal: 20,
+    borderRadius: 16,
     marginBottom: 20,
+    overflow: 'hidden',
   },
-  infoTitle: {
-    fontSize: 18,
+  tab: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  activeTab: {
+    backgroundColor: '#007AFF',
+  },
+  tabText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#fff',
+  },
+  tabContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+    marginBottom: 100,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  infoText: {
+  sectionText: {
     fontSize: 16,
     color: '#ccc',
     lineHeight: 24,
   },
-  noSightingsContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
+  detailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
-  noSightingsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 16,
-    marginBottom: 8,
+  detailItem: {
+    width: '48%',
+    marginBottom: 16,
   },
-  noSightingsSubtitle: {
+  detailLabel: {
     fontSize: 14,
     color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
   },
   sightingsList: {
     paddingBottom: 20,
@@ -678,26 +573,21 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#333',
   },
   sightingHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 12,
   },
   sightingNumber: {
     backgroundColor: '#007AFF',
-    width: 24,
-    height: 24,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   sightingNumberText: {
     color: '#fff',
-    fontSize: 12,
     fontWeight: 'bold',
   },
   sightingDateInfo: {
@@ -719,236 +609,70 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  sightingDetailsContainer: {
-    marginBottom: 12,
-  },
-  sightingDetailRow: {
+  diveSiteInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  sightingDetailContent: {
-    flex: 1,
-  },
-  sightingDetailLabel: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  sightingDetailValue: {
-    fontSize: 14,
-    color: '#fff',
-    fontWeight: '500',
-  },
-  notesContainer: {
-    backgroundColor: '#2a2a2a',
-    borderRadius: 12,
-    padding: 12,
+    gap: 6,
     marginBottom: 12,
   },
-  noteSection: {
-    marginBottom: 8,
+  diveSiteName: {
+    fontSize: 14,
+    color: '#666',
   },
-  noteSectionLast: {
-    marginBottom: 0,
+  notesSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+    paddingTop: 12,
   },
-  noteLabel: {
-    fontSize: 12,
-    color: '#007AFF',
-    fontWeight: '600',
-    textTransform: 'uppercase',
+  notesLabel: {
+    fontSize: 14,
+    color: '#666',
     marginBottom: 4,
   },
-  noteText: {
+  notesText: {
     fontSize: 14,
     color: '#ccc',
     lineHeight: 20,
   },
-  sightingImageContainer: {
-    marginTop: 8,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
   },
-  sightingImageWrapper: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    overflow: 'hidden',
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 8,
   },
-  sightingImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  bottomBar: {
-    flexDirection: 'row',
-    padding: 20,
-    paddingBottom: 34,
-    backgroundColor: '#000',
-    gap: 12,
+  emptySubtext: {
+    fontSize: 14,
+    color: '#444',
   },
   actionButton: {
-    borderRadius: 12,
-    padding: 16,
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    right: 20,
+    backgroundColor: '#007AFF',
+    borderRadius: 16,
+    paddingVertical: 16,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     gap: 8,
+    shadowColor: '#007AFF',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
-  wishlistButton: {
-    backgroundColor: '#1a1a1a',
-    borderWidth: 1,
-    borderColor: '#FF3B30',
-    width: 56,
-  },
-  wishlistActive: {
-    backgroundColor: '#FF3B30',
-    borderColor: '#FF3B30',
-  },
-  addSightingButton: {
-    backgroundColor: '#007AFF',
-    flex: 1,
-  },
-  addSightingText: {
+  actionButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-  },
-  
-  // New styles for grouped sightings
-  sightingsByDiveSiteContainer: {
-    paddingBottom: 20,
-  },
-  diveSiteGroup: {
-    marginBottom: 24,
-  },
-  diveSiteHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  diveSiteName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-    marginLeft: 8,
-    flex: 1,
-  },
-  sightingCountBadge: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  sightingCountText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  sightingsListContainer: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  sightingCardInGroup: {
-    padding: 16,
-  },
-  sightingCardWithDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  sightingHeaderInGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  sightingDateInfoInGroup: {
-    flex: 1,
-  },
-  sightingDateInGroup: {
-    fontSize: 14,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  sightingTimeInGroup: {
-    fontSize: 12,
-    color: '#666',
-  },
-  sightingIndex: {
-    backgroundColor: '#007AFF',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sightingIndexText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  sightingDetailsContainerInGroup: {
-    marginBottom: 12,
-  },
-  sightingDetailRowInGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  sightingDetailLabelInGroup: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
-  },
-  sightingDetailValueInGroup: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '500',
-  },
-  notesContainerInGroup: {
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-  },
-  noteSectionInGroup: {
-    marginBottom: 6,
-  },
-  noteSectionInGroupLast: {
-    marginBottom: 0,
-  },
-  noteLabelInGroup: {
-    fontSize: 10,
-    color: '#007AFF',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  noteTextInGroup: {
-    fontSize: 12,
-    color: '#ccc',
-    lineHeight: 16,
-  },
-  sightingImageContainerInGroup: {
-    marginTop: 8,
-  },
-  sightingImageWrapperInGroup: {
-    width: '100%',
-    height: 150,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  sightingImageInGroup: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  sightingsScrollView: {
-    flex: 1,
   },
 });

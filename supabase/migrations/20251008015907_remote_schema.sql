@@ -93,6 +93,13 @@ create table "public"."wishlists" (
     "deleted" boolean default false
 );
 
+create table "public"."user_achievements" (
+    "id" uuid not null default gen_random_uuid(),
+    "user_id" uuid,
+    "achievement_id" uuid,
+    "unlocked_at" timestamp with time zone default now(),
+    "created_at" timestamp with time zone default now()
+);
 
 CREATE UNIQUE INDEX achievements_code_key ON public.achievements USING btree (code);
 
@@ -110,6 +117,8 @@ CREATE UNIQUE INDEX sightings_pkey ON public.sightings USING btree (id);
 
 CREATE UNIQUE INDEX wishlists_pkey ON public.wishlists USING btree (id);
 
+CREATE UNIQUE INDEX user_achievements_pkey ON public.user_achievements USING btree (id);
+
 alter table "public"."achievements" add constraint "achievements_pkey" PRIMARY KEY using index "achievements_pkey";
 
 alter table "public"."categories" add constraint "categories_pkey" PRIMARY KEY using index "categories_pkey";
@@ -123,6 +132,8 @@ alter table "public"."profiles" add constraint "profiles_pkey" PRIMARY KEY using
 alter table "public"."sightings" add constraint "sightings_pkey" PRIMARY KEY using index "sightings_pkey";
 
 alter table "public"."wishlists" add constraint "wishlists_pkey" PRIMARY KEY using index "wishlists_pkey";
+
+alter table "public"."user_achievements" add constraint "user_achievements_pkey" PRIMARY KEY using index "user_achievements_pkey";
 
 alter table "public"."achievements" add constraint "achievements_code_key" UNIQUE using index "achievements_code_key";
 
@@ -153,6 +164,14 @@ alter table "public"."wishlists" validate constraint "wishlists_creature_id_fkey
 alter table "public"."wishlists" add constraint "wishlists_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
 
 alter table "public"."wishlists" validate constraint "wishlists_user_id_fkey";
+
+alter table "public"."user_achievements" add constraint "user_achievements_user_id_fkey" FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE not valid;
+
+alter table "public"."user_achievements" add constraint "user_achievements_achievement_id_fkey" FOREIGN KEY (achievement_id) REFERENCES achievements(id) ON DELETE CASCADE not valid;
+
+alter table "public"."user_achievements" validate constraint "user_achievements_user_id_fkey";
+
+alter table "public"."user_achievements" validate constraint "user_achievements_achievement_id_fkey";
 
 set check_function_bodies = off;
 

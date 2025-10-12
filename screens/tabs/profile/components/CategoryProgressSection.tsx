@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { COLORS } from '@/constants';
 
 interface CategoryStat {
   seen: number;
@@ -17,7 +18,7 @@ const CategoryProgressSection: React.FC<CategoryProgressSectionProps> = ({
   categoryNames = {}
 }) => {
   return (
-    <View style={styles.section}>
+    <View style={styles.container}>
       <Text style={styles.sectionTitle}>Category Progress</Text>
       {Object.entries(categoryStats).map(([categoryId, stat]: [string, CategoryStat]) => (
         <View key={categoryId} style={styles.categoryProgress}>
@@ -29,30 +30,36 @@ const CategoryProgressSection: React.FC<CategoryProgressSectionProps> = ({
             <View 
               style={[
                 styles.progressFill, 
-                { width: `${stat.completion}%` }
+                { 
+                  width: `${stat.completion}%`,
+                  backgroundColor: stat.completion === 100 ? COLORS.SUCCESS : COLORS.PRIMARY
+                }
               ]} 
             />
           </View>
+          <Text style={styles.completionText}>{Math.round(stat.completion)}% Complete</Text>
         </View>
       ))}
     </View>
   );
 };
 
-// ... existing styles and export ...
 const styles = StyleSheet.create({
-  section: {
-    paddingHorizontal: 20,
+  container: {
+    marginHorizontal: 20,
     marginBottom: 32,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: COLORS.TEXT_PRIMARY,
     marginBottom: 16,
   },
   categoryProgress: {
-    marginBottom: 16,
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
   },
   categoryProgressHeader: {
     flexDirection: 'row',
@@ -61,21 +68,29 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     fontSize: 16,
-    color: '#fff',
+    fontWeight: '600',
+    color: COLORS.TEXT_PRIMARY,
   },
   categoryCompletion: {
     fontSize: 14,
-    color: '#666',
+    fontWeight: '600',
+    color: COLORS.TEXT_SECONDARY,
   },
   progressBar: {
-    height: 4,
-    backgroundColor: '#333',
-    borderRadius: 2,
+    height: 8,
+    backgroundColor: COLORS.SURFACE_SECONDARY,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 8,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#007AFF',
-    borderRadius: 2,
+    borderRadius: 4,
+  },
+  completionText: {
+    fontSize: 12,
+    color: COLORS.TEXT_TERTIARY,
+    textAlign: 'right',
   },
 });
 

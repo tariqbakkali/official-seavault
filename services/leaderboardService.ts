@@ -1,4 +1,4 @@
-import { Profile, Sighting, Creature } from '@/types/database';
+import { Profile, Sighting, Creature, UserAchievement, Achievement } from '@/types/database';
 
 interface LeaderboardEntry {
   user_id: string;
@@ -12,7 +12,9 @@ interface LeaderboardEntry {
 export const getLeaderboardData = (
   allProfiles: Record<string, Profile>, 
   allSightings: Sighting[], // Changed from Record<string, Sighting> to Sighting[]
-  allCreatures: Creature[]  // Changed from Record<string, Creature> to Creature[]
+  allCreatures: Creature[],  // Changed from Record<string, Creature> to Creature[]
+  allUserAchievements: UserAchievement[], // Added user achievements
+  allAchievements: Achievement[] // Added achievements
 ): LeaderboardEntry[] => {
   const userStats: Record<string, { points: number; creatures: Set<string>; profile: Profile }> = {};
 
@@ -37,6 +39,20 @@ export const getLeaderboardData = (
     if (creature && userStats[sighting.user_id]) {
       userStats[sighting.user_id].points += creature.points || 0;
       userStats[sighting.user_id].creatures.add(sighting.creature_id);
+    }
+  });
+
+  // Convert achievements array to a map for quick lookup
+  const achievementMap = new Map<string, Achievement>();
+  allAchievements.forEach(achievement => {
+    achievementMap.set(achievement.id, achievement);
+  });
+
+  // Calculate points from achievements
+  allUserAchievements.forEach(userAchievement => {
+    const achievement = achievementMap.get(userAchievement.achievement_id);
+    if (achievement && userStats[userAchievement.user_id]) {
+      userStats[userAchievement.user_id].points += achievement.points || 0;
     }
   });
 

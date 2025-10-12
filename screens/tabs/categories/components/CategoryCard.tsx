@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import ImageWithFallback from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components';
 
 interface CategoryWithStats {
   id: string;

@@ -76,7 +76,6 @@ export default function LoginScreen() {
         if (error) throw error;
 
         if (data) {
-          console.log('Sign in successful');
         } else {
           showAlert('Error', 'Invalid email or password. Please try again.');
         }
@@ -89,7 +88,12 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}

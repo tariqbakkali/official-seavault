@@ -56,7 +56,6 @@ export default function RootLayout() {
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const userId = session?.user?.id || null;
-      console.log('Auth state changed:', userId);
       
       if (userId) {
         // Initialize user session when user logs in
@@ -107,6 +106,7 @@ export default function RootLayout() {
         <Stack.Screen name="stats/discovered" />
         <Stack.Screen name="stats/points" />
         <Stack.Screen name="stats/wishlist" />
+        <Stack.Screen name="stats/achievements" />
         <Stack.Screen name="creatures/[id]" />
         <Stack.Screen name="categories/[id]/index" />
         <Stack.Screen 

@@ -17,6 +17,7 @@ import {
   getProfile,
   profiles$, // Import profiles$ observable
   achievements$, // Import achievements$ observable
+  userAchievements$, // Import userAchievements$ observable
 } from '../stores/syncedObservables';
 // import { customSynced } from '@/services/legendStateConfig';
 
@@ -30,7 +31,6 @@ export const initializeSync = async () => {
     // Get the configured synced instance
     onSyncPress();
     
-    console.log('Sync initialization completed');
   } catch (error) {
     console.error('Error initializing sync:', error);
   }
@@ -44,7 +44,6 @@ export const initializeUserSync = async (userId: string) => {
 
     onSyncPress();
     
-    console.log(`User sync initialized for user: ${userId}`);
   } catch (error) {
     console.error('Error initializing user sync:', error);
   }
@@ -61,7 +60,6 @@ export const clearUserSync = () => {
     wishlists$.set({});
     profile$.set({} as any);
     
-    console.log('User sync cleared');
   } catch (error) {
     console.error('Error clearing user sync:', error);
   }
@@ -75,7 +73,6 @@ export const waitForDataLoad = async () => {
     await when(() => getCreatures() !== undefined);
     await when(() => getDiveSites() !== undefined);
     
-    console.log('Data loaded from persistence');
   } catch (error) {
     console.error('Error waiting for data load:', error);
   }
@@ -94,8 +91,8 @@ export const forceSyncAll = async () => {
     profile$.get();
     profiles$.get(); // Force sync profiles observable
     achievements$.get(); // Force sync achievements observable
+    userAchievements$.get(); // Force sync user achievements observable
 
-    console.log('Forced sync completed');
   } catch (error) {
     console.error('Error during forced sync:', error);
   }
@@ -115,7 +112,6 @@ export const onSyncPress = async () => {
     // customSynced(profiles$);
     // customSynced(achievements$);
 
-    console.log('Manual sync completed');
   } catch (error) {
     console.error('Manual sync failed:', error);
   }
@@ -134,6 +130,7 @@ export const getSyncStatus = () => {
     profileLoaded: getProfile() !== undefined,
     profilesLoaded: profiles$.get() !== undefined, // Include profiles loading status
     achievementsLoaded: achievements$.get() !== undefined, // Include achievements loading status
+    userAchievementsLoaded: userAchievements$.get() !== undefined, // Include user achievements loading status
   };
 };
 
@@ -145,10 +142,8 @@ export const hasPendingSyncOperations = async () => {
 // Handle network status changes
 export const handleNetworkStatusChange = (isConnected: boolean) => {
   if (isConnected) {
-    console.log('Network connection restored, retrying pending operations');
     // Legend State should automatically retry pending operations
   } else {
-    console.log('Network connection lost, operations will be queued');
   }
 };
 

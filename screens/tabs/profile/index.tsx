@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,16 +10,18 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { User, Settings, LogOut, Star, Eye, Trophy } from 'lucide-react-native';
+import { Settings, LogOut } from 'lucide-react-native';
 import { ImageWithFallback } from '@/components';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
-import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import { ROUTES} from '@/constants';
 import { supabase } from '@/services/supabase';
 import StatsSection from './components/StatsSection';
 import CategoryProgressSection from './components/CategoryProgressSection';
+import AchievementsPreview from './components/AchievementsPreview';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
+import LoadingState from '@/components/LoadingState';
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -32,13 +34,16 @@ interface MenuItem {
 export default function ProfileScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [userStats, setUserStats] = React.useState<any>(null);
+  const [achievementsWithStatus, setAchievementsWithStatus] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   
-  const { creatures: allCreatures, categories: allCategories, sightings: allSightings, wishlists: allWishlists, profile: userProfile } = useSyncedData();
+  const { creatures: allCreatures, categories: allCategories, currentUserSightings: allSightings, wishlists: allWishlists, profile: userProfile, achievements: allAchievements, userAchievements: allUserAchievements } = useSyncedData();
 
   const loadData = React.useCallback(() => {
     try {
+      setLoading(true);
       // Extract data from observables
       const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
       const categoriesArray = allCategories ? Object.values(allCategories) : [];
@@ -58,17 +63,55 @@ export default function ProfileScreen() {
       const catalog = {
         creatures: creaturesArray as any[],
         categories: categoriesArray as any[],
-        achievements: [] // We don't have achievements in observables
+        achievements: allAchievements ? Object.values(allAchievements) : []
       };
       
-      if (userData && catalog) {
-        const stats = calculateUserStats(userData, catalog);
-        setUserStats(stats);
+      // Get user achievements
+      const userAchievementsArray = allUserAchievements ? Object.values(allUserAchievements) : [];
+      
+      // Only calculate stats when we have the necessary data
+      if (creaturesArray.length > 0 && categoriesArray.length > 0) {
+        if (userData && catalog) {
+          const stats = calculateUserStats(userData, catalog, userAchievementsArray);
+          setUserStats(stats);
+        }
       }
+      
+      // Calculate achievements with status
+      const unlockedAchievementIds = new Set(userAchievementsArray.map((ua: any) => ua.achievement_id));
+      const uniqueCreatures = new Set(sightingsArray.map((s: any) => s.creature_id)).size;
+      
+      const achievementsWithStatus = (allAchievements ? Object.values(allAchievements) : [])
+        .map((achievement: any) => {
+          let progress = 0;
+          let total = 0;
+          
+          if (achievement.category === 'collection') {
+            progress = uniqueCreatures;
+            const match = achievement.description?.match(/Log (\d+) different species/);
+            total = match ? parseInt(match[1], 10) : 0;
+          }
+          
+          return {
+            ...achievement,
+            unlocked: unlockedAchievementIds.has(achievement.id),
+            progress,
+            total
+          };
+        })
+        .sort((a: any, b: any) => {
+          if (a.unlocked && !b.unlocked) return -1;
+          if (!a.unlocked && b.unlocked) return 1;
+          return (b.points || 0) - (a.points || 0);
+        });
+        
+      setAchievementsWithStatus(achievementsWithStatus);
     } catch (error) {
       console.error('Error loading profile data:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [allCreatures, allCategories, allSightings, allWishlists, userProfile]);
+  }, [allCreatures, allCategories, allSightings, allWishlists, userProfile, allAchievements, allUserAchievements]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -110,7 +153,12 @@ export default function ProfileScreen() {
 
   // Extract profile data safely
   const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
-
+  
+  // Get unlocked achievements
+  const userAchievementsArray = allUserAchievements ? Object.values(allUserAchievements) : [];
+  const unlockedCount = userAchievementsArray.length;
+  const totalCount = allAchievements ? Object.values(allAchievements).length : 0;
+  
   const menuItems: MenuItem[] = [
     {
       icon: <Settings size={24} color="#fff" />,
@@ -127,8 +175,26 @@ export default function ProfileScreen() {
     },
   ];
 
-  return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+  // Show loading state while data is being fetched
+  if (loading) {
+    return (
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
+        <ScreenHeader title="Profile" />
+        <LoadingState message="Loading profile data..." />
+      </View>
+    );
+  }
+
+    return (
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
       <ScreenHeader title="Profile" />
       <ScrollView
         style={styles.scrollView}
@@ -139,6 +205,10 @@ export default function ProfileScreen() {
             tintColor="#007AFF"
           />
         }
+        // Allow maps to handle gestures by not intercepting them
+        onStartShouldSetResponderCapture={() => false}
+        onMoveShouldSetResponderCapture={() => false}
+        onResponderTerminationRequest={() => false}
       >
         {/* Profile Header */}
         <View style={styles.header}>
@@ -158,8 +228,16 @@ export default function ProfileScreen() {
         {/* Stats Section */}
         <StatsSection 
           uniqueCreatures={userStats?.uniqueCreatures || 0}
-          wishlistCount={allWishlists ? Object.keys(allWishlists).length : 0}
           totalPoints={userStats?.totalPoints || 0}
+          achievementsUnlocked={unlockedCount}
+          totalAchievements={totalCount}
+        />
+
+        {/* Achievements Preview */}
+        <AchievementsPreview
+          achievements={achievementsWithStatus}
+          unlockedCount={unlockedCount}
+          totalCount={totalCount}
         />
 
         {/* Category Progress Section */}
@@ -236,6 +314,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     margin: 20,
     overflow: 'hidden',
+    marginBottom: 32,
   },
   menuItem: {
     flexDirection: 'row',

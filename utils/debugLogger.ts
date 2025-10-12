@@ -37,7 +37,6 @@ export class DebugLogger {
       data
     };
     
-    console.log(`[DEBUG][AUTH][${timestamp}] ${event}`, data || '');
   }
 
   /**
@@ -47,7 +46,6 @@ export class DebugLogger {
     if (!this.isDebugEnabled) return;
     
     const timestamp = new Date().toISOString();
-    console.log(`[DEBUG][SYNC][${timestamp}] ${event}`, data || '');
   }
 
   /**
@@ -57,7 +55,6 @@ export class DebugLogger {
     if (!this.isDebugEnabled) return;
     
     const timestamp = new Date().toISOString();
-    console.log(`[DEBUG][PROFILE][${timestamp}] ${event}`, data || '');
   }
 
   /**
@@ -67,7 +64,6 @@ export class DebugLogger {
     if (!this.isDebugEnabled) return;
     
     const timestamp = new Date().toISOString();
-    console.log(`[DEBUG][UPLOAD][${timestamp}] ${event}`, data || '');
   }
 
   /**
@@ -86,7 +82,6 @@ export class DebugLogger {
   logSeparator(): void {
     if (!this.isDebugEnabled) return;
     
-    console.log('==================================================');
   }
 }
 

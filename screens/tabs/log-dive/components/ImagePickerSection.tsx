@@ -49,7 +49,6 @@ const ImagePickerSection: React.FC<ImagePickerSectionProps> = ({
           fileName: asset.fileName || `image_${Date.now()}.jpg`,
         });
       } else if (result.canceled) {
-        console.log('User cancelled image picker');
       }
     } catch (error) {
       console.error('ImagePicker Error: ', error);

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {
+import { 
   View,
   Text,
   StyleSheet,
@@ -8,25 +8,18 @@ import {
   RefreshControl,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context'; // Add proper import
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Eye, Heart, Trophy } from 'lucide-react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
 import { ImageWithFallback } from '@/components';
-import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY, APP_CONFIG } from '@/constants';
+import { ROUTES, APP_CONFIG } from '@/constants';
 import { getLeaderboardData } from '@/services/leaderboardService';
 import { forceSyncAll } from '@/utils/syncUtils';
-import { Profile, Creature, Category, Sighting, Wishlist } from '@/types/database';
-// ScreenHeader import removed
-
-interface StatCard {
-  icon: React.ReactNode;
-  value: number;
-  label: string;
-  color: string;
-  onPress?: () => void;
-}
+import {  Creature, Category, Sighting, Wishlist } from '@/types/database';
+import StatCard from './components/StatCard';
 
 interface LeaderboardEntry {
   user_id: string;
@@ -37,16 +30,9 @@ interface LeaderboardEntry {
   isCurrentUser?: boolean;
 }
 
-interface LeaderboardEntryType {
-  user_id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  creatures_discovered: number;
-  total_points: number;
-}
+
 
 export default function HomeScreen() {
-  const [userData, setUserData] = React.useState<any | null>(null);
   const [userStats, setUserStats] = React.useState<any | null>(null);
   const [leaderboard, setLeaderboard] = React.useState<LeaderboardEntry[]>([]);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -54,7 +40,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   
   // Use the new specialized stores
-  const { creatures: allCreatures, categories: allCategories, currentUserSightings, allUsersSightings, wishlists: allWishlists, profile: userProfile, allProfiles, achievements: allAchievements } = useSyncedData();
+  const { creatures: allCreatures, categories: allCategories, currentUserSightings, allUsersSightings, profile: userProfile, allProfiles, achievements: allAchievements, userAchievements: allUserAchievements, wishlists: allWishlists, allUsersAchievements } = useSyncedData();
 
   const loadData = React.useCallback(() => {
     try {
@@ -62,12 +48,10 @@ export default function HomeScreen() {
       const creaturesObj = allCreatures || {};
       const categoriesObj = allCategories || {};
       const sightingsObj = currentUserSightings || {};
-      const wishlistsObj = allWishlists || {};
        
       const creaturesArray = Object.values(creaturesObj) as Creature[];
       const categoriesArray = Object.values(categoriesObj) as Category[];
       const sightingsArray = Object.values(sightingsObj) as Sighting[];
-      const wishlistsArray = Object.values(wishlistsObj) as Wishlist[];
 
       const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
       const allProfilesData = allProfiles || {};
@@ -76,11 +60,9 @@ export default function HomeScreen() {
       // Create mock userData object to match the expected format
       const userData = {
         sightings: sightingsArray,
-        wishlists: wishlistsArray,
+        wishlists: [], // Keep empty array for compatibility with statsService
         profile: profileData
       };
-      
-      setUserData(userData);
       
       // Create mock catalog object to match the expected format
       const catalog = {
@@ -89,22 +71,43 @@ export default function HomeScreen() {
         achievements: allAchievements ? Object.values(allAchievements) : [],
       };
       
+      // Get user achievements
+      const userAchievementsArray = allUserAchievements ? Object.values(allUserAchievements) : [];
+      
       // Calculate user stats
       if (userData && catalog) {
-        const stats = calculateUserStats(userData, catalog);
+        const stats = calculateUserStats(userData, catalog, userAchievementsArray);
         setUserStats(stats);
       }
       
       // Populate leaderboard data using all users sightings
       const allSightingsArray = allUsersSightings ? Object.values(allUsersSightings) : [];
-      const generatedLeaderboard = getLeaderboardData(allProfilesData, allSightingsArray as Sighting[], creaturesArray);
+      const allUsersAchievementsArray = allUsersAchievements ? Object.values(allUsersAchievements) : [];
+      const achievementsArray = allAchievements ? Object.values(allAchievements) : [];
+      const generatedLeaderboard = getLeaderboardData(
+        allProfilesData, 
+        allSightingsArray as Sighting[], 
+        creaturesArray,
+        allUsersAchievementsArray,
+        achievementsArray
+      );
       setLeaderboard(generatedLeaderboard);
     } catch (error) {
       console.error('Error loading home data:', error);
     } finally {
       setLoading(false);
     }
-  }, [allCreatures, allCategories, currentUserSightings, allUsersSightings, allWishlists, userProfile, allProfiles, allAchievements]);
+  }, [allCreatures, allCategories, currentUserSightings, allUsersSightings, userProfile, allProfiles, allAchievements, allUserAchievements, allUsersAchievements]);
+
+  React.useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -117,45 +120,32 @@ export default function HomeScreen() {
     }
   };
 
-  React.useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      loadData();
-    }, [loadData])
-  );
-
-
-  const stats: StatCard[] = [
+  const stats = [
     {
-      icon: <Eye size={24} color="#007AFF" />,
+      type: 'discovered' as const,
       value: userStats?.uniqueCreatures || 0,
-      label: 'Discovered',
-      color: '#007AFF',
-      onPress: () => router.push(ROUTES.STATS.DISCOVERED),
+      onPress: () => router.push('/stats/discovered'),
     },
     {
-      icon: <Heart size={24} color="#FF3B30" />,
+      type: 'achievements' as const,
+      value: userStats?.achievementsUnlocked || 0,
+      onPress: () => router.push('/stats/achievements'),
+    },
+    {
+      type: 'wishlist' as const,
       value: allWishlists ? Object.keys(allWishlists).length : 0,
-      label: 'Wishlist',
-      color: '#FF3B30',
-      onPress: () => router.push(ROUTES.STATS.WISHLIST),
-    },
-    {
-      icon: <Trophy size={24} color="#FF9500" />,
-      value: userStats?.totalPoints || 0,
-      label: 'Points',
-      color: '#FF9500',
-      onPress: () => router.push(ROUTES.STATS.POINTS),
+      onPress: () => router.push('/stats/wishlist'),
     },
   ];
 
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        {/* ScreenHeader removed */}
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={styles.title}>{APP_CONFIG.NAME}</Text>
@@ -167,110 +157,115 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      {/* ScreenHeader removed */}
-      <ScrollView
+    <SafeAreaView style={styles.safeAreaContainer}>
+      <ScrollView 
         style={styles.scrollView}
+        // Add this to test map gestures
+        scrollEnabled={true}
+        nestedScrollEnabled={true}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor="#007AFF"
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
+        // Allow maps to handle gestures by not intercepting them
+        onStartShouldSetResponderCapture={() => false}
+        onMoveShouldSetResponderCapture={() => false}
+        onResponderTerminationRequest={() => false}
       >
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <View style={styles.titleRow}>
-              <View>
-                <Text style={styles.title}>{APP_CONFIG.NAME}</Text>
-                <Text style={styles.subtitle}>{APP_CONFIG.TAGLINE}</Text>
-              </View>
-              <TouchableOpacity 
-                style={styles.logDiveButton}
-                onPress={() => router.push(ROUTES.TABS.LOG_DIVE)}
-              >
-                <Text style={styles.logDiveText}>+ Log a Dive</Text>
-              </TouchableOpacity>
+        {/* <MapTest /> Add this to test map functionality */}
+        <View style={styles.header}>
+          <Text style={styles.welcomeText}>Welcome back,</Text>
+          <Text style={styles.usernameText}>
+            {userProfile && Object.values(userProfile).length > 0 
+              ? Object.values(userProfile)[0]?.full_name || 'Diver' 
+              : 'Diver'}
+          </Text>
+        </View>
+
+        <View style={styles.statsContainer}>
+          {stats.map((stat, index) => (
+            <View 
+              key={index} 
+              style={[
+                styles.statCardWrapper,
+                index === 0 && styles.firstCard,
+                index === stats.length - 1 && styles.lastCard
+              ]}
+            >
+              <StatCard
+                type={stat.type as any}
+                value={stat.value}
+                onPress={stat.onPress}
+              />
             </View>
-          </View>
+          ))}
+        </View>
 
-          <View style={styles.statsContainer}>
-            {stats.map((stat, index) => (
-              <TouchableOpacity key={index} style={styles.statCard} onPress={stat.onPress}>
-                <View style={styles.statIcon}>
-                  {stat.icon}
-                </View>
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleRow}>
-                <Trophy size={20} color="#FF9500" />
-                <Text style={styles.sectionTitle}>Top Explorers</Text>
-              </View>
-              <TouchableOpacity onPress={() => router.push(ROUTES.MODAL.LEADERBOARD)}>
-                <Text style={styles.seeAllButton}>See All</Text>
-              </TouchableOpacity>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Trophy size={20} color="#FF9500" />
+              <Text style={styles.sectionTitle}>Top Explorers</Text>
             </View>
+            <TouchableOpacity onPress={() => router.push(ROUTES.MODAL.LEADERBOARD)}>
+              <Text style={styles.seeAllButton}>See All</Text>
+            </TouchableOpacity>
+          </View>
 
-            {leaderboard.map((entry, index) => (
-              <View 
-                key={entry.user_id} 
-                style={[
-                  styles.leaderboardEntry,
-                  entry.isCurrentUser && styles.currentUserEntry,
-                  index === leaderboard.length - 1 && { borderBottomWidth: 0 }
-                ]}
-              >
-                <View style={styles.leaderboardLeft}>
-                  <View style={styles.rankContainer}>
-                    <Text style={[
-                      styles.rankText,
-                      index < 3 && styles.rankTextTop
-                    ]}>
-                      {index + 1}
-                    </Text>
-                  </View>
-                  <View style={styles.avatar}>
-                    <ImageWithFallback
-                      uri={entry.avatar || undefined}
-                      style={styles.avatarImage}
-                      fallbackColor="#333"
-                    />
-                  </View>
-                  <View>
-                    <Text style={styles.leaderboardName}>
-                      {entry.name}
-                      {entry.isCurrentUser && <Text style={styles.youText}> (You)</Text>}
-                    </Text>
-                    <Text style={styles.leaderboardSubtext}>
-                      {entry.creatures} creatures discovered
-                    </Text>
-                  </View>
+          {leaderboard.map((entry, index) => (
+            <View 
+              key={entry.user_id} 
+              style={[
+                styles.leaderboardEntry,
+                entry.isCurrentUser && styles.currentUserEntry,
+                index === leaderboard.length - 1 && { borderBottomWidth: 0 }
+              ]}
+            >
+              <View style={styles.leaderboardLeft}>
+                <View style={styles.rankContainer}>
+                  <Text style={[
+                    styles.rankText,
+                    index < 3 && styles.rankTextTop
+                  ]}>
+                    {index + 1}
+                  </Text>
                 </View>
-                <View style={styles.pointsBadge}>
-                  <Text style={styles.pointsText}>{entry.points}</Text>
+                <View style={styles.avatar}>
+                  <ImageWithFallback
+                    uri={entry.avatar || undefined}
+                    style={styles.avatarImage}
+                    fallbackColor="#333"
+                  />
+                </View>
+                <View>
+                  <Text style={styles.leaderboardName}>
+                    {entry.name}
+                    {entry.isCurrentUser && <Text style={styles.youText}> </Text>}
+                  </Text>
+                  <Text style={styles.leaderboardSubtext}>
+                    {entry.creatures} creatures discovered
+                  </Text>
                 </View>
               </View>
-            ))}
-          </View>
+              <View style={styles.pointsBadge}>
+                <Text style={styles.pointsText}>{entry.points}</Text>
+              </View>
+            </View>
+          ))}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const { width: WINDOW_WIDTH } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
-  container: {
+  safeAreaContainer: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  container: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
@@ -282,6 +277,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 24,
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  usernameText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
   },
   titleRow: {
     flexDirection: 'row',
@@ -312,26 +316,18 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
     marginBottom: 24,
   },
-  statCard: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    width: (WINDOW_WIDTH - 60) / 3,
-    minHeight: 120,
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+  statCardWrapper: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  firstCard: {
+    marginLeft: 0,
+  },
+  lastCard: {
+    marginRight: 0,
   },
   statIcon: {
     marginBottom: 8,

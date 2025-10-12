@@ -5,7 +5,6 @@ import MapContainer from '@/components/ui/MapContainer';
 import FormSection from '@/components/ui/FormSection';
 import { DiveSite } from '@/types/database';
 import { hasValidCoordinates } from '@/utils/diveSiteUtils';
-import DiveSiteMarker from '@/components/DiveSiteMarker';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
 interface CoordinateSelectionSectionProps {
@@ -32,7 +31,7 @@ const CoordinateSelectionSection: React.FC<CoordinateSelectionSectionProps> = ({
   handleMarkerDragEnd,
   selectedCoordinate
 }) => {
-  // Render function for individual markers
+  // Render function for individual markers - return marker data instead of component
   const renderMarker = (data: any) => {
     // Add safety checks for marker data
     if (!data || !data.geometry || !data.geometry.coordinates || 
@@ -49,19 +48,19 @@ const CoordinateSelectionSection: React.FC<CoordinateSelectionSectionProps> = ({
       return null;
     }
     
-    return (
-      <DiveSiteMarker
-        id={data.properties.id}
-        name={data.properties.name}
-        latitude={lat}
-        longitude={lng}
-        pinColor="#007AFF"
-      />
-    );
+    // Return marker data object for CustomClusteredMapView
+    return {
+      id: data.properties.id,
+      coordinates: { latitude: lat, longitude: lng },
+      title: data.properties.name,
+      color: "#007AFF"
+    };
   };
 
+  console.log('[DEBUG] CoordinateSelectionSection: Passing selectedCoordinate to MapContainer', selectedCoordinate);
+
   return (
-    <FormSection title="Select Location on Map">
+    <FormSection title="Location">
       <MapToggleButton 
         isSelecting={isSelectingCoordinates}
         onPress={() => setIsSelectingCoordinates(!isSelectingCoordinates)}
@@ -75,7 +74,7 @@ const CoordinateSelectionSection: React.FC<CoordinateSelectionSectionProps> = ({
         onPress={handleMapPress}
         onMarkerDragEnd={handleMarkerDragEnd}
         selectedCoordinate={selectedCoordinate}
-        helperText={isSelectingCoordinates ? "Tap on the map above to select the dive site location. The coordinates will be filled automatically." : undefined}
+        helperText={isSelectingCoordinates ? "Tap on the map to select the dive site location" : undefined}
       />
     </FormSection>
   );

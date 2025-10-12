@@ -3,6 +3,7 @@ import { supabase } from '../services/supabase';
 import { Database } from '../types/database';
 import { v4 as uuidv4 } from 'uuid';
 import { customSynced } from '@/services/legendStateConfig';
+import { checkAndAwardSightingAchievements } from '@/services/achievementService';
 
 // Types for our observables
 export type Creature = Database['public']['Tables']['creatures']['Row'];
@@ -12,6 +13,7 @@ export type Sighting = Database['public']['Tables']['sightings']['Row'];
 export type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Achievement = Database['public']['Tables']['achievements']['Row'];
+export type UserAchievement = Database['public']['Tables']['user_achievements']['Row'];
 
 // User ID tracking - using an observable to make it reactive
 export const currentUserID$ = observable<string | null>(null);
@@ -49,6 +51,21 @@ export const achievements$ = observable(customSynced({
   persist: { name: 'achievements' },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
+}));
+
+export const userAchievements$ = observable(customSynced({
+  supabase,
+  collection: 'user_achievements',
+  filter: (select: any) => {
+    const userId = currentUserID$.get();
+    if (!userId) return select.eq('user_id', 'no-auth-user-id'); // Return empty result for unauthenticated users
+    return select.eq('user_id', userId);
+  },
+  actions: ['read'],
+  persist: { name: 'user_achievements' },
+  changesSince: 'last-sync',
+  fieldCreatedAt: 'created_at',
+  realtime: true,
 }));
 
 export const diveSites$ = observable(customSynced({
@@ -108,6 +125,16 @@ export const allUsersSightings$ = observable(customSynced({
   collection: 'sightings',
   actions: ['read'],
   persist: { name: 'all_sightings' },
+  changesSince: 'last-sync',
+  fieldCreatedAt: 'created_at',
+}));
+
+// All users achievements observable - for leaderboard and community features
+export const allUsersAchievements$ = observable(customSynced({
+  supabase,
+  collection: 'user_achievements',
+  actions: ['read'],
+  persist: { name: 'all_user_achievements' },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
 }));
@@ -186,6 +213,11 @@ export const profiles$ = observable(customSynced({
 export const getCategories = () => categories$.get();
 export const getCreatures = () => creatures$.get();
 export const getAchievements = () => achievements$.get();
+export const getUserAchievements = () => {
+  const achievements = userAchievements$.get();
+  return achievements;
+};
+export const getAllUsersAchievements = () => allUsersAchievements$.get();
 export const getDiveSites = () => diveSites$.get();
 export const getCurrentUserSightings = () => currentUserSightings$.get();
 export const getAllUsersSightings = () => allUsersSightings$.get();
@@ -193,20 +225,40 @@ export const getWishlists = () => wishlists$.get();
 export const getProfile = () => profile$.get();
 
 // Utility functions for creating new records
-export const createSighting = (sightingData: Omit<Sighting, 'id' | 'created_at' | 'user_id'>) => {
+export const createSighting = async (sightingData: Omit<Sighting, 'id' | 'created_at' | 'user_id'>) => {
   const userId = currentUserID$.get();
   if (!userId) {
     throw new Error('User must be logged in to create sightings');
   }
   
+  
   const id = uuidv4();
   
-  (currentUserSightings$ as any)[id].set({
+  const newSighting = {
     ...sightingData,
     id,
     user_id: userId,
     created_at: new Date().toISOString(),
-  } as Sighting);
+  } as Sighting;
+
+  (currentUserSightings$ as any)[id].set(newSighting);
+
+  // Check for achievements after creating the sighting
+  try {
+    // Get all current sightings to determine the count of unique creatures
+    const allSightings = currentUserSightings$.get() || {};
+    const sightingsArray = Object.values(allSightings);
+    
+    // Count unique creatures
+    const uniqueCreatures = new Set(sightingsArray.map((s: any) => s.creature_id)).size;
+    
+    // Check and award achievements based on the count
+    await checkAndAwardSightingAchievements(userId, uniqueCreatures);
+  } catch (error) {
+    console.error('Error checking achievements:', error);
+  }
+  
+  return newSighting;
 };
 
 export const createWishlistItem = async (creatureId: string) => {
@@ -253,7 +305,6 @@ export const createDiveSite = (diveSiteData: Omit<DiveSite, 'id' | 'created_at'>
 
 export const removeWishlistItem = (wishlistId: string) => {
   // Use Legend State's delete method instead of direct deletion
-  // console.log('Removing wishlist item:', wishlistId);
   (wishlists$ as any)[wishlistId].delete();
 };
 
@@ -319,3 +370,4 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
 };
 
 export const getSightings = getCurrentUserSightings;
+

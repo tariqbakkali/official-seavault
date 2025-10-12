@@ -1,4 +1,5 @@
 import * as React from 'react';
+import Constants from 'expo-constants';
 import {
   View,
   Text,
@@ -8,7 +9,7 @@ import {
 } from 'react-native';
 import { MapPin } from 'lucide-react-native';
 import { Database } from '@/types/database';
-import ImageWithFallback from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components';
 
 type DiveSite = Database['public']['Tables']['dive_sites']['Row'];
 
@@ -22,9 +23,9 @@ const cardWidth = (width - 60) / 2;
 
 export default function ExploreDiveSiteCard({ diveSite, onPress }: ExploreDiveSiteCardProps) {
   // Generate a static map URL (you'll need to replace YOUR_API_KEY with an actual Google Maps API key)
+      const key = Constants.expoConfig?.extra?.GOOGLE_MAPS_API_KEY || '';
   const mapUrl = diveSite.latitude && diveSite.longitude 
-    ? `https://maps.googleapis.com/maps/api/staticmap?center=${diveSite.latitude},${diveSite.longitude}&zoom=10&size=400x400&key=${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}`
-    : null;
+    ? `https://maps.googleapis.com/maps/api/staticmap?center=${diveSite.latitude},${diveSite.longitude}&zoom=10&size=400x400&key=${key || ''}`: null;
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>

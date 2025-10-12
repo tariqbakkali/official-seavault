@@ -140,6 +140,10 @@ const MainLogDiveForm: React.FC<MainLogDiveFormProps> = ({
       style={styles.container}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
+      // Allow maps to handle gestures by not intercepting them
+      onStartShouldSetResponderCapture={() => false}
+      onMoveShouldSetResponderCapture={() => false}
+      onResponderTerminationRequest={() => false}
     >
       <View style={styles.header}>
         <Text style={styles.headerText}>Record your dive detail and Creature spotted</Text>

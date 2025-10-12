@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Trophy, ArrowLeft } from 'lucide-react-native';
 import { useSyncedData } from '@/hooks/useSyncedData';
+import { getLeaderboardData } from '@/services/leaderboardService';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
 import LeaderboardEntry from './components/LeaderboardEntry';
@@ -40,47 +41,27 @@ export default function LeaderboardModal() {
   const [refreshing, setRefreshing] = React.useState(false);
   const insets = useSafeAreaInsets();
   
-  const { allProfiles: allProfiles, allUsersSightings, creatures: allCreatures, profile, fetchUserData, fetchCatalog } = useSyncedData();
+  const { allProfiles: allProfiles, allUsersSightings, creatures: allCreatures, profile, fetchUserData, fetchCatalog, achievements: allAchievements, allUsersAchievements } = useSyncedData();
   const userProfile = profile ? Object.values(profile)[0] : undefined;
 
-  // Fetch leaderboard data directly from Supabase
-  const fetchLeaderboard = async (limit: number = 10): Promise<LeaderboardEntryType[]> => {
+  // Update the fetchLeaderboard function to return the correct type
+  const fetchLeaderboard = async (limit: number = 10) => {
     const allProfilesData = allProfiles || {};
     const allSightingsData = allUsersSightings || {};
     const allCreaturesData = allCreatures || {};
+    const allUsersAchievementsData = allUsersAchievements || {};
+    const allAchievementsData = allAchievements || {};
 
-    const users = Object.values(allProfilesData).filter((p: any) => p.full_name && p.full_name !== '');
+    // Use the updated getLeaderboardData function that includes achievements
+    const leaderboardResult = getLeaderboardData(
+      allProfilesData,
+      Object.values(allSightingsData),
+      Object.values(allCreaturesData),
+      Object.values(allUsersAchievementsData),
+      Object.values(allAchievementsData)
+    );
 
-    // Calculate stats for each user
-    const leaderboardData = users.map((user: any) => {
-      // Get all sightings for this user
-      const userSightings = Object.values(allSightingsData).filter((s: any) => s.user_id === user.id);
-
-      // Calculate unique creatures and total points
-      const uniqueCreatures = new Set(userSightings.map((s: any) => s.creature_id));
-      const creatureEntries = Object.values(allCreaturesData);
-      const totalPoints = userSightings.reduce((sum: number, sighting: any) => {
-        // Assuming creature points are available in the creatures observable
-        const creature: any = creatureEntries.find((c: any) => c.id === sighting.creature_id);
-        return sum + (creature?.points || 0);
-      }, 0);
-
-      return {
-        user_id: user.id,
-        full_name: user.full_name,
-        avatar_url: user.avatar_url,
-        creatures_discovered: uniqueCreatures.size,
-        total_points: totalPoints
-      };
-    });
-
-    // Sort by points (descending), then by creatures discovered (descending)
-    return leaderboardData.sort((a, b) => {
-      if (b.total_points !== a.total_points) {
-        return b.total_points - a.total_points;
-      }
-      return b.creatures_discovered - a.creatures_discovered;
-    }).slice(0, limit);
+    return leaderboardResult.slice(0, limit);
   };
 
   const loadData = async () => {
@@ -97,12 +78,12 @@ export default function LeaderboardModal() {
       
       // Process leaderboard data to match the expected format for LeaderboardEntry component
       if (leaderboardResult && currentUserId) {
-        const processedData: LeaderboardUser[] = (leaderboardResult as LeaderboardEntryType[]).map((entry, index) => ({
+        const processedData: LeaderboardUser[] = leaderboardResult.map((entry, index) => ({
           id: entry.user_id,
-          name: entry.full_name || 'Unknown User',
-          avatar: entry.avatar_url,
-          creatures: Number(entry.creatures_discovered),
-          points: Number(entry.total_points),
+          name: entry.name || 'Unknown User',
+          avatar: entry.avatar,
+          creatures: entry.creatures,
+          points: entry.points,
           isCurrentUser: entry.user_id === currentUserId,
           rank: index + 1
         }));
@@ -142,7 +123,12 @@ export default function LeaderboardModal() {
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
       <ScreenHeader 
         title="Leaderboard" 
         onBackPress={() => router.back()}

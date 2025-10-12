@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
-import Supercluster, { PointFeature } from 'supercluster';
+import { View, Text, Platform } from 'react-native';
+import { GoogleMaps, AppleMaps } from 'expo-maps';
+import Supercluster from 'supercluster';
 
 interface ClusteredMapViewProps {
   style?: any;
   data: any[];
-  initialRegion: Region;
-  renderMarker: (data: any) => React.ReactNode;
-  renderCluster?: (cluster: any, onPress: () => void) => React.ReactNode;
+  initialRegion: { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number };
+  renderMarker: (data: any) => any; // Return marker data object instead of React component
+  renderCluster?: (cluster: any, onPress: () => void) => any; // Return marker data object instead of React component
   clusteringEnabled?: boolean;
   onClusterPress?: (clusterId: string, children: any[]) => void;
   onPress?: (event: any) => void;
   onMarkerDragEnd?: (event: any) => void;
-  selectedCoordinate?: { latitude: number; longitude: number } | null; // Add selectedCoordinate prop
+  selectedCoordinate?: { latitude: number; longitude: number } | null;
 }
 
 const CustomClusteredMapView = ({
@@ -26,19 +26,25 @@ const CustomClusteredMapView = ({
   onClusterPress,
   onPress,
   onMarkerDragEnd,
-  selectedCoordinate, // Add selectedCoordinate prop
+  selectedCoordinate,
 }: ClusteredMapViewProps) => {
-  // console.log('CustomClusteredMapView called with data length:', data?.length, 'initialRegion:', initialRegion, 'clusteringEnabled:', clusteringEnabled);
+  // For web and all platforms, use expo-maps directly with basic implementation
+  
   const [clusters, setClusters] = useState<any[]>([]);
-  const [region, setRegion] = useState<Region>(initialRegion);
-  const mapRef = useRef<MapView>(null);
+  const [region, setRegion] = useState(initialRegion);
   const superclusterRef = useRef<Supercluster | null>(null);
+  const [mapKey, setMapKey] = useState(0);
+
+  // Force re-render when selectedCoordinate changes
+  useEffect(() => {
+    console.log('[DEBUG] CustomClusteredMapView: selectedCoordinate changed', selectedCoordinate);
+    setMapKey(prev => prev + 1);
+  }, [selectedCoordinate]);
 
   // Initialize Supercluster
   useEffect(() => {
-    // console.log('CustomClusteredMapView useEffect called with data:', data?.length, 'clusteringEnabled:', clusteringEnabled);
     if (data && data.length > 0 && clusteringEnabled) {
-      const points = data
+      const points: Supercluster.PointFeature<any>[] = data
         .filter(item => 
           item.geometry && 
           item.geometry.coordinates && 
@@ -48,13 +54,13 @@ const CustomClusteredMapView = ({
           typeof item.geometry.coordinates[1] === 'number'
         )
         .map(item => ({
-          type: 'Feature' as const,
+          type: 'Feature',
           properties: {
             ...item.properties,
             cluster: false,
           },
           geometry: {
-            type: 'Point' as const,
+            type: 'Point',
             coordinates: [
               parseFloat(item.geometry.coordinates[0]),
               parseFloat(item.geometry.coordinates[1])
@@ -63,19 +69,19 @@ const CustomClusteredMapView = ({
         }));
 
       const supercluster = new Supercluster({
-        radius: 40,
+        radius: 60, // Increased cluster radius for better grouping
         maxZoom: 20,
         minZoom: 0,
+        extent: 512, // Tile extent (default is 512)
+        nodeSize: 64, // Size of the KD-tree leaf node (default is 64)
       });
 
-      supercluster.load(points as PointFeature<any>[]);
+      supercluster.load(points);
       superclusterRef.current = supercluster;
       
       updateClusters(supercluster, region);
     } else {
       // If clustering is disabled or no data, show all markers directly
-      // Ensure data is in the correct format for rendering
-      // console.log('Setting clusters directly (no clustering):', data?.length);
       if (data && data.length > 0) {
         // Make sure all data items have the required structure
         const formattedData = data.map((item, index) => {
@@ -109,8 +115,7 @@ const CustomClusteredMapView = ({
   }, [data, clusteringEnabled, region]);
 
   // Update clusters when region changes
-  const updateClusters = (supercluster: Supercluster, currentRegion: Region) => {
-    // console.log('updateClusters called with region:', currentRegion);
+  const updateClusters = (supercluster: Supercluster, currentRegion: { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number }) => {
     if (!supercluster || !currentRegion) return;
     
     const bbox: [number, number, number, number] = [
@@ -125,7 +130,6 @@ const CustomClusteredMapView = ({
     
     try {
       const newClusters = supercluster.getClusters(bbox, zoom);
-      // console.log('Generated clusters:', newClusters.length);
       setClusters(newClusters);
     } catch (error) {
       console.warn('Error updating clusters:', error);
@@ -134,8 +138,7 @@ const CustomClusteredMapView = ({
   };
 
   // Handle region changes
-  const onRegionChangeComplete = (newRegion: Region) => {
-    // console.log('onRegionChangeComplete called with new region:', newRegion);
+  const handleRegionChange = (newRegion: any) => {
     setRegion(newRegion);
     if (superclusterRef.current && clusteringEnabled) {
       updateClusters(superclusterRef.current, newRegion);
@@ -155,129 +158,171 @@ const CustomClusteredMapView = ({
     }
   };
 
-  // Render markers or clusters
-  const renderMarkers = () => {
-    // console.log('renderMarkers called with clusters:', clusters?.length);
-    if (!clusters) return null;
-    
-    const markers = [];
-    
-    for (let i = 0; i < clusters.length; i++) {
-      const cluster = clusters[i];
-      // console.log(`Processing cluster ${i}:`, cluster);
-      
-      if (!cluster || !cluster.geometry || !cluster.geometry.coordinates) {
-        // console.log(`Skipping cluster ${i} due to missing geometry or coordinates`);
-        continue;
-      }
-      
-      const coordinates = cluster.geometry.coordinates;
-      
-      // Validate coordinates
-      if (!Array.isArray(coordinates) || coordinates.length < 2 || 
-          typeof coordinates[0] !== 'number' || typeof coordinates[1] !== 'number') {
-        // console.log(`Skipping cluster ${i} due to invalid coordinates`);
-        continue;
-      }
-      
-      const longitude = coordinates[0];
-      const latitude = coordinates[1];
-      
-      // Check if it's a cluster
-      if (cluster.properties && cluster.properties.cluster && clusteringEnabled) {
-        // console.log(`Rendering cluster ${i}`);
-        if (renderCluster) {
-          // For custom renderCluster, we call it directly
-          const clusterElement = renderCluster(cluster, () => handleClusterPress(cluster));
-          if (clusterElement) {
-            // Ensure the cluster element has a key prop
-            const keyedClusterElement = React.cloneElement(clusterElement as React.ReactElement, {
-              key: `cluster-${cluster.properties.cluster_id || i}`
-            });
-            markers.push(keyedClusterElement);
-          }
-        } else {
-          // Default cluster rendering
-          markers.push(
-            <Marker
-              key={`cluster-${cluster.properties.cluster_id || i}`}
-              coordinate={{ latitude, longitude }}
-              onPress={() => handleClusterPress(cluster)}
-            >
-              <View style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: '#007AFF',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-                <Text style={{
-                  color: '#FFFFFF',
-                  fontWeight: 'bold',
-                }}>
-                  {cluster.properties.point_count}
-                </Text>
-              </View>
-            </Marker>
-          );
-        }
-      } else {
-        // Render individual marker
-        // console.log(`Rendering individual marker ${i}`);
-        const markerElement = renderMarker(cluster);
-        if (markerElement) {
-          // Ensure the marker element has a key prop
-          const keyedMarkerElement = React.cloneElement(markerElement as React.ReactElement, {
-            key: `marker-${cluster.properties?.id || cluster.id || i}`
-          });
-          markers.push(keyedMarkerElement);
-        }
-      }
-    }
-    
-    // Render draggable marker when coordinates are selected
-    if (selectedCoordinate) {
-      markers.push(
-        <Marker
-          key="selected-marker"
-          coordinate={{
-            latitude: selectedCoordinate.latitude,
-            longitude: selectedCoordinate.longitude,
-          }}
-          title="Selected Location"
-          pinColor="#FF0000"
-          draggable={true}
-          onDragEnd={onMarkerDragEnd}
-        />
-      );
-    }
-    
-    // console.log('Returning markers:', markers.length);
-    return markers;
+  // Convert initial region to camera position
+  const cameraPosition = selectedCoordinate ? {
+    coordinates: {
+      latitude: selectedCoordinate.latitude,
+      longitude: selectedCoordinate.longitude,
+    },
+    zoom: 15, // Zoom in when a specific location is selected
+  } : {
+    coordinates: {
+      latitude: initialRegion.latitude,
+      longitude: initialRegion.longitude,
+    },
+    zoom: 10, // Adjust as needed
   };
 
+  console.log('[DEBUG] CustomClusteredMapView: cameraPosition', cameraPosition);
+  console.log('[DEBUG] CustomClusteredMapView: selectedCoordinate', selectedCoordinate);
+
+  // Convert clusters to markers for expo-maps
+  const mapMarkers = clusters.map((cluster, index) => {
+    if (!cluster || !cluster.geometry || !cluster.geometry.coordinates) {
+      return null;
+    }
+    
+    const coordinates = cluster.geometry.coordinates;
+    
+    // Validate coordinates
+    if (!Array.isArray(coordinates) || coordinates.length < 2 || 
+        typeof coordinates[0] !== 'number' || typeof coordinates[1] !== 'number') {
+      return null;
+    }
+    
+    const longitude = coordinates[0];
+    const latitude = coordinates[1];
+    
+    // Check if it's a cluster
+    if (cluster.properties && cluster.properties.cluster && clusteringEnabled) {
+      // For clusters, we'll use a special marker to indicate it's a cluster
+      const pointCount = cluster.properties.point_count || 0;
+      return {
+        id: `cluster-${cluster.properties.cluster_id || index}`,
+        coordinates: { latitude, longitude },
+        title: `${pointCount} dive sites`,
+        // Different color for clusters
+        color: '#FF9500', // Orange color for clusters
+      };
+    } else {
+      // Render individual marker using the renderMarker function
+      const markerData = renderMarker(cluster);
+      if (markerData) {
+        return {
+          id: markerData.id || cluster.properties?.id || cluster.id || `marker-${index}`,
+          coordinates: { 
+            latitude: markerData.coordinates?.latitude || latitude, 
+            longitude: markerData.coordinates?.longitude || longitude 
+          },
+          title: markerData.title || cluster.properties?.name || cluster.name || 'Dive Site',
+          color: markerData.color || '#007AFF', // Blue color for individual sites
+        };
+      }
+      // Fallback marker data
+      return {
+        id: cluster.properties?.id || cluster.id || `marker-${index}`,
+        coordinates: { latitude, longitude },
+        title: cluster.properties?.name || cluster.name || 'Dive Site',
+        color: '#007AFF', // Blue color for individual sites
+      };
+    }
+  }).filter(marker => marker !== null);
+
+  // Add selected coordinate marker if present
+  if (selectedCoordinate) {
+    console.log('[DEBUG] CustomClusteredMapView: Adding selected coordinate marker', selectedCoordinate);
+    // Validate the selected coordinate
+    if (typeof selectedCoordinate.latitude === 'number' && typeof selectedCoordinate.longitude === 'number') {
+      const selectedMarker = {
+        id: "selected-marker",
+        coordinates: selectedCoordinate,
+        title: "Selected Location",
+        color: '#FF3B30', // Red color for selected location
+        draggable: true, // Make the selected marker draggable
+      };
+      console.log('[DEBUG] CustomClusteredMapView: Selected marker object created', selectedMarker);
+      mapMarkers.push(selectedMarker);
+      console.log('[DEBUG] CustomClusteredMapView: Selected marker added to mapMarkers array');
+    } else {
+      console.log('[DEBUG] CustomClusteredMapView: Invalid selectedCoordinate format', selectedCoordinate);
+    }
+  } else {
+    console.log('[DEBUG] CustomClusteredMapView: No selectedCoordinate to display');
+  }
+
+  console.log('[DEBUG] CustomClusteredMapView: Final mapMarkers array', mapMarkers);
+
+  // Platform-specific map view
+  const MapViewComponent = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
+
+  // Validate markers before passing to map component
+  const validMarkers = mapMarkers.filter(marker => {
+    if (!marker) return false;
+    if (!marker.coordinates) return false;
+    if (typeof marker.coordinates.latitude !== 'number' || typeof marker.coordinates.longitude !== 'number') {
+      console.warn('[DEBUG] CustomClusteredMapView: Invalid marker coordinates', marker);
+      return false;
+    }
+    return true;
+  });
+
+  console.log('[DEBUG] CustomClusteredMapView: Valid markers to render', validMarkers);
+  console.log('[DEBUG] CustomClusteredMapView: Camera position', cameraPosition);
+  console.log('[DEBUG] CustomClusteredMapView: Map key', mapKey);
+
   return (
-    <MapView
-      ref={mapRef}
+    <View 
       style={style}
-      initialRegion={initialRegion}
-      onRegionChangeComplete={onRegionChangeComplete}
-      onPress={onPress}
-      showsUserLocation={true}
-      showsMyLocationButton={true}
-      showsCompass={true}
-      showsScale={true}
-      showsBuildings={false}
-      showsTraffic={false}
-      showsIndoors={false}
-      toolbarEnabled={true}
-      loadingEnabled={true}
-      loadingBackgroundColor="#1a1a1a"
-      loadingIndicatorColor="#007AFF"
+      // Prevent parent ScrollView from intercepting touch events
+      onStartShouldSetResponder={() => true}
+      onMoveShouldSetResponder={() => true}
+      // Additional gesture handling for better map interaction
+      onStartShouldSetResponderCapture={() => false}
+      onMoveShouldSetResponderCapture={() => false}
+      // Handle pan and zoom gestures properly
+      onResponderTerminationRequest={() => false}
+      // Ensure the map exclusively handles all touch events
+      onResponderGrant={() => true}
+      onResponderMove={() => true}
+      onResponderRelease={() => true}
     >
-      {renderMarkers()}
-    </MapView>
+      <MapViewComponent
+        key={mapKey}
+        style={{ flex: 1 }}
+        cameraPosition={cameraPosition}
+        markers={validMarkers}
+        onMapClick={onPress}
+        onMarkerClick={(event) => {
+          console.log('[DEBUG] CustomClusteredMapView: Map marker clicked', event);
+          // Find the marker that was clicked
+          const clickedMarker = validMarkers.find(marker => marker.id === event.id);
+          if (clickedMarker) {
+            // Check if it's a cluster marker
+            if (clickedMarker.id.startsWith('cluster-')) {
+              // Find the cluster data
+              const clusterIndex = clickedMarker.id.split('-')[1];
+              const cluster = clusters.find(c => 
+                c.properties && c.properties.cluster_id && 
+                c.properties.cluster_id.toString() === clusterIndex
+              );
+              if (cluster) {
+                handleClusterPress(cluster);
+              }
+            } else if (clickedMarker.id === "selected-marker" && onMarkerDragEnd) {
+              // Handle drag end for selected marker
+              // Note: expo-maps doesn't directly support onMarkerDragEnd, 
+              // but we can simulate it by handling map clicks when dragging ends
+              console.log('[DEBUG] CustomClusteredMapView: Selected marker clicked');
+            }
+            // For individual markers, call the onPress handler if provided
+            else if (onPress) {
+              // Pass the marker data to the onPress handler
+              onPress({ nativeEvent: { coordinate: clickedMarker.coordinates } });
+            }
+          }
+        }}
+      />
+    </View>
   );
 };
 

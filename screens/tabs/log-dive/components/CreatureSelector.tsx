@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Dimensions } from 'react-native';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { Database } from '@/types/database';
-import ImageWithFallback from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components';
 
 interface CreatureSelectorProps {
   catalog: any;
@@ -176,6 +176,10 @@ const CreatureSelector: React.FC<CreatureSelectorProps> = ({
           <ScrollView 
             contentContainerStyle={styles.modalContent}
             showsVerticalScrollIndicator={false}
+            // Allow maps to handle gestures by not intercepting them
+            onStartShouldSetResponderCapture={() => false}
+            onMoveShouldSetResponderCapture={() => false}
+            onResponderTerminationRequest={() => false}
           >
             <TouchableOpacity
               style={styles.modalItem}

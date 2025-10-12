@@ -41,7 +41,7 @@ export const ROUTES = {
   STATS: {
     DISCOVERED: '/stats/discovered' as const,
     POINTS: '/stats/points' as const,
-    WISHLIST: '/stats/wishlist' as const,
+    ACHIEVEMENTS: '/stats/achievements' as const,
   },
   
   // Modal routes
@@ -106,7 +106,7 @@ export type RouteParams = {
   '/creatures/[id]': { id: string };
   '/stats/discovered': undefined;
   '/stats/points': undefined;
-  '/stats/wishlist': undefined;
+  '/stats/achievements': undefined;
   '/profile/edit': undefined;
   '/modal/leaderboard': undefined;
   '/modal/explore': undefined;

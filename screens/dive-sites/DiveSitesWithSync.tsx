@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { forceSyncAll } from '@/utils/syncUtils';
 
 const DiveSitesWithSync: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { diveSites } = useSyncedData();
+  const insets = useSafeAreaInsets();
 
   // Convert dive sites object to array with actual values
   const diveSitesArray = diveSites ? Object.values(diveSites) : [];
@@ -34,7 +36,12 @@ const DiveSitesWithSync: React.FC = () => {
 
   if (!diveSites) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Loading dive sites...</Text>
       </View>
@@ -42,7 +49,12 @@ const DiveSitesWithSync: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
       <FlatList
         data={diveSitesArray}
         renderItem={renderDiveSite}

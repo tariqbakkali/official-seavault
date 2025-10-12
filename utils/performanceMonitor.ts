@@ -139,7 +139,6 @@ export class PerformanceMonitor {
    * Log performance metrics to console
    */
   logMetrics(): void {
-    console.log('Sync Performance Metrics:', this.metrics);
   }
 
   /**

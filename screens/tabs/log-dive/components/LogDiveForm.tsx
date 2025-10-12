@@ -10,7 +10,7 @@ import {
 import { router } from 'expo-router';
 import { Calendar, Clock, MapPin, Camera, Check } from 'lucide-react-native';
 import { DiveSite, Creature } from '@/types/database';
-import ImageWithFallback from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components';
 
 const { width } = Dimensions.get('window');
 const creatureCardWidth = (width - 60) / 3;

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Camera, AlertCircle } from 'lucide-react-native';
-import ImageWithFallback from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components';
 import DefaultAvatar from '@/assets/images/AVATAR.png';
 import { styles } from '../styles';
 

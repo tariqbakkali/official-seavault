@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { Heart, X } from 'lucide-react-native';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { Creature } from '@/types/database';
-import ImageWithFallback from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 
 interface WishlistCreature {
@@ -112,7 +112,12 @@ export default function WishlistScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
       <ScreenHeader 
         title={`Wishlist (${wishlistCreatures.length})`} 
         onBackPress={() => router.back()}

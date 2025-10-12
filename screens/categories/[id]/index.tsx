@@ -10,6 +10,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ImageWithFallback } from '@/components';
+import WikimediaImage from '@/components/WikimediaImage';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -45,6 +46,7 @@ export default function CategoryDetailScreen() {
         const categoryCreatures = creaturesArray.filter(
           (creature: any) => creature.category_id === id
         );
+        
         setCreatures(categoryCreatures);
       }
     } catch (error) {
@@ -85,11 +87,20 @@ export default function CategoryDetailScreen() {
       onPress={() => router.push(`/creatures/${item.id}`)}
     >
       <View style={styles.creatureImageContainer}>
-        <ImageWithFallback
-          uri={item.image_url}
-          style={styles.creatureImage}
-          fallbackColor="#333"
-        />
+        {item.image_url && (item.image_url.includes('wikimedia.org') || item.image_url.includes('wikipedia.org')) ? (
+          <WikimediaImage
+            uri={item.image_url}
+            style={styles.creatureImage}
+            fallbackColor="#333"
+          />
+        ) : (
+          <ImageWithFallback
+            uri={item.image_url}
+            style={styles.creatureImage}
+            fallbackColor="#333"
+            showOfflineIndicator={true}
+          />
+        )}
       </View>
       <View style={styles.creatureInfo}>
         <Text style={styles.creatureName}>{item.name}</Text>
@@ -105,7 +116,12 @@ export default function CategoryDetailScreen() {
 
   if (isLoading.categories || isLoading.creatures) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <ScreenHeader 
           title="Loading..." 
           onBackPress={() => router.back()}
@@ -119,7 +135,12 @@ export default function CategoryDetailScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
       <ScreenHeader 
         title={category?.name || 'Unknown Category'} 
         onBackPress={() => router.back()}
@@ -220,7 +241,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   pointsText: {
-    color: '#007AFF',
+    color: COLORS.PRIMARY,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -228,10 +249,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 64,
+    paddingTop: 50,
   },
   emptyText: {
-    fontSize: 16,
     color: '#666',
+    fontSize: 16,
   },
 });

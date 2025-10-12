@@ -14,7 +14,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Search, Filter } from 'lucide-react-native';
 import { Database } from '@/types/database';
 import { useSyncedData } from '@/hooks/useSyncedData';
-import ImageWithFallback from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
 
@@ -146,9 +146,14 @@ export default function CreaturePickerScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <ScreenHeader 
-          title="Select Creature" 
+          title="Loading..." 
           onBackPress={() => router.back()}
           showBackButton={true}
         />
@@ -160,7 +165,12 @@ export default function CreaturePickerScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
       <ScreenHeader 
         title="Select Creature" 
         onBackPress={() => router.back()}

@@ -38,7 +38,7 @@ const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({ entry, rank }: { en
         <View>
           <Text style={styles.leaderboardName}>
             {entry.name}
-            {entry.isCurrentUser && <Text style={styles.youText}> (You)</Text>}
+            {entry.isCurrentUser && <Text style={styles.youText}></Text>}
           </Text>
           <Text style={styles.leaderboardSubtext}>
             {entry.creatures} creatures discovered

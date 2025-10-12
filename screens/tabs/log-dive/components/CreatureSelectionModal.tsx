@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Search, Camera, X, Check } from 'lucide-react-native';
 import { Creature } from '@/types/database';
-import ImageWithFallback from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components';
 import * as ImagePicker from 'expo-image-picker';
 
 const { width, height } = Dimensions.get('window');

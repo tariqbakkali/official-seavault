@@ -15,7 +15,6 @@ export const initializeApp = async () => {
     // Initialize catalog data sync
     await initializeSync();
     
-    console.log('Local-first app initialized successfully');
   } catch (error) {
     console.error('Error initializing local-first app:', error);
     throw error;
@@ -33,7 +32,6 @@ export const initializeUserSession = async (userId: string) => {
     // Initialize user-specific data sync
     await initializeUserSync(userId);
     
-    console.log(`User session initialized for user: ${userId}`);
   } catch (error) {
     console.error('Error initializing user session:', error);
     throw error;
@@ -51,7 +49,6 @@ export const cleanupUserSession = async () => {
     // Clear user-specific observables
     // This is handled in the clearUserSync function
     
-    console.log('User session cleaned up');
   } catch (error) {
     console.error('Error cleaning up user session:', error);
     throw error;
@@ -63,10 +60,8 @@ export const cleanupUserSession = async () => {
  */
 export const handleAppStateChange = (isActive: boolean) => {
   if (isActive) {
-    console.log('App became active, ensuring sync is up to date');
     // App is active, sync will continue automatically
   } else {
-    console.log('App went to background, sync will pause');
     // App is in background, sync will pause but resume when active
   }
 };

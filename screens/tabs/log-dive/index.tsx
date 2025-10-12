@@ -129,10 +129,8 @@ const LogDiveScreen = () => {
       
       // Check network status to determine if saved offline or online
       const networkState = await NetInfo.fetch();
-      console.log('Network state:', networkState); // Debug log
       const isOnline = networkState.isConnected && networkState.isInternetReachable !== false;
       
-      console.log('Is online:', isOnline); // Debug log
       
       // Show appropriate success message
       if (isOnline) {
@@ -172,7 +170,6 @@ const LogDiveScreen = () => {
     return (
       <View style={[styles.container, { 
         paddingTop: insets.top, 
-        paddingBottom: insets.bottom,
         paddingLeft: insets.left,
         paddingRight: insets.right
       }]}>
@@ -189,7 +186,6 @@ const LogDiveScreen = () => {
   return (
     <View style={[styles.container, { 
       paddingTop: insets.top, 
-      paddingBottom: insets.bottom,
       paddingLeft: insets.left,
       paddingRight: insets.right
     }]}>

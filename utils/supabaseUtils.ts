@@ -14,7 +14,6 @@ export const refreshSchemaCache = async (): Promise<boolean> => {
       return false;
     }
     
-    console.log('SupabaseUtils: Schema cache refreshed successfully');
     return true;
   } catch (error: any) {
     console.error('SupabaseUtils: Error refreshing schema cache:', error);
@@ -34,7 +33,6 @@ export const executeWithRetry = async <T>(
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`SupabaseUtils: Attempting operation (try ${attempt}/${maxRetries})`);
       return await operation();
     } catch (error: any) {
       lastError = error;
@@ -42,7 +40,6 @@ export const executeWithRetry = async <T>(
       
       // If it's a schema cache error, refresh the cache
       if (error.code === 'PGRST205') {
-        console.log('SupabaseUtils: Schema cache error detected, refreshing cache');
         await refreshSchemaCache();
       }
       

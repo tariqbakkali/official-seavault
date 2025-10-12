@@ -1,5 +1,6 @@
 import React from 'react';
-import { Marker } from 'react-native-maps';
+import { Platform, View, StyleSheet } from 'react-native';
+import { GoogleMaps, AppleMaps } from 'expo-maps';
 
 interface DiveSiteMarkerProps {
   id: string;
@@ -13,7 +14,7 @@ interface DiveSiteMarkerProps {
 }
 
 /**
- * Reusable component for displaying dive site markers on the map
+ * Reusable component for displaying dive site markers on the map using expo-maps
  */
 const DiveSiteMarker: React.FC<DiveSiteMarkerProps> = ({
   id,
@@ -25,20 +26,43 @@ const DiveSiteMarker: React.FC<DiveSiteMarkerProps> = ({
   draggable = false,
   onDragEnd
 }) => {
+  // Platform-specific map view
+  const MapViewComponent = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
+
+  // Convert to camera position
+  const cameraPosition = {
+    coordinates: { latitude, longitude },
+    zoom: 15,
+  };
+
+  // Create marker with enhanced properties
+  const markers = [{
+    id,
+    coordinates: { latitude, longitude },
+    title: name,
+    color: pinColor,
+    // Note: draggable is not directly supported in expo-maps
+  }];
+
   return (
-    <Marker
-      key={id}
-      coordinate={{
-        latitude,
-        longitude,
-      }}
-      title={name}
-      pinColor={pinColor}
-      onPress={onPress}
-      draggable={draggable}
-      onDragEnd={onDragEnd}
-    />
+    <View style={styles.container}>
+      <MapViewComponent
+        style={styles.map}
+        cameraPosition={cameraPosition}
+        markers={markers}
+        onMarkerClick={onPress ? () => onPress() : undefined}
+      />
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  map: {
+    flex: 1,
+  },
+});
 
 export default DiveSiteMarker;

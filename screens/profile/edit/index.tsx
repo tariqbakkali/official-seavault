@@ -58,7 +58,12 @@ export default function EditProfileScreen() {
 
   return (
     <KeyboardAvoidingView 
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScreenHeader 
@@ -67,7 +72,14 @@ export default function EditProfileScreen() {
         showBackButton={true}
       />
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        // Allow maps to handle gestures by not intercepting them
+        onStartShouldSetResponderCapture={() => false}
+        onMoveShouldSetResponderCapture={() => false}
+        onResponderTerminationRequest={() => false}
+      >
         <AvatarSection
           avatarUri={avatarUri}
           uploadingAvatar={uploadingAvatar}

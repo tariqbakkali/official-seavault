@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
-import ImageWithFallback from '@/components/ImageWithFallback';
+import { ImageWithFallback } from '@/components';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Category } from '@/types/database';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
@@ -31,7 +31,7 @@ export default function CategoriesTab() {
   const [isOffline, setIsOffline] = React.useState(false);
   const insets = useSafeAreaInsets();
   
-  const { categories: allCategories, creatures: allCreatures, sightings: allSightings, wishlists: allWishlists, profile: userProfile } = useSyncedData();
+  const { categories: allCategories, creatures: allCreatures, currentUserSightings: allSightings, wishlists: allWishlists, profile: userProfile, userAchievements: allUserAchievements } = useSyncedData();
 
   const loadData = React.useCallback(() => {
     try {
@@ -144,6 +144,7 @@ export default function CategoriesTab() {
         uri={item.image_url}
         style={styles.categoryImage}
         containerStyle={styles.imageContainer}
+        showOfflineIndicator={true}
       />
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.8)']}
@@ -163,14 +164,22 @@ export default function CategoriesTab() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <ScreenHeader title="Categories" />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
       <ScreenHeader title="Categories" />
       <View style={styles.content}>
         {isOffline && (
@@ -239,39 +248,33 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   categoryOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: DIMENSIONS.SPACE_LG,
   },
   categoryContent: {
-    padding: DIMENSIONS.SPACE_LG,
+    // Content wrapper for the gradient overlay
   },
   categoryName: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
     color: COLORS.TEXT_PRIMARY,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   completionBadge: {
     position: 'absolute',
-    top: DIMENSIONS.SPACE_LG,
-    right: DIMENSIONS.SPACE_LG,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: DIMENSIONS.RADIUS_MD,
-    paddingHorizontal: DIMENSIONS.SPACE_MD,
+    top: DIMENSIONS.SPACE_MD,
+    right: DIMENSIONS.SPACE_MD,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: DIMENSIONS.SPACE_SM,
     paddingVertical: DIMENSIONS.SPACE_XS,
+    borderRadius: DIMENSIONS.RADIUS_MD,
   },
   completionText: {
     color: COLORS.TEXT_PRIMARY,
-    fontSize: TYPOGRAPHY.SIZE_MD,
-    fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD,
-  },
-  header: {
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    paddingTop: DIMENSIONS.SPACE_LG,
-    paddingBottom: DIMENSIONS.SPACE_LG,
-  },
-  title: {
-    fontSize: TYPOGRAPHY.SIZE_HERO,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
-    color: COLORS.TEXT_PRIMARY,
   },
 });

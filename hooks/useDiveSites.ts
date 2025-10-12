@@ -2,49 +2,17 @@ import { useCallback } from 'react';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { Database } from '@/types/database';
 
-/**
- * Custom hook for accessing dive sites data and actions
- * Separates business logic from UI components
- * Updated to use Legend-State observables for local-first functionality
- */
 export const useDiveSites = () => {
   const {
     diveSites,
     isLoading,
     errors,
+    createDiveSite,
     createSighting,
     createWishlistItem,
-    createDiveSite,
     removeWishlistItem,
+    fetchDiveSites,
   } = useSyncedData();
-
-  /**
-   * Fetch all dive sites with proper error handling
-   * Data is automatically loaded by observables in the new implementation
-   */
-  const loadDiveSites = useCallback(async () => {
-    try {
-      // In the new implementation, data is automatically loaded by observables
-      // We just return the current data
-      return diveSites || [];
-    } catch (err) {
-      console.error('Failed to load dive sites:', err);
-      return [];
-    }
-  }, [diveSites]);
-
-  /**
-   * Get a dive site by ID with proper error handling
-   */
-  const fetchDiveSiteById = useCallback(async (id: string) => {
-    try {
-      const allDiveSites = diveSites || [];
-      return allDiveSites.find((site: any) => site.id === id) || null;
-    } catch (err) {
-      console.error(`Failed to fetch dive site with id ${id}:`, err);
-      return null;
-    }
-  }, [diveSites]);
 
   /**
    * Create a new dive site with proper error handling
@@ -62,6 +30,22 @@ export const useDiveSites = () => {
     }
   }, [createDiveSite]);
 
+  /**
+   * Create a new sighting with proper error handling
+   */
+  const addSighting = useCallback(async (
+    sightingData: Omit<Database['public']['Tables']['sightings']['Row'], 'id' | 'created_at' | 'user_id'>
+  ) => {
+    try {
+      // Create a new sighting using the new Legend-State implementation
+      const newSighting = await createSighting(sightingData);
+      return newSighting;
+    } catch (err) {
+      console.error('Failed to create sighting:', err);
+      return null;
+    }
+  }, [createSighting]);
+
   return {
     // Data
     diveSites,
@@ -69,9 +53,9 @@ export const useDiveSites = () => {
     error: errors.diveSites,
     
     // Actions
-    loadDiveSites,
-    fetchDiveSiteById,
+    loadDiveSites: fetchDiveSites,
     addDiveSite,
+    addSighting,
     
     // Local-first actions
     createSighting,
@@ -79,3 +63,5 @@ export const useDiveSites = () => {
     removeWishlistItem,
   };
 };
+
+export default useDiveSites;

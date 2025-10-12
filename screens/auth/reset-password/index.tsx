@@ -32,7 +32,6 @@ export default function ResetPasswordScreen() {
   // Function to parse URL and set up session
   const parseUrlAndSetupSession = async (url: string) => {
     try {
-      console.log('Parsing URL:', url);
       
       // Check if URL contains fragment parameters
       if (url && url.includes('#')) {
@@ -44,15 +43,10 @@ export default function ResetPasswordScreen() {
           const refreshToken = fragmentParams.get('refresh_token');
           const type = fragmentParams.get('type');
           
-          console.log('Parsed fragment parameters:', {
-            accessToken: accessToken ? 'PRESENT' : 'MISSING',
-            refreshToken: refreshToken ? 'PRESENT' : 'MISSING',
-            type
-          });
+         
           
           // Check if we have the necessary parameters for a recovery session
           if (type === 'recovery' && accessToken) {
-            console.log('Setting up recovery session with access token');
             
             // Set the session manually
             const { data, error } = await supabase.auth.setSession({
@@ -60,18 +54,14 @@ export default function ResetPasswordScreen() {
               refresh_token: refreshToken || '', // refresh_token might be optional
             });
             
-            console.log('setSession response:', { data, error });
             
             if (error) {
               console.error('Session setup error:', error);
               return false;
             } else {
-              console.log('Session set successfully:', data);
               return true;
             }
           } else {
-            console.log('Missing required parameters for recovery session');
-            console.log('Type:', type, 'Access Token:', !!accessToken);
           }
         }
       }
@@ -86,52 +76,41 @@ export default function ResetPasswordScreen() {
   React.useEffect(() => {
     const checkResetCapability = async () => {
       try {
-        console.log('All URL parameters:', params);
         
         // Try to get the current URL
         let urlSetupSuccess = false;
         
         try {
           const url = await Linking.getInitialURL();
-          console.log('Current URL from getInitialURL:', url);
           
           if (url) {
             urlSetupSuccess = await parseUrlAndSetupSession(url);
-            console.log('URL setup success:', urlSetupSuccess);
           } else {
-            console.log('No URL returned from getInitialURL');
           }
         } catch (urlError) {
-          console.log('Error getting current URL:', urlError);
         }
         
         // If URL parsing didn't work, check if we have a valid session
         if (!urlSetupSuccess) {
-          console.log('Checking for existing session...');
           const { data: { session }, error } = await supabase.auth.getSession();
           
           if (error) {
             console.error('Session check error:', error);
           } else {
-            console.log('Current session:', session);
             
             // If we have a session with a user, we can reset the password
             if (session && session.user) {
-              console.log('Can reset password - valid session found');
               setCanResetPassword(true);
             } else {
-              console.log('No valid session found');
             }
           }
         } else {
           // URL parsing was successful, so we can reset the password
-          console.log('URL parsing successful, enabling password reset');
           setCanResetPassword(true);
         }
       } catch (error) {
         console.error('Error checking reset capability:', error);
       } finally {
-        console.log('Finished checking reset capability');
         setCheckingReset(false);
       }
     };
@@ -140,9 +119,7 @@ export default function ResetPasswordScreen() {
     
     // Also listen for URL events while this component is mounted
     const urlSubscription = Linking.addEventListener('url', async (event) => {
-      console.log('URL event in reset password screen:', event.url);
       const success = await parseUrlAndSetupSession(event.url);
-      console.log('URL event parsing success:', success);
       if (success) {
         setCanResetPassword(true);
         setCheckingReset(false);
@@ -220,7 +197,12 @@ export default function ResetPasswordScreen() {
   // Show loading state while checking
   if (checkingReset) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <View style={styles.centeredContent}>
           <Text style={styles.title}>{APP_CONFIG.NAME}</Text>
           <Text style={styles.subtitle}>Preparing Password Reset</Text>
@@ -236,7 +218,12 @@ export default function ResetPasswordScreen() {
   // Show a message if we can't reset the password and don't have a token
   if (!canResetPassword) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <View style={styles.centeredContent}>
           <Text style={styles.title}>{APP_CONFIG.NAME}</Text>
           <Text style={styles.subtitle}>Unable to Reset Password</Text>
@@ -255,7 +242,12 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { 
+      paddingTop: insets.top, 
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    }]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}

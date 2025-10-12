@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 export default ({ config }) => {
   const appJsonConfig = {
     name: 'SeaVault',
@@ -11,16 +13,37 @@ export default ({ config }) => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.seavault.app',
+      config: {
+        googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
+      },
     },
     android: {
       package: 'com.seavault.app',
       edgeToEdgeEnabled: true,
-      permissions: ['android.permission.RECORD_AUDIO'],
+      permissions: [
+        'android.permission.RECORD_AUDIO',
+        'android.permission.ACCESS_FINE_LOCATION',
+        'android.permission.ACCESS_COARSE_LOCATION'
+      ],
+      config: {
+        googleMaps: {
+          apiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
+        },
+      },
     },
     web: {
       bundler: 'metro',
       output: 'single',
       favicon: './assets/images/favicon.png',
+      // Add Google Maps API key and script for web
+      config: {
+        googleMaps: {
+          apiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
+        },
+      },
+      // Add the Google Maps JavaScript API script
+      // This ensures the Google Maps API is loaded for web
+      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
     },
     plugins: [
       'expo-router',
@@ -33,7 +56,22 @@ export default ({ config }) => {
             'The app accesses your photos to let you share them with your friends.',
         },
       ],
-      'expo-maps',
+      // Add expo-maps plugin for proper expo-maps integration
+      [
+        'expo-maps',
+        {
+          googleMaps: {
+            apiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
+          },
+          android: {
+            googleMaps: {
+              apiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
+            }
+          },
+          requestLocationPermission: true,
+          locationPermission: "Allow SeaVault to use your location"
+        }
+      ],
       'expo-secure-store',
       'sentry-expo',
     ],
@@ -41,7 +79,7 @@ export default ({ config }) => {
       typedRoutes: true,
     },
     extra: {
-      EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: '',
+      GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || '',
       supabaseUrl: 'https://hqqebvozpvwpopxtixyt.supabase.co',
       supabaseAnonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhxcWVidm96cHZ3cG9weHRpeHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwOTQwODUsImV4cCI6MjA3MzY3MDA4NX0.WYn1ISKphuoVM92XKiVrywxpPrBGvIuV3tGP88Y6Wqc',
@@ -56,16 +94,5 @@ export default ({ config }) => {
     platforms: ['ios', 'android', 'web'],
   };
 
-  return {
-    ...appJsonConfig,
-    android: {
-      ...appJsonConfig.android,
-      config: {
-        ...appJsonConfig.android?.config,
-        googleMaps: {
-          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
-        },
-      },
-    },
-  };
+  return appJsonConfig;
 };

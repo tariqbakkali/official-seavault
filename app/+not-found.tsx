@@ -9,7 +9,12 @@ export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Page Not Found' }} />
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={[styles.container, { 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
         <Text style={styles.title}>Page Not Found</Text>
         <Text style={styles.text}>Sorry, the page you&#39;re looking for doesn&#39;t exist or the link is invalid.</Text>
         {pathname && (

@@ -45,7 +45,6 @@ export async function retryWithBackoff<T>(
         currentDelay = Math.min(delay * Math.pow(2, attempt), maxDelay);
       }
       
-      console.log(`Attempt ${attempt + 1} failed. Retrying in ${currentDelay}ms...`, error);
       
       // Wait before retrying
       await new Promise(resolve => setTimeout(resolve, currentDelay));

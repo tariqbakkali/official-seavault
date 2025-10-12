@@ -1,4 +1,4 @@
-import { Creature, Category } from '@/types/database';
+import { Creature, Category, UserAchievement, Achievement } from '@/types/database';
 
 export interface UserStats {
   totalPoints: number;
@@ -11,6 +11,8 @@ export interface UserStats {
     points: number; // Add points to category stats
   }>;
   categoryNames: Record<string, string>;
+  achievementsUnlocked: number; // Add achievements unlocked count
+  recentAchievements?: any[]; // Add recent achievements
 }
 
 // Updated function signature to accept observable data directly
@@ -23,9 +25,11 @@ export const calculateUserStats = (
   catalog: {
     creatures: Creature[];
     categories: Category[];
-    achievements: any[];
-  }
+    achievements: Achievement[]; // Updated type
+  },
+  userAchievements?: UserAchievement[] // Updated type
 ): UserStats => {
+  
   // Handle case where catalog is not yet loaded
   if (!catalog || !catalog.creatures || !catalog.categories) {
     return {
@@ -33,7 +37,9 @@ export const calculateUserStats = (
       uniqueCreatures: 0,
       overallCompletion: 0,
       categoryStats: {},
-      categoryNames: {}
+      categoryNames: {},
+      achievementsUnlocked: 0,
+      recentAchievements: []
     };
   }
 
@@ -48,13 +54,18 @@ export const calculateUserStats = (
   });
   
   // Calculate points from sightings
-  userData.sightings.forEach((sighting: any) => {
-    const creature = creatureMap.get(sighting.creature_id);
-    if (creature) {
-      totalPoints += creature.points || 0;
-      seenCreatureIds.add(sighting.creature_id);
-    }
-  });
+  if (userData.sightings && Array.isArray(userData.sightings)) {
+    userData.sightings.forEach((sighting: any) => {
+      // Make sure sighting has a creature_id
+      if (sighting && sighting.creature_id) {
+        const creature = creatureMap.get(sighting.creature_id);
+        if (creature) {
+          totalPoints += creature.points || 0;
+          seenCreatureIds.add(sighting.creature_id);
+        }
+      }
+    });
+  }
   
   // Create category stats
   const categoryStats: Record<string, { seen: number; total: number; completion: number; points: number }> = {};
@@ -103,11 +114,58 @@ export const calculateUserStats = (
   const uniqueCreatures = seenCreatureIds.size;
   const overallCompletion = totalCreatures > 0 ? Math.round((uniqueCreatures / totalCreatures) * 100) : 0;
   
+  // Calculate achievements unlocked
+  const achievementsUnlocked = userAchievements ? userAchievements.length : 0;
+  
+  // Add achievement points to total points
+  if (userAchievements && catalog.achievements) {
+    // Create a map of achievement IDs to achievement objects for quick lookup
+    const achievementMap = new Map<string, Achievement>();
+    catalog.achievements.forEach((achievement: Achievement) => {
+      achievementMap.set(achievement.id, achievement);
+    });
+    
+    // Add points from unlocked achievements
+    userAchievements.forEach((userAchievement: UserAchievement) => {
+      const achievement = achievementMap.get(userAchievement.achievement_id);
+      if (achievement && achievement.points) {
+        totalPoints += achievement.points;
+      }
+    });
+  }
+  
+  // Get recent achievements (last 5 unlocked)
+  let recentAchievements: any[] = [];
+  if (userAchievements && catalog.achievements) {
+    // Create a map of achievement IDs to achievement objects
+    const achievementMap = new Map<string, any>();
+    catalog.achievements.forEach((achievement: any) => {
+      achievementMap.set(achievement.id, achievement);
+    });
+    
+    // Get the most recently unlocked achievements
+    recentAchievements = userAchievements
+      .slice(-5) // Get last 5 achievements
+      .map((userAchievement: any) => {
+        // Make sure userAchievement has an achievement_id
+        if (userAchievement && userAchievement.achievement_id) {
+          const achievement = achievementMap.get(userAchievement.achievement_id);
+          return achievement ? { ...achievement, unlocked: true } : null;
+        }
+        return null;
+      })
+      .filter(Boolean) // Remove null values
+      .reverse(); // Show most recent first
+  }
+  
+  
   return {
     totalPoints,
     uniqueCreatures,
     overallCompletion,
     categoryStats,
-    categoryNames
+    categoryNames,
+    achievementsUnlocked,
+    recentAchievements
   };
 };
