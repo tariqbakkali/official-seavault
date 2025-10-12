@@ -4,7 +4,8 @@ import {
   categories$, 
   creatures$, 
   diveSites$, 
-  sightings$, 
+  currentUserSightings$,
+  allUsersSightings$,
   wishlists$, 
   profile$,
   achievements$,
@@ -14,7 +15,9 @@ import {
   createDiveSite,
   toggleWishlistItem, // Added toggleWishlistItem
   removeWishlistItem,
-  updateUserProfile
+  updateUserProfile,
+  getCurrentUserSightings,
+  getAllUsersSightings
 } from '../stores/syncedObservables';
 import { supabase } from '../services/supabase';
 import { Database } from '../types/database';
@@ -24,7 +27,8 @@ export const useSyncedData = () => {
   const categories = use$(categories$);
   const creatures = use$(creatures$);
   const diveSites = use$(diveSites$);
-  const sightings = use$(sightings$);
+  const currentUserSightings = use$(currentUserSightings$);
+  const allUsersSightings = use$(allUsersSightings$);
   const wishlists = use$(wishlists$);
   // For profile, we need to handle it specially to ensure we get the current user's profile
   const profile = use$(profile$);
@@ -37,7 +41,8 @@ export const useSyncedData = () => {
   const categoriesSyncState = useObservable(syncState(categories$));
   const creaturesSyncState = useObservable(syncState(creatures$));
   const diveSitesSyncState = useObservable(syncState(diveSites$));
-  const sightingsSyncState = useObservable(syncState(sightings$));
+  const currentUserSightingsSyncState = useObservable(syncState(currentUserSightings$));
+  const allUsersSightingsSyncState = useObservable(syncState(allUsersSightings$));
   const wishlistsSyncState = useObservable(syncState(wishlists$));
   const profileSyncState = useObservable(syncState(profile$));
   const achievementsSyncState = useObservable(syncState(achievements$));
@@ -48,7 +53,8 @@ export const useSyncedData = () => {
     categories: !categoriesSyncState.isLoaded,
     creatures: !creaturesSyncState.isLoaded,
     diveSites: !diveSitesSyncState.isLoaded,
-    sightings: !sightingsSyncState.isLoaded,
+    currentUserSightings: !currentUserSightingsSyncState.isLoaded,
+    allUsersSightings: !allUsersSightingsSyncState.isLoaded,
     wishlists: !wishlistsSyncState.isLoaded,
     profile: !profileSyncState.isLoaded,
     achievements: !achievementsSyncState.isLoaded,
@@ -60,7 +66,8 @@ export const useSyncedData = () => {
     categories: categoriesSyncState.error,
     creatures: creaturesSyncState.error,
     diveSites: diveSitesSyncState.error,
-    sightings: sightingsSyncState.error,
+    currentUserSightings: currentUserSightingsSyncState.error,
+    allUsersSightings: allUsersSightingsSyncState.error,
     wishlists: wishlistsSyncState.error,
     profile: profileSyncState.error,
     achievements: achievementsSyncState.error,
@@ -91,8 +98,8 @@ export const useSyncedData = () => {
     if (!profileSyncState.isLoaded.get()) {
       profile$.get();
     }
-    if (!sightingsSyncState.isLoaded.get()) {
-      sightings$.get();
+    if (!currentUserSightingsSyncState.isLoaded.get()) {
+      currentUserSightings$.get();
     }
     if (!wishlistsSyncState.isLoaded.get()) {
       wishlists$.get();
@@ -219,7 +226,8 @@ export const useSyncedData = () => {
     categories,
     creatures,
     diveSites,
-    sightings,
+    currentUserSightings,
+    allUsersSightings,
     wishlists,
     profile,
     achievements,

@@ -30,7 +30,7 @@ export default function DiscoveredScreen() {
   const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
   
-  const { creatures: allCreatures, sightings: allSightings } = useSyncedData();
+  const { creatures: allCreatures, currentUserSightings } = useSyncedData();
 
   const loadData = React.useCallback(() => {
     try {
@@ -39,62 +39,50 @@ export default function DiscoveredScreen() {
       const creaturesArray = allCreatures ? Object.values(allCreatures).filter(
         (c: any) => c && typeof c === 'object' && c.id && typeof c.id === 'string'
       ) : [];
-      const sightingsArray = allSightings ? Object.values(allSightings).filter(
-        (s: any) => s && typeof s === 'object' && s.id && typeof s.id === 'string'
+      
+      const sightingsArray = currentUserSightings ? Object.values(currentUserSightings).filter(
+        (s: any) => s && typeof s === 'object' && s.creature_id && typeof s.creature_id === 'string'
       ) : [];
       
-      if (creaturesArray.length > 0) {
-        // Create a map of creature ID to creature for quick lookup
-        const creatureMap = new Map<string, any>();
-        creaturesArray.forEach((creature: any) => {
-          creatureMap.set(creature.id, creature);
-        });
-        
-        // Group sightings by creature ID
-        const sightingsByCreature: Record<string, any[]> = {};
-        sightingsArray.forEach((sighting: any) => {
-          if (sighting.creature_id) {
-            if (!sightingsByCreature[sighting.creature_id]) {
-              sightingsByCreature[sighting.creature_id] = [];
-            }
-            sightingsByCreature[sighting.creature_id].push(sighting);
-          }
-        });
-        
-        // Create discovered creatures array with first sighting and total count
-        const discovered: DiscoveredCreature[] = [];
-        Object.keys(sightingsByCreature).forEach((creatureId: string) => {
-          const creature = creatureMap.get(creatureId);
-          if (creature) {
-            const sightings = sightingsByCreature[creatureId];
-            // Sort sightings by date to find the first one
-            sightings.sort((a: any, b: any) => 
-              new Date(a.date).getTime() - new Date(b.date).getTime()
-            );
-            const firstSighting = sightings[0];
-            const totalSightings = sightings.length;
-            
-            discovered.push({
-              creature,
-              firstSighting,
-              totalSightings
-            });
-          }
-        });
-        
-        // Sort by first sighting date (newest first)
-        discovered.sort((a, b) => 
+      // Group sightings by creature
+      const sightingsByCreature: Record<string, any[]> = {};
+      sightingsArray.forEach((sighting: any) => {
+        if (!sightingsByCreature[sighting.creature_id]) {
+          sightingsByCreature[sighting.creature_id] = [];
+        }
+        sightingsByCreature[sighting.creature_id].push(sighting);
+      });
+      
+      // Create discovered creatures list with first sighting and total count
+      const discovered: DiscoveredCreature[] = Object.entries(sightingsByCreature)
+        .map(([creatureId, sightings]) => {
+          // Find the creature details
+          const creature: any = creaturesArray.find((c: any) => c.id === creatureId);
+          if (!creature) return null;
+          
+          // Sort sightings by date to find the first one
+          const sortedSightings = [...sightings].sort((a, b) => 
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
+          
+          return {
+            creature,
+            firstSighting: sortedSightings[0],
+            totalSightings: sightings.length
+          };
+        })
+        .filter((item): item is DiscoveredCreature => item !== null)
+        .sort((a, b) => 
           new Date(b.firstSighting.date).getTime() - new Date(a.firstSighting.date).getTime()
         );
-        
-        setDiscoveredCreatures(discovered);
-      }
+      
+      setDiscoveredCreatures(discovered);
     } catch (error) {
-      console.error('Error loading discovered data:', error);
+      console.error('Error loading discovered creatures:', error);
     } finally {
       setLoading(false);
     }
-  }, [allCreatures, allSightings]);
+  }, [allCreatures, currentUserSightings]);
 
   React.useEffect(() => {
     loadData();

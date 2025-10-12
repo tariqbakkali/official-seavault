@@ -3,14 +3,16 @@ import {
   categories$, 
   creatures$, 
   diveSites$, 
-  sightings$, 
+  currentUserSightings$, 
+  allUsersSightings$,
   wishlists$, 
   profile$,
   setCurrentUserID,
   getCategories,
   getCreatures,
   getDiveSites,
-  getSightings,
+  getCurrentUserSightings,
+  getAllUsersSightings,
   getWishlists,
   getProfile,
   profiles$, // Import profiles$ observable
@@ -28,13 +30,6 @@ export const initializeSync = async () => {
     // Get the configured synced instance
     onSyncPress();
     
-    // // Sync catalog data
-    // await synced.sync(categories$);
-    // await synced.sync(creatures$);
-    // await synced.sync(diveSites$);
-    // await synced.sync(profiles$);
-    // await synced.sync(achievements$);
-    
     console.log('Sync initialization completed');
   } catch (error) {
     console.error('Error initializing sync:', error);
@@ -49,13 +44,6 @@ export const initializeUserSync = async (userId: string) => {
 
     onSyncPress();
     
-    // // Get the configured synced instance
-    
-    // // Sync user-specific data
-    // customSynced();
-    // customSynced(wishlists$);
-    // customSynced(profile$);
-    
     console.log(`User sync initialized for user: ${userId}`);
   } catch (error) {
     console.error('Error initializing user sync:', error);
@@ -69,7 +57,7 @@ export const clearUserSync = () => {
     setCurrentUserID(null);
     
     // Clear user-specific observables
-    sightings$.set({});
+    currentUserSightings$.set({});
     wishlists$.set({});
     profile$.set({} as any);
     
@@ -100,12 +88,12 @@ export const forceSyncAll = async () => {
     categories$.get();
     creatures$.get();
     diveSites$.get();
-    sightings$.get();
+    currentUserSightings$.get();
+    allUsersSightings$.get();
     wishlists$.get();
     profile$.get();
     profiles$.get(); // Force sync profiles observable
     achievements$.get(); // Force sync achievements observable
-
 
     console.log('Forced sync completed');
   } catch (error) {
@@ -120,7 +108,8 @@ export const onSyncPress = async () => {
     // customSynced(categories$);  
     // customSynced(creatures$);  
     // customSynced(diveSites$);
-    // customSynced(sightings$);
+    // customSynced(currentUserSightings$);
+    // customSynced(allUsersSightings$);
     // customSynced(wishlists$);
     // customSynced(profile$);
     // customSynced(profiles$);
@@ -139,7 +128,8 @@ export const getSyncStatus = () => {
     categoriesLoaded: getCategories() !== undefined,
     creaturesLoaded: getCreatures() !== undefined,
     diveSitesLoaded: getDiveSites() !== undefined,
-    sightingsLoaded: getSightings() !== undefined,
+    currentUserSightingsLoaded: getCurrentUserSightings() !== undefined,
+    allUsersSightingsLoaded: getAllUsersSightings() !== undefined,
     wishlistsLoaded: getWishlists() !== undefined,
     profileLoaded: getProfile() !== undefined,
     profilesLoaded: profiles$.get() !== undefined, // Include profiles loading status

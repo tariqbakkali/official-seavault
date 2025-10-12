@@ -100,6 +100,17 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['achievements']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['achievements']['Insert']>;
       };
+      user_achievements: {
+        Row: {
+          id: string;
+          user_id: string;
+          achievement_id: string;
+          unlocked_at: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['user_achievements']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['user_achievements']['Insert']>;
+      };
     };
   };
 }
@@ -111,6 +122,8 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Sighting = Database['public']['Tables']['sightings']['Row'];
 export type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 export type Achievement = Database['public']['Tables']['achievements']['Row'];
+export type UserAchievement = Database['public']['Tables']['user_achievements']['Row'];
+
 
 export interface CachedCatalog {
   categories: Category[];
@@ -123,6 +136,7 @@ export interface CachedUserData {
   sightings: Sighting[];
   wishlists: Wishlist[];
   achievements: Achievement[];
+  userAchievements: UserAchievement[];
   stats: {
     totalPoints: number;
     uniqueCreatures: number;
@@ -139,7 +153,7 @@ export interface CachedUserData {
 
 export interface PendingOperation {
   clientId: string;
-  table: 'sightings' | 'wishlists' | 'profiles';
+  table: 'sightings' | 'wishlists' | 'profiles'| 'user_achievements';
   op: 'insert' | 'update' | 'delete';
   payload: any;
   ts: number;

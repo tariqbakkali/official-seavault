@@ -9,11 +9,21 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { Trophy, ArrowLeft } from 'lucide-react-native';
 import { useSyncedData } from '@/hooks/useSyncedData';
-import { supabase } from '@/services/supabase';
-import LeaderboardEntry from '@/screens/modal/leaderboard/components/LeaderboardEntry';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { forceSyncAll } from '@/utils/syncUtils';
+import LeaderboardEntry from './components/LeaderboardEntry';
 
+interface LeaderboardEntryType {
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  creatures_discovered: number;
+  total_points: number;
+}
+
+// Define the interface that matches what the LeaderboardEntry component expects
 interface LeaderboardUser {
   id: string;
   name: string;
@@ -24,30 +34,20 @@ interface LeaderboardUser {
   rank: number;
 }
 
-interface LeaderboardEntryType {
-  user_id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  creatures_discovered: number;
-  total_points: number;
-}
-
 export default function LeaderboardModal() {
   const [leaderboardData, setLeaderboardData] = React.useState<LeaderboardUser[]>([]);
+  const [currentUserRank, setCurrentUserRank] = React.useState<number | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
   
-  // Use the new useSyncedData hook instead of useDataStore
-  let { fetchUserData, fetchCatalog, allProfiles, sightings, creatures, profile } = useSyncedData();
-
+  const { allProfiles: allProfiles, allUsersSightings, creatures: allCreatures, profile, fetchUserData, fetchCatalog } = useSyncedData();
   const userProfile = profile ? Object.values(profile)[0] : undefined;
 
   // Fetch leaderboard data directly from Supabase
   const fetchLeaderboard = async (limit: number = 10): Promise<LeaderboardEntryType[]> => {
     const allProfilesData = allProfiles || {};
-    const allSightingsData = sightings || {};
-    const allCreaturesData = creatures || {};
+    const allSightingsData = allUsersSightings || {};
+    const allCreaturesData = allCreatures || {};
 
     const users = Object.values(allProfilesData).filter((p: any) => p.full_name && p.full_name !== '');
 
@@ -95,9 +95,9 @@ export default function LeaderboardModal() {
       // Get current user ID
       const currentUserId = userProfile?.id;
       
-      // Process leaderboard data
+      // Process leaderboard data to match the expected format for LeaderboardEntry component
       if (leaderboardResult && currentUserId) {
-        const processedData = (leaderboardResult as LeaderboardEntryType[]).map((entry, index) => ({
+        const processedData: LeaderboardUser[] = (leaderboardResult as LeaderboardEntryType[]).map((entry, index) => ({
           id: entry.user_id,
           name: entry.full_name || 'Unknown User',
           avatar: entry.avatar_url,
@@ -108,27 +108,31 @@ export default function LeaderboardModal() {
         }));
         
         setLeaderboardData(processedData);
+        
+        // Find current user's rank
+        const userEntry = processedData.find(entry => entry.id === currentUserId);
+        setCurrentUserRank(userEntry ? userEntry.rank : null);
       }
     } catch (error) {
-      console.error('Error loading leaderboard data:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error loading leaderboard:', error);
     }
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
+      await forceSyncAll();
       await loadData();
     } catch (error) {
       console.error('Error refreshing leaderboard:', error);
+    } finally {
+      setRefreshing(false);
     }
-    setRefreshing(false);
   };
 
   React.useEffect(() => {
     loadData();
-  }, []);
+  }, [userProfile]);
 
   const renderLeaderboardEntry = ({ item }: { item: LeaderboardUser }) => (
     <LeaderboardEntry
@@ -136,21 +140,6 @@ export default function LeaderboardModal() {
       rank={item.rank}
     />
   );
-
-  if (loading) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <ScreenHeader 
-          title="Leaderboard" 
-          onBackPress={() => router.back()}
-          showBackButton={true}
-        />
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading leaderboard...</Text>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
@@ -162,7 +151,7 @@ export default function LeaderboardModal() {
 
       <FlatList
         data={leaderboardData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: LeaderboardUser) => item.id}
         renderItem={renderLeaderboardEntry}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}

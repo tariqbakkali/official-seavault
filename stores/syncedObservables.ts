@@ -73,8 +73,8 @@ export const diveSites$ = observable(customSynced({
 // Synced observables for user-specific data
 // These will be initialized with user ID filter when user logs in
 
-// Sightings observable - user-specific
-export const sightings$ = observable(customSynced({
+// Current user sightings observable - user-specific
+export const currentUserSightings$ = observable(customSynced({
   supabase,
   collection: 'sightings',
   filter: (select: any) => {
@@ -102,6 +102,16 @@ export const sightings$ = observable(customSynced({
   realtime: true, // Enable realtime for all, filtering will be done by Supabase
 }));
 
+// All users sightings observable - for leaderboard and community features
+export const allUsersSightings$ = observable(customSynced({
+  supabase,
+  collection: 'sightings',
+  actions: ['read'],
+  persist: { name: 'all_sightings' },
+  changesSince: 'last-sync',
+  fieldCreatedAt: 'created_at',
+}));
+
 // Wishlists observable - user-specific
 export const wishlists$ = observable(customSynced({
   supabase,
@@ -114,7 +124,19 @@ export const wishlists$ = observable(customSynced({
   actions: ['read', 'update', 'delete'],
   update: async (input: any) => {
 
-    console.log({input})
+    if (input.deleted ) {
+      const { data, error } = await supabase
+      .from('wishlists')
+      .delete()
+      .eq('id', input.id)
+      .select()
+      .single();
+      if (error) {
+        throw new Error(`Failed to delete wishlist item: ${error.message}`);
+      }
+      return { data, error: null };
+    }
+
     // Custom Supabase create function for wishlists
     const { data, error } = await supabase
       .from('wishlists')
@@ -165,7 +187,8 @@ export const getCategories = () => categories$.get();
 export const getCreatures = () => creatures$.get();
 export const getAchievements = () => achievements$.get();
 export const getDiveSites = () => diveSites$.get();
-export const getSightings = () => sightings$.get();
+export const getCurrentUserSightings = () => currentUserSightings$.get();
+export const getAllUsersSightings = () => allUsersSightings$.get();
 export const getWishlists = () => wishlists$.get();
 export const getProfile = () => profile$.get();
 
@@ -178,7 +201,7 @@ export const createSighting = (sightingData: Omit<Sighting, 'id' | 'created_at' 
   
   const id = uuidv4();
   
-  (sightings$ as any)[id].set({
+  (currentUserSightings$ as any)[id].set({
     ...sightingData,
     id,
     user_id: userId,
@@ -230,6 +253,7 @@ export const createDiveSite = (diveSiteData: Omit<DiveSite, 'id' | 'created_at'>
 
 export const removeWishlistItem = (wishlistId: string) => {
   // Use Legend State's delete method instead of direct deletion
+  // console.log('Removing wishlist item:', wishlistId);
   (wishlists$ as any)[wishlistId].delete();
 };
 
@@ -293,3 +317,5 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
     [userId]: updatedProfile
   });
 };
+
+export const getSightings = getCurrentUserSightings;

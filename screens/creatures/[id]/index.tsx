@@ -37,12 +37,12 @@ export default function CreatureDetailScreen() {
   const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
   
   // Use updated observable-based store
-  const { creatures, wishlists, sightings: allSightings, diveSites: allDiveSites, profile } = useSyncedData();
+  const { creatures, wishlists, allUsersSightings, diveSites: allDiveSites, profile } = useSyncedData();
   const userProfile = profile ? Object.values(profile)[0] : undefined;
 
   React.useEffect(() => {
     loadData();
-  }, [id, creatures, allSightings, allDiveSites, wishlists, userProfile]);
+  }, [id, creatures, allUsersSightings, allDiveSites, wishlists, userProfile]);
 
   // Watch for changes in wishlists to update the UI
   React.useEffect(() => {
@@ -74,8 +74,8 @@ export default function CreatureDetailScreen() {
       // Fetch user data
       const userId = userProfile && typeof userProfile === 'object' && userProfile.hasOwnProperty('id') ? (userProfile as any).id : undefined;
       if (userId) {
-        // Fetch sightings for this creature using the sightings observable
-        const allSightingsArray = allSightings ? Object.values(allSightings) : [];
+        // Fetch sightings for this creature using the allUsersSightings observable
+        const allSightingsArray = allUsersSightings ? Object.values(allUsersSightings) : [];
         const sightingsArray = allSightingsArray.filter((sighting: any) => 
           sighting && sighting.creature_id === id
         ) as Sighting[];
@@ -103,7 +103,7 @@ export default function CreatureDetailScreen() {
     } finally {
       setLoading(false);
     }
-  }, [id, creatures, allSightings, allDiveSites, wishlists, userProfile]);
+  }, [id, creatures, allUsersSightings, allDiveSites, wishlists, userProfile]);
 
   React.useEffect(() => {
     loadData();

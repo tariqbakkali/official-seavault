@@ -18,7 +18,8 @@ const expectedExports = {
     'categories$',
     'creatures$',
     'diveSites$',
-    'sightings$',
+    'currentUserSightings$',
+    'allUsersSightings$',
     'wishlists$',
     'profile$',
     'achievements$',
@@ -71,3 +72,4 @@ console.log('4. Added proper loading and error states');
 console.log('5. Implemented all required mutation functions');
 console.log('6. Added fetch functions for catalog data, user data, and dive sites');
 console.log('7. Implemented profile management functions');
+console.log('8. Separated sightings into currentUserSightings$ and allUsersSightings$ for better data management');

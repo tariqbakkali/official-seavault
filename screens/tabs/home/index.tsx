@@ -54,15 +54,14 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   
   // Use the new specialized stores
-  const { creatures: allCreatures, categories: allCategories, sightings: allSightings, wishlists: allWishlists, profile: userProfile, allProfiles, achievements: allAchievements } = useSyncedData();
-
+  const { creatures: allCreatures, categories: allCategories, currentUserSightings, allUsersSightings, wishlists: allWishlists, profile: userProfile, allProfiles, achievements: allAchievements } = useSyncedData();
 
   const loadData = React.useCallback(() => {
     try {
       // Extract data from observables with proper typing
       const creaturesObj = allCreatures || {};
       const categoriesObj = allCategories || {};
-      const sightingsObj = allSightings || {};
+      const sightingsObj = currentUserSightings || {};
       const wishlistsObj = allWishlists || {};
        
       const creaturesArray = Object.values(creaturesObj) as Creature[];
@@ -96,15 +95,16 @@ export default function HomeScreen() {
         setUserStats(stats);
       }
       
-      // Populate leaderboard data
-      const generatedLeaderboard = getLeaderboardData(allProfilesData, sightingsArray, creaturesArray);
+      // Populate leaderboard data using all users sightings
+      const allSightingsArray = allUsersSightings ? Object.values(allUsersSightings) : [];
+      const generatedLeaderboard = getLeaderboardData(allProfilesData, allSightingsArray as Sighting[], creaturesArray);
       setLeaderboard(generatedLeaderboard);
     } catch (error) {
       console.error('Error loading home data:', error);
     } finally {
       setLoading(false);
     }
-  }, [allCreatures, allCategories, allSightings, allWishlists, userProfile, allProfiles, allAchievements]);
+  }, [allCreatures, allCategories, currentUserSightings, allUsersSightings, allWishlists, userProfile, allProfiles, allAchievements]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
