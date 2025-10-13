@@ -4,7 +4,7 @@ import { GoogleMaps, AppleMaps } from 'expo-maps';
 
 const SimpleMapTest = () => {
   // Platform-specific map view
-  const MapViewComponent = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
+  const MapView = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
 
   // Simple marker
   const markers = [{
@@ -23,7 +23,7 @@ const SimpleMapTest = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Simple Map Test</Text>
       <View style={styles.mapContainer}>
-        <MapViewComponent
+        <MapView
           style={styles.map}
           cameraPosition={cameraPosition}
           markers={markers}

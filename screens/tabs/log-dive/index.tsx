@@ -1,170 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router } from 'expo-router';
-import NetInfo from '@react-native-community/netinfo';
-import { useSyncedData } from '@/hooks/useSyncedData';
+import { router, useLocalSearchParams } from 'expo-router';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import { COLORS } from '@/constants';
-import { showAlert } from '@/utils/alertUtils';
-import MainLogDiveForm from './components/MainLogDiveForm';
-import { Database } from '@/types/database';
-
-// Types
-interface SelectedImage {
-  uri: string;
-  type: string;
-  fileName: string;
-}
-
-interface FormData {
-  diveSiteId: string | null;
-  date: Date;
-  timeOfDay: string;
-  diveType: string;
-  depth: string;
-  diveNotes: string;
-  imageUrl: string;
-  creatureId: string | null;
-}
+import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import DiveSitePicker from './components/DiveSitePicker/index';
+import DateTimePickerSection from './components/DateTimePickerSection';
+import DiveTypeDepthSection from './components/DiveTypeDepthSection';
+import DiveNotesSection from './components/DiveNotesSection';
+import ImagePickerSection from './components/ImagePickerSection';
+import CreatureSelector from './components/CreatureSelector';
+import { useLogDive } from './hooks/useLogDive';
 
 const LogDiveScreen = () => {
   const insets = useSafeAreaInsets();
-  const { selectedCategory, selectedCreature, source } = useLocalSearchParams();
+  const { selectedDiveSiteId } = useLocalSearchParams();
   
-  const [formData, setFormData] = useState<FormData>({
-    diveSiteId: null,
-    date: new Date(),
-    timeOfDay: '',
-    diveType: '',
-    depth: '',
-    diveNotes: '',
-    imageUrl: '',
-    creatureId: null,
-  });
-
-  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [showDiveSiteSearch, setShowDiveSiteSearch] = useState(false);
-  const [diveSiteSearchQuery, setDiveSiteSearchQuery] = useState('');
-
-  const { creatures: allCreatures, categories: allCategories, diveSites: allDiveSites, createSighting, isLoading } = useSyncedData();
-
-  // Determine if we should show back button based on navigation source
-  const shouldShowBackButton = source === 'creature';
-
-  const handleBackPress = () => {
-    // Clear selected categories before navigating back
-    setSelectedCategories([]);
-    
-    if (shouldShowBackButton && selectedCreature) {
-      // Navigate back to the specific creature details screen
-      router.push(`/creatures/${selectedCreature}`);
-    } else {
-      // Default back navigation for other cases
-      router.back();
-    }
-  };
-
-  // Extract data from observables
-  const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
-  const categoriesArray = allCategories ? Object.values(allCategories) : [];
-
-  const diveSitesArray = allDiveSites ? Object.values(allDiveSites) as Database['public']['Tables']['dive_sites']['Row'][] : [];
+  // State to control ScrollView scrolling
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+  const scrollViewRef = useRef<ScrollView>(null);
   
-  // Create mock catalog object to match the expected format
-  const catalog = {
-    creatures: creaturesArray as any[],
-    categories: categoriesArray as any[],
-    achievements: [] // We don't have achievements in observables
-  };
-
-  // Fetch catalog data and dive sites on component mount
-  useEffect(() => {
-    // Data is automatically available from observables
-    // Just mark loading as complete
-  }, []);
-
-  // Set selected category and creature if passed from navigation
-  useEffect(() => {
-    if (selectedCategory && typeof selectedCategory === 'string') {
-      setSelectedCategories([selectedCategory]);
-    }
+  const {
+    // State
+    formData,
+    setFormData,
+    selectedImage,
+    setSelectedImage,
+    selectedCategories,
+    setSelectedCategories,
+    isLoading,
     
-    if (selectedCreature && typeof selectedCreature === 'string') {
-      setFormData(prev => ({
-        ...prev,
-        creatureId: selectedCreature
-      }));
-    }
-  }, [selectedCategory, selectedCreature]);
+    // Data
+    diveSitesArray,
+    catalog,
+    
+    // Handlers
+    handleBackPress,
+    handleDiveSiteSelect,
+    handleDeselectDiveSite,
+    handleSubmit,
+    shouldShowBackButton,
+  } = useLogDive();
 
-  // Clear selected categories when component unmounts
-  useEffect(() => {
-    return () => {
-      setSelectedCategories([]);
-    };
-  }, []);
-
-  const handleSubmit = async () => {
-    try {
-      // Format time of day from the time picker
-      const timeOfDay = formData.timeOfDay;
-      
-      // Create sighting for the main creature only
-      const sightingData = {
-        dive_site_id: formData.diveSiteId,
-        dive_type: formData.diveType || null,
-        date: formData.date.toISOString().split('T')[0],
-        dive_notes: formData.diveNotes || null,
-        depth: formData.depth || null,
-        creature_id: formData.creatureId || null, // Use the main creature ID
-        image_url: formData.imageUrl || null,
-        time_of_day: timeOfDay || null,
-        creature_notes: null, // No creature notes for main creature selection
-      };
-      
-      // Create the sighting
-      await createSighting(sightingData as any); // Cast to any to avoid TypeScript issues
-      
-      // Check network status to determine if saved offline or online
-      const networkState = await NetInfo.fetch();
-      const isOnline = networkState.isConnected && networkState.isInternetReachable !== false;
-      
-      
-      // Show appropriate success message
-      if (isOnline) {
-        showAlert(
-          'Dive Log Saved',
-          'Your dive log has been saved successfully and synchronized with the cloud.'
-        );
-      } else {
-        showAlert(
-          'Dive Log Saved Offline',
-          'Your dive log has been saved locally and will be synchronized when you\'re back online.'
-        );
-      }
-      
-      // Reset form
-      setFormData({
-        diveSiteId: null,
-        date: new Date(),
-        timeOfDay: '',
-        diveType: '',
-        depth: '',
-        diveNotes: '',
-        imageUrl: '',
-        creatureId: null,
-      });
-      
-      // Reset image selection
-      setSelectedImage(null);
-      setSelectedCategories([]); // Clear category selections
-    } catch (error) {
-      console.error('Error submitting dive log:', error);
-      showAlert('Error', 'Error submitting dive log. Please try again.');
+  // Update form data if a dive site was selected from the modal
+  React.useEffect(() => {
+    if (selectedDiveSiteId && typeof selectedDiveSiteId === 'string') {
+      handleDiveSiteSelect(selectedDiveSiteId);
     }
-  };
+  }, [selectedDiveSiteId]);
 
   if (isLoading.diveSites) {
     return (
@@ -194,21 +77,76 @@ const LogDiveScreen = () => {
         onBackPress={handleBackPress}
         showBackButton={shouldShowBackButton}
       />
-      <MainLogDiveForm
-        formData={formData}
-        setFormData={setFormData}
-        diveSites={diveSitesArray}
-        catalog={catalog}
-        selectedCategories={selectedCategories}
-        setSelectedCategories={setSelectedCategories}
-        selectedImage={selectedImage}
-        setSelectedImage={setSelectedImage}
-        handleSubmit={handleSubmit}
-        diveSiteSearchQuery={diveSiteSearchQuery}
-        setDiveSiteSearchQuery={setDiveSiteSearchQuery}
-        showDiveSiteSearch={showDiveSiteSearch}
-        setShowDiveSiteSearch={setShowDiveSiteSearch}
-      />
+      <ScrollView 
+        ref={scrollViewRef}
+        style={styles.container}
+        scrollEnabled={scrollEnabled} // Control scroll behavior
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Record your dive detail and Creature spotted</Text>
+        </View>
+
+        <View style={styles.content}>
+          <DiveSitePicker
+            diveSites={diveSitesArray}
+            selectedDiveSiteId={formData.diveSiteId}
+            onDeselectDiveSite={handleDeselectDiveSite}
+            onDiveSiteSelect={handleDiveSiteSelect}
+            // Pass scroll control functions to disable/enable parent scroll
+            onMapGestureBegin={() => setScrollEnabled(false)}
+            onMapGestureEnd={() => setScrollEnabled(true)}
+          />
+
+          <DateTimePickerSection
+            date={formData.date}
+            timeOfDay={formData.timeOfDay}
+            onDateChange={(date) => setFormData({ ...formData, date })}
+            onTimeOfDayChange={(timeOfDay) => setFormData({ ...formData, timeOfDay })}
+          />
+
+          <DiveTypeDepthSection
+            diveType={formData.diveType}
+            depth={formData.depth}
+            onDiveTypeChange={(diveType) => setFormData({ ...formData, diveType })}
+            onDepthChange={(depth) => setFormData({ ...formData, depth })}
+          />
+
+          <DiveNotesSection
+            diveNotes={formData.diveNotes}
+            onDiveNotesChange={(diveNotes) => setFormData({ ...formData, diveNotes })}
+          />
+
+          <ImagePickerSection
+            selectedImage={selectedImage}
+            onImageSelected={(image) => {
+              setSelectedImage(image);
+              setFormData({ ...formData, imageUrl: image.uri });
+            }}
+            onImageRemoved={() => {
+              setSelectedImage(null);
+              setFormData({ ...formData, imageUrl: '' });
+            }}
+          />
+
+          <CreatureSelector
+            catalog={catalog}
+            selectedCategories={selectedCategories}
+            creatureId={formData.creatureId}
+            onCategoryChange={setSelectedCategories}
+            onCreatureChange={(creatureId) => setFormData({ ...formData, creatureId })}
+          />
+
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleSubmit}
+          >
+            <Text style={styles.submitButtonText}>Log Dive</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -217,6 +155,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.BACKGROUND,
+  },
+  header: {
+    padding: DIMENSIONS.PADDING_HORIZONTAL,
+    backgroundColor: COLORS.SURFACE,
+    paddingTop: DIMENSIONS.SPACE_LG,
+    paddingBottom: DIMENSIONS.SPACE_LG,
+  },
+  headerText: {
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    color: COLORS.TEXT_SECONDARY,
+    textAlign: 'center',
+  },
+  content: {
+    padding: DIMENSIONS.PADDING_HORIZONTAL,
+    paddingTop: DIMENSIONS.SPACE_LG,
+    paddingBottom: DIMENSIONS.SPACE_LG,
+  },
+  submitButton: {
+    backgroundColor: COLORS.PRIMARY,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.SPACE_LG,
+    alignItems: 'center',
+    marginTop: DIMENSIONS.SPACE_LG,
+    marginBottom: DIMENSIONS.SPACE_LG,
+    shadowColor: COLORS.PRIMARY,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+    marginHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
+  },
+  submitButtonText: {
+    color: COLORS.TEXT_PRIMARY,
+    fontSize: TYPOGRAPHY.SIZE_LG,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
   },
 });
 

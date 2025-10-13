@@ -51,7 +51,7 @@ export const DiveSiteMarkerExpo: React.FC<DiveSiteMarkerExpoProps> = ({
   pinColor = '#007AFF',
 }) => {
   // Platform-specific map view
-  const MapViewComponent = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
+  const MapView = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
 
   // Convert to camera position
   const cameraPosition = {
@@ -69,7 +69,7 @@ export const DiveSiteMarkerExpo: React.FC<DiveSiteMarkerExpoProps> = ({
 
   return (
     <View style={{ flex: 1 }}>
-      <MapViewComponent
+      <MapView
         style={{ flex: 1 }}
         cameraPosition={cameraPosition}
         markers={markers}

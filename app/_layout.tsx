@@ -128,6 +128,12 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen 
+          name="modal/dive-site-picker" 
+          options={{ 
+            presentation: 'modal',
+          }} 
+        />
+        <Stack.Screen 
           name="dive-sites/add" 
         />
       </Stack.Protected>

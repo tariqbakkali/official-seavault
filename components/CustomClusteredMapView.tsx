@@ -35,9 +35,11 @@ const CustomClusteredMapView = ({
   const superclusterRef = useRef<Supercluster | null>(null);
   const [mapKey, setMapKey] = useState(0);
 
+  // Platform-specific map view component
+  const MapView = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
+
   // Force re-render when selectedCoordinate changes
   useEffect(() => {
-    console.log('[DEBUG] CustomClusteredMapView: selectedCoordinate changed', selectedCoordinate);
     setMapKey(prev => prev + 1);
   }, [selectedCoordinate]);
 
@@ -173,9 +175,6 @@ const CustomClusteredMapView = ({
     zoom: 10, // Adjust as needed
   };
 
-  console.log('[DEBUG] CustomClusteredMapView: cameraPosition', cameraPosition);
-  console.log('[DEBUG] CustomClusteredMapView: selectedCoordinate', selectedCoordinate);
-
   // Convert clusters to markers for expo-maps
   const mapMarkers = clusters.map((cluster, index) => {
     if (!cluster || !cluster.geometry || !cluster.geometry.coordinates) {
@@ -230,7 +229,6 @@ const CustomClusteredMapView = ({
 
   // Add selected coordinate marker if present
   if (selectedCoordinate) {
-    console.log('[DEBUG] CustomClusteredMapView: Adding selected coordinate marker', selectedCoordinate);
     // Validate the selected coordinate
     if (typeof selectedCoordinate.latitude === 'number' && typeof selectedCoordinate.longitude === 'number') {
       const selectedMarker = {
@@ -240,60 +238,30 @@ const CustomClusteredMapView = ({
         color: '#FF3B30', // Red color for selected location
         draggable: true, // Make the selected marker draggable
       };
-      console.log('[DEBUG] CustomClusteredMapView: Selected marker object created', selectedMarker);
       mapMarkers.push(selectedMarker);
-      console.log('[DEBUG] CustomClusteredMapView: Selected marker added to mapMarkers array');
-    } else {
-      console.log('[DEBUG] CustomClusteredMapView: Invalid selectedCoordinate format', selectedCoordinate);
     }
-  } else {
-    console.log('[DEBUG] CustomClusteredMapView: No selectedCoordinate to display');
   }
-
-  console.log('[DEBUG] CustomClusteredMapView: Final mapMarkers array', mapMarkers);
-
-  // Platform-specific map view
-  const MapViewComponent = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
 
   // Validate markers before passing to map component
   const validMarkers = mapMarkers.filter(marker => {
     if (!marker) return false;
     if (!marker.coordinates) return false;
     if (typeof marker.coordinates.latitude !== 'number' || typeof marker.coordinates.longitude !== 'number') {
-      console.warn('[DEBUG] CustomClusteredMapView: Invalid marker coordinates', marker);
+      console.warn('Invalid marker coordinates', marker);
       return false;
     }
     return true;
   });
 
-  console.log('[DEBUG] CustomClusteredMapView: Valid markers to render', validMarkers);
-  console.log('[DEBUG] CustomClusteredMapView: Camera position', cameraPosition);
-  console.log('[DEBUG] CustomClusteredMapView: Map key', mapKey);
-
   return (
-    <View 
-      style={style}
-      // Prevent parent ScrollView from intercepting touch events
-      onStartShouldSetResponder={() => true}
-      onMoveShouldSetResponder={() => true}
-      // Additional gesture handling for better map interaction
-      onStartShouldSetResponderCapture={() => false}
-      onMoveShouldSetResponderCapture={() => false}
-      // Handle pan and zoom gestures properly
-      onResponderTerminationRequest={() => false}
-      // Ensure the map exclusively handles all touch events
-      onResponderGrant={() => true}
-      onResponderMove={() => true}
-      onResponderRelease={() => true}
-    >
-      <MapViewComponent
+    <View style={style}>
+      <MapView
         key={mapKey}
         style={{ flex: 1 }}
         cameraPosition={cameraPosition}
         markers={validMarkers}
         onMapClick={onPress}
         onMarkerClick={(event) => {
-          console.log('[DEBUG] CustomClusteredMapView: Map marker clicked', event);
           // Find the marker that was clicked
           const clickedMarker = validMarkers.find(marker => marker.id === event.id);
           if (clickedMarker) {
@@ -312,12 +280,17 @@ const CustomClusteredMapView = ({
               // Handle drag end for selected marker
               // Note: expo-maps doesn't directly support onMarkerDragEnd, 
               // but we can simulate it by handling map clicks when dragging ends
-              console.log('[DEBUG] CustomClusteredMapView: Selected marker clicked');
             }
             // For individual markers, call the onPress handler if provided
             else if (onPress) {
-              // Pass the marker data to the onPress handler
-              onPress({ nativeEvent: { coordinate: clickedMarker.coordinates } });
+              // Create a proper event object for the onPress handler
+              const eventObject = {
+                nativeEvent: {
+                  coordinate: clickedMarker.coordinates,
+                  id: clickedMarker.id,
+                }
+              };
+              onPress(eventObject);
             }
           }
         }}
