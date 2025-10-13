@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MapToggleButton from '@/components/ui/MapToggleButton';
 import MapContainer from '@/components/ui/MapContainer';
@@ -20,6 +20,8 @@ interface CoordinateSelectionSectionProps {
   handleMapPress: (event: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => void;
   handleMarkerDragEnd: (event: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => void;
   selectedCoordinate: { latitude: number; longitude: number } | null;
+  onMapGestureBegin?: () => void; // Add gesture control props
+  onMapGestureEnd?: () => void;   // Add gesture control props
 }
 
 const CoordinateSelectionSection: React.FC<CoordinateSelectionSectionProps> = ({
@@ -29,8 +31,36 @@ const CoordinateSelectionSection: React.FC<CoordinateSelectionSectionProps> = ({
   initialRegion,
   handleMapPress,
   handleMarkerDragEnd,
-  selectedCoordinate
+  selectedCoordinate,
+  onMapGestureBegin,
+  onMapGestureEnd
 }) => {
+  const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (gestureTimeoutRef.current) {
+        clearTimeout(gestureTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  // Function to safely end gestures
+  const endGesture = () => {
+    // Clear any existing timeout
+    if (gestureTimeoutRef.current) {
+      clearTimeout(gestureTimeoutRef.current);
+    }
+    
+    // Set a timeout to ensure the gesture ends
+    gestureTimeoutRef.current = setTimeout(() => {
+      if (onMapGestureEnd) {
+        onMapGestureEnd();
+      }
+    }, 100); // Small delay to ensure proper cleanup
+  };
+
   // Render function for individual markers - return marker data instead of component
   const renderMarker = (data: any) => {
     // Add safety checks for marker data
@@ -74,7 +104,10 @@ const CoordinateSelectionSection: React.FC<CoordinateSelectionSectionProps> = ({
         onPress={handleMapPress}
         onMarkerDragEnd={handleMarkerDragEnd}
         selectedCoordinate={selectedCoordinate}
-        helperText={isSelectingCoordinates ? "Tap on the map to select the dive site location" : undefined}
+        helperText={isSelectingCoordinates ? "Tap on the map to select the dive site location" : "Press the button above to select coordinates from the map"}
+        onMapGestureBegin={onMapGestureBegin}
+        onMapGestureEnd={endGesture}
+        isMarkerDraggable={true} // Enable draggable markers
       />
     </FormSection>
   );

@@ -22,6 +22,32 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
   onMapGestureBegin,
   onMapGestureEnd,
 }) => {
+  const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (gestureTimeoutRef.current) {
+        clearTimeout(gestureTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  // Function to safely end gestures
+  const endGesture = () => {
+    // Clear any existing timeout
+    if (gestureTimeoutRef.current) {
+      clearTimeout(gestureTimeoutRef.current);
+    }
+    
+    // Set a timeout to ensure the gesture ends
+    gestureTimeoutRef.current = setTimeout(() => {
+      if (onMapGestureEnd) {
+        onMapGestureEnd();
+      }
+    }, 100); // Small delay to ensure proper cleanup
+  };
+
   // Helper function to calculate initial region focused on area with most dive sites
   const calculateInitialRegionForDenseArea = (sites: any[]) => {
     if (sites.length === 0) {
@@ -93,16 +119,17 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
           return false; // Don't capture the responder, just notify
         }}
         onResponderRelease={() => {
-          // Notify parent that map interaction has ended
-          if (onMapGestureEnd) {
-            onMapGestureEnd();
-          }
+          // End gesture safely
+          endGesture();
         }}
         onResponderTerminate={() => {
-          // Notify parent that map interaction has ended
-          if (onMapGestureEnd) {
-            onMapGestureEnd();
-          }
+          // End gesture safely
+          endGesture();
+        }}
+        // Add additional handlers to ensure cleanup
+        onTouchEnd={() => {
+          // End gesture safely
+          endGesture();
         }}
       >
         {selectedDiveSiteId ? (

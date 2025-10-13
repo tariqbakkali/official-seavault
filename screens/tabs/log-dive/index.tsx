@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -19,6 +19,16 @@ const LogDiveScreen = () => {
   // State to control ScrollView scrolling
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
   
   const {
     // State
@@ -48,6 +58,19 @@ const LogDiveScreen = () => {
       handleDiveSiteSelect(selectedDiveSiteId);
     }
   }, [selectedDiveSiteId]);
+
+  // Function to safely enable scroll
+  const enableScroll = () => {
+    // Clear any existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    
+    // Set a timeout to ensure the scroll is enabled
+    scrollTimeoutRef.current = setTimeout(() => {
+      setScrollEnabled(true);
+    }, 100); // Small delay to ensure proper cleanup
+  };
 
   if (isLoading.diveSites) {
     return (
@@ -96,7 +119,7 @@ const LogDiveScreen = () => {
             onDiveSiteSelect={handleDiveSiteSelect}
             // Pass scroll control functions to disable/enable parent scroll
             onMapGestureBegin={() => setScrollEnabled(false)}
-            onMapGestureEnd={() => setScrollEnabled(true)}
+            onMapGestureEnd={enableScroll}
           />
 
           <DateTimePickerSection

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { Database } from '@/types/database';
@@ -22,6 +22,32 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
   onMapGestureBegin,
   onMapGestureEnd,
 }) => {
+  const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (gestureTimeoutRef.current) {
+        clearTimeout(gestureTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  // Function to safely end gestures
+  const endGesture = () => {
+    // Clear any existing timeout
+    if (gestureTimeoutRef.current) {
+      clearTimeout(gestureTimeoutRef.current);
+    }
+    
+    // Set a timeout to ensure the gesture ends
+    gestureTimeoutRef.current = setTimeout(() => {
+      if (onMapGestureEnd) {
+        onMapGestureEnd();
+      }
+    }, 100); // Small delay to ensure proper cleanup
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
@@ -39,7 +65,7 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
         onDeselectDiveSite={onDeselectDiveSite}
         onDiveSiteSelect={onDiveSiteSelect}
         onMapGestureBegin={onMapGestureBegin}
-        onMapGestureEnd={onMapGestureEnd}
+        onMapGestureEnd={endGesture}
       />
     </View>
   );

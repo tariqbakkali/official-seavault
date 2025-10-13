@@ -14,6 +14,9 @@ interface ClusteredMapViewProps {
   onPress?: (event: any) => void;
   onMarkerDragEnd?: (event: any) => void;
   selectedCoordinate?: { latitude: number; longitude: number } | null;
+  onMapGestureBegin?: () => void; // Add gesture control props
+  onMapGestureEnd?: () => void;   // Add gesture control props
+  isMarkerDraggable?: boolean; // Add draggable marker support
 }
 
 const CustomClusteredMapView = ({
@@ -27,6 +30,9 @@ const CustomClusteredMapView = ({
   onPress,
   onMarkerDragEnd,
   selectedCoordinate,
+  onMapGestureBegin,
+  onMapGestureEnd,
+  isMarkerDraggable = false, // Default to false for backward compatibility
 }: ClusteredMapViewProps) => {
   // For web and all platforms, use expo-maps directly with basic implementation
   
@@ -34,6 +40,8 @@ const CustomClusteredMapView = ({
   const [region, setRegion] = useState(initialRegion);
   const superclusterRef = useRef<Supercluster | null>(null);
   const [mapKey, setMapKey] = useState(0);
+  const [isDragging, setIsDragging] = useState(false); // Track dragging state
+  const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Add timeout ref
 
   // Platform-specific map view component
   const MapView = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
@@ -42,6 +50,20 @@ const CustomClusteredMapView = ({
   useEffect(() => {
     setMapKey(prev => prev + 1);
   }, [selectedCoordinate]);
+
+  // Update region when initialRegion changes
+  useEffect(() => {
+    setRegion(initialRegion);
+  }, [initialRegion]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (gestureTimeoutRef.current) {
+        clearTimeout(gestureTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Initialize Supercluster
   useEffect(() => {
@@ -114,7 +136,7 @@ const CustomClusteredMapView = ({
         setClusters([]);
       }
     }
-  }, [data, clusteringEnabled, region]);
+  }, [data, clusteringEnabled, region, initialRegion]);
 
   // Update clusters when region changes
   const updateClusters = (supercluster: Supercluster, currentRegion: { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number }) => {
@@ -235,8 +257,8 @@ const CustomClusteredMapView = ({
         id: "selected-marker",
         coordinates: selectedCoordinate,
         title: "Selected Location",
-        color: '#FF3B30', // Red color for selected location
-        draggable: true, // Make the selected marker draggable
+        color: isDragging ? '#00FF00' : '#FF3B30', // Green when dragging, red when not
+        draggable: isMarkerDraggable, // Make the selected marker draggable if enabled
       };
       mapMarkers.push(selectedMarker);
     }
@@ -253,14 +275,154 @@ const CustomClusteredMapView = ({
     return true;
   });
 
+  // Handle map long press for draggable marker simulation
+  const handleMapLongPress = (event: any) => {
+    if (isMarkerDraggable && selectedCoordinate) {
+      // Start dragging simulation
+      setIsDragging(true);
+      
+      // Notify parent that dragging has started
+      if (onMapGestureBegin) {
+        onMapGestureBegin();
+      }
+    }
+    
+    // Call the original onPress handler if provided
+    if (onPress) {
+      onPress(event);
+    }
+  };
+
+  // Handle map click for ending drag or setting new position
+  const handleMapClick = (event: any) => {
+    console.log('[DEBUG] CustomClusteredMapView: handleMapClick called with event', event);
+    if (isDragging) {
+      // End dragging simulation
+      setIsDragging(false);
+      
+      // Notify parent that dragging has ended
+      if (onMapGestureEnd) {
+        onMapGestureEnd();
+      }
+      
+      // Call onMarkerDragEnd with the new position
+      if (onMarkerDragEnd) {
+        console.log('[DEBUG] CustomClusteredMapView: Calling onMarkerDragEnd with event', event);
+        // Ensure the event has the expected structure
+        if (event && event.coordinate) {
+          // Expo Maps passes coordinates directly in the event object
+          const coordinateEvent = {
+            nativeEvent: {
+              coordinate: {
+                latitude: event.coordinate.latitude,
+                longitude: event.coordinate.longitude
+              }
+            }
+          };
+          onMarkerDragEnd(coordinateEvent);
+        } else if (event && event.coordinates) {
+          // Handle Expo Maps alternative event structure with 'coordinates' (plural)
+          const coordinateEvent = {
+            nativeEvent: {
+              coordinate: {
+                latitude: event.coordinates.latitude,
+                longitude: event.coordinates.longitude
+              }
+            }
+          };
+          onMarkerDragEnd(coordinateEvent);
+        } else {
+          // Fallback to the original event if structure is different
+          onMarkerDragEnd(event);
+        }
+      }
+    } else {
+      // Call the original onPress handler if provided
+      if (onPress) {
+        console.log('[DEBUG] CustomClusteredMapView: Calling onPress with event', event);
+        // Ensure the event has the expected structure
+        if (event && event.coordinate) {
+          // Expo Maps passes coordinates directly in the event object
+          const coordinateEvent = {
+            nativeEvent: {
+              coordinate: {
+                latitude: event.coordinate.latitude,
+                longitude: event.coordinate.longitude
+              }
+            }
+          };
+          onPress(coordinateEvent);
+        } else if (event && event.coordinates) {
+          // Handle Expo Maps alternative event structure with 'coordinates' (plural)
+          const coordinateEvent = {
+            nativeEvent: {
+              coordinate: {
+                latitude: event.coordinates.latitude,
+                longitude: event.coordinates.longitude
+              }
+            }
+          };
+          onPress(coordinateEvent);
+        } else {
+          // Fallback to the original event if structure is different
+          onPress(event);
+        }
+      }
+    }
+  };
+
+  // Function to safely end gestures
+  const endGesture = () => {
+    // Clear any existing timeout
+    if (gestureTimeoutRef.current) {
+      clearTimeout(gestureTimeoutRef.current);
+    }
+    
+    // Set a timeout to ensure the gesture ends
+    gestureTimeoutRef.current = setTimeout(() => {
+      if (onMapGestureEnd) {
+        onMapGestureEnd();
+      }
+      
+      // Also end dragging if it was active
+      if (isDragging) {
+        setIsDragging(false);
+      }
+    }, 100); // Small delay to ensure proper cleanup
+  };
+
   return (
-    <View style={style}>
+    <View 
+      style={style}
+      // These handlers will help us detect when the user is interacting with the map
+      onStartShouldSetResponder={() => {
+        // Notify parent that map interaction has started
+        if (onMapGestureBegin) {
+          onMapGestureBegin();
+        }
+        return false; // Don't capture the responder, just notify
+      }}
+      onResponderRelease={() => {
+        // End gesture safely
+        endGesture();
+      }}
+      onResponderTerminate={() => {
+        // End gesture safely
+        endGesture();
+      }}
+      // Add additional handlers to ensure cleanup
+      onTouchEnd={() => {
+        // End gesture safely
+        endGesture();
+      }}
+    >
       <MapView
         key={mapKey}
         style={{ flex: 1 }}
         cameraPosition={cameraPosition}
         markers={validMarkers}
-        onMapClick={onPress}
+        onMapClick={handleMapClick}
+        onMapLongClick={handleMapLongPress}
         onMarkerClick={(event) => {
           // Find the marker that was clicked
           const clickedMarker = validMarkers.find(marker => marker.id === event.id);
@@ -276,10 +438,19 @@ const CustomClusteredMapView = ({
               if (cluster) {
                 handleClusterPress(cluster);
               }
-            } else if (clickedMarker.id === "selected-marker" && onMarkerDragEnd) {
-              // Handle drag end for selected marker
-              // Note: expo-maps doesn't directly support onMarkerDragEnd, 
-              // but we can simulate it by handling map clicks when dragging ends
+            } else if (clickedMarker.id === "selected-marker" && isMarkerDraggable) {
+              // Handle click on draggable marker
+              // For now, we'll just call the onPress handler if provided
+              if (onPress) {
+                // Create a proper event object for the onPress handler
+                const eventObject = {
+                  nativeEvent: {
+                    coordinate: clickedMarker.coordinates,
+                    id: clickedMarker.id,
+                  }
+                };
+                onPress(eventObject);
+              }
             }
             // For individual markers, call the onPress handler if provided
             else if (onPress) {

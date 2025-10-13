@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import CustomClusteredMapView from '@/components/CustomClusteredMapView';
 
@@ -12,6 +12,9 @@ interface MapContainerProps {
   selectedCoordinate?: { latitude: number; longitude: number } | null;
   style?: object;
   helperText?: string;
+  onMapGestureBegin?: () => void; // Add gesture control props
+  onMapGestureEnd?: () => void;   // Add gesture control props
+  isMarkerDraggable?: boolean; // Add draggable marker support
 }
 
 /**
@@ -26,23 +29,63 @@ const MapContainer: React.FC<MapContainerProps> = ({
   onMarkerDragEnd,
   selectedCoordinate,
   style,
-  helperText
+  helperText,
+  onMapGestureBegin,
+  onMapGestureEnd,
+  isMarkerDraggable = false // Default to false for backward compatibility
 }) => {
+  const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (gestureTimeoutRef.current) {
+        clearTimeout(gestureTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  // Function to safely end gestures
+  const endGesture = () => {
+    // Clear any existing timeout
+    if (gestureTimeoutRef.current) {
+      clearTimeout(gestureTimeoutRef.current);
+    }
+    
+    // Set a timeout to ensure the gesture ends
+    gestureTimeoutRef.current = setTimeout(() => {
+      if (onMapGestureEnd) {
+        onMapGestureEnd();
+      }
+    }, 100); // Small delay to ensure proper cleanup
+  };
+
   console.log('[DEBUG] MapContainer: Received props', { data, initialRegion, selectedCoordinate, clusteringEnabled });
   return (
     <View style={[styles.container, style]}>
       <View 
         style={styles.mapWrapper}
-        // Prevent parent ScrollView from intercepting touch events
-        onStartShouldSetResponder={() => true}
-        onMoveShouldSetResponder={() => true}
-        onStartShouldSetResponderCapture={() => false}
-        onMoveShouldSetResponderCapture={() => false}
-        // Ensure the map exclusively handles all touch events
-        onResponderTerminationRequest={() => false}
-        onResponderGrant={() => true}
-        onResponderMove={() => true}
-        onResponderRelease={() => true}
+        // These handlers will help us detect when the user is interacting with the map
+        onStartShouldSetResponder={() => {
+          // Notify parent that map interaction has started
+          if (onMapGestureBegin) {
+            onMapGestureBegin();
+          }
+          return false; // Don't capture the responder, just notify
+        }}
+        onResponderRelease={() => {
+          // End gesture safely
+          endGesture();
+        }}
+        onResponderTerminate={() => {
+          // End gesture safely
+          endGesture();
+        }}
+        // Add additional handlers to ensure cleanup
+        onTouchEnd={() => {
+          // End gesture safely
+          endGesture();
+        }}
       >
         <CustomClusteredMapView
           key={selectedCoordinate ? `${selectedCoordinate.latitude}-${selectedCoordinate.longitude}` : 'no-selection'}
@@ -54,6 +97,9 @@ const MapContainer: React.FC<MapContainerProps> = ({
           onPress={onPress}
           onMarkerDragEnd={onMarkerDragEnd}
           selectedCoordinate={selectedCoordinate}
+          onMapGestureBegin={onMapGestureBegin}
+          onMapGestureEnd={onMapGestureEnd}
+          isMarkerDraggable={isMarkerDraggable}
         />
       </View>
       {helperText && <Text style={styles.helperText}>{helperText}</Text>}
