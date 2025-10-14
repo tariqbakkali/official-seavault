@@ -7,6 +7,7 @@ import { supabase, uploadImage } from '@/services/supabase';
 import { router } from 'expo-router';
 import { AuthError } from '@supabase/auth-js';
 import { hasUnsavedChanges, validateProfileForm } from '../utils/profileUtils';
+import { clearUserSync } from '@/utils/syncUtils'; // Add this import
 
 export const useProfile = () => {
   const [fullName, setFullName] = React.useState('');
@@ -18,9 +19,9 @@ export const useProfile = () => {
   const [hasUnsavedChangesState, setHasUnsavedChangesState] = React.useState(false);
   const [validationErrors, setValidationErrors] = React.useState<{[key: string]: string}>({});
 
-  let { profile, fetchUserData, updateUserProfile } = useSyncedData();
-  profile = profile ? Object.values(profile)[0] : undefined;
-
+  const { profile: profileObservable, fetchUserData, updateUserProfile } = useSyncedData();
+  // Extract the actual profile data from the observable
+  const profile = profileObservable ? Object.values(profileObservable)[0] : undefined;
 
   // Load profile data
   const loadProfileData = React.useCallback(async () => {
@@ -166,6 +167,9 @@ export const useProfile = () => {
         try {
           // Get current profile data from observable to get user ID
           const profileData = profile;
+          
+          // Clear user data from Legend State before deleting account
+          clearUserSync();
           
           await supabase.auth.signOut();
           const { error } = await supabase.auth.admin.deleteUser(profileData?.id || '');

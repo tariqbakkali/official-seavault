@@ -21,6 +21,7 @@ import CategoryProgressSection from './components/CategoryProgressSection';
 import AchievementsPreview from './components/AchievementsPreview';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
+import { clearUserSync } from '@/utils/syncUtils';
 import LoadingState from '@/components/LoadingState';
 
 interface MenuItem {
@@ -139,6 +140,9 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Clear user data from Legend State before signing out
+              clearUserSync();
+              
               await supabase.auth.signOut();
               router.replace(ROUTES.AUTH.LOGIN);
             } catch (error) {

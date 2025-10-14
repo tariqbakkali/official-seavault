@@ -1,6 +1,7 @@
 import { initializeSync, initializeUserSync } from './syncUtils';
 import { supabase } from '../services/supabase';
 import { setCurrentUserID } from '../stores/syncedObservables';
+import { clearUserSync } from './syncUtils';
 
 /**
  * Application initializer for local-first functionality
@@ -47,7 +48,7 @@ export const cleanupUserSession = async () => {
     setCurrentUserID(null);
     
     // Clear user-specific observables
-    // This is handled in the clearUserSync function
+    clearUserSync();
     
   } catch (error) {
     console.error('Error cleaning up user session:', error);
