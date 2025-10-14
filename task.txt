@@ -1,0 +1,7 @@
+D:\Work\official-seavault\components\CustomClusteredMapView.tsx
+
+D:\Work\official-seavault\screens\tabs\log-dive\components\DiveSiteMap.tsx
+
+i want that the vertical scroll diable when the user drag form the map
+
+and mean proritize to the map scroll 

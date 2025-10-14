@@ -37,7 +37,23 @@ export const useAddDiveSite = (): UseAddDiveSiteReturn => {
    */
   const handleCoordinateSelect = useCallback((event: any) => {
     if (isSelectingCoordinates) {
-      const { coordinate } = event.nativeEvent;
+      // Handle different event structures from Expo Maps
+      let coordinate;
+      if (event && event.nativeEvent && event.nativeEvent.coordinate) {
+        // Standard React Native event structure
+        coordinate = event.nativeEvent.coordinate;
+      } else if (event && event.coordinate) {
+        // Expo Maps direct coordinate structure
+        coordinate = event.coordinate;
+      } else if (event && event.coordinates) {
+        // Expo Maps alternative event structure with 'coordinates' (plural)
+        coordinate = event.coordinates;
+      } else {
+        // Fallback if we can't find coordinates
+        console.warn('Could not extract coordinates from event:', event);
+        return;
+      }
+      
       setLatitude(coordinate.latitude.toString());
       setLongitude(coordinate.longitude.toString());
       

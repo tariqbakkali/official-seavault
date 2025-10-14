@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,11 +26,38 @@ const AddDiveSiteScreen = () => {
     latitudeDelta: 5,
     longitudeDelta: 5,
   });
+  // State to control ScrollView scrolling
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const coordinatesRef = useRef<{ latitude: string; longitude: string }>({ latitude: '', longitude: '' });
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  // Update coordinates ref when latitude or longitude changes
+  useEffect(() => {
+    coordinatesRef.current = { latitude, longitude };
+    console.log('[DEBUG] AddDiveSiteScreen: coordinatesRef updated to', coordinatesRef.current);
+  }, [latitude, longitude]);
   
   // Debug state changes
   useEffect(() => {
     console.log('[DEBUG] AddDiveSiteScreen: diveSiteName changed to', diveSiteName);
   }, [diveSiteName]);
+  
+  useEffect(() => {
+    console.log('[DEBUG] AddDiveSiteScreen: latitude changed to', latitude);
+  }, [latitude]);
+  
+  useEffect(() => {
+    console.log('[DEBUG] AddDiveSiteScreen: longitude changed to', longitude);
+  }, [longitude]);
   
   useEffect(() => {
     console.log('[DEBUG] AddDiveSiteScreen: selectedCoordinate changed to', selectedCoordinate);
@@ -126,6 +153,13 @@ const AddDiveSiteScreen = () => {
         setLongitude(longitude.toString());
         console.log('[DEBUG] AddDiveSiteScreen: Longitude set successfully');
         
+        // Update the coordinates ref
+        coordinatesRef.current = { 
+          latitude: latitude.toString(), 
+          longitude: longitude.toString() 
+        };
+        console.log('[DEBUG] AddDiveSiteScreen: coordinatesRef updated to', coordinatesRef.current);
+        
         // Set the selected coordinate to show the marker on the map
         const coordinate = { latitude, longitude };
         console.log('[DEBUG] AddDiveSiteScreen: Setting selected coordinate to', coordinate);
@@ -180,6 +214,13 @@ const AddDiveSiteScreen = () => {
       setLongitude(longitude.toString());
       setSelectedCoordinate({ latitude, longitude });
       
+      // Update the coordinates ref
+      coordinatesRef.current = { 
+        latitude: latitude.toString(), 
+        longitude: longitude.toString() 
+      };
+      console.log('[DEBUG] getCurrentLocation: coordinatesRef updated to', coordinatesRef.current);
+      
       // Update initial region to focus on current location
       setInitialRegion({
         latitude,
@@ -203,10 +244,36 @@ const AddDiveSiteScreen = () => {
    * Handle coordinate selection from map tap
    */
   const handleCoordinateSelect = useCallback((event: any) => {
+    console.log('[DEBUG] handleCoordinateSelect: Called with event', event);
     if (isSelectingCoordinates) {
-      const { coordinate } = event.nativeEvent;
+      // Handle different event structures from Expo Maps
+      let coordinate;
+      if (event && event.nativeEvent && event.nativeEvent.coordinate) {
+        // Standard React Native event structure
+        coordinate = event.nativeEvent.coordinate;
+      } else if (event && event.coordinate) {
+        // Expo Maps direct coordinate structure
+        coordinate = event.coordinate;
+      } else if (event && event.coordinates) {
+        // Expo Maps alternative event structure with 'coordinates' (plural)
+        coordinate = event.coordinates;
+      } else {
+        // Fallback if we can't find coordinates
+        console.warn('Could not extract coordinates from event:', event);
+        return;
+      }
+      
+      console.log('[DEBUG] handleCoordinateSelect: Setting latitude to', coordinate.latitude.toString());
       setLatitude(coordinate.latitude.toString());
+      console.log('[DEBUG] handleCoordinateSelect: Setting longitude to', coordinate.longitude.toString());
       setLongitude(coordinate.longitude.toString());
+      
+      // Update the coordinates ref
+      coordinatesRef.current = { 
+        latitude: coordinate.latitude.toString(), 
+        longitude: coordinate.longitude.toString() 
+      };
+      console.log('[DEBUG] handleCoordinateSelect: coordinatesRef updated to', coordinatesRef.current);
       
       // Show confirmation
       Alert.alert(
@@ -257,18 +324,67 @@ const AddDiveSiteScreen = () => {
    * Handle form submission
    */
   const handleSubmit = useCallback(async () => {
-    if (!validateForm()) {
-      Alert.alert('Validation Error', validationErrors.join('\n'));
+    console.log('[DEBUG] handleSubmit: Called');
+    console.log('[DEBUG] handleSubmit: Current state values', { diveSiteName, latitude, longitude });
+    console.log('[DEBUG] handleSubmit: Current ref values', coordinatesRef.current);
+    
+    // Get the latest coordinate values from the ref
+    const currentLatitude = coordinatesRef.current.latitude;
+    const currentLongitude = coordinatesRef.current.longitude;
+    const currentDiveSiteName = diveSiteName;
+    
+    console.log('[DEBUG] handleSubmit: Using values', { currentDiveSiteName, currentLatitude, currentLongitude });
+    
+    // Create a validation function that uses current values
+    const validateCurrentForm = () => {
+      const errors: string[] = [];
+      
+      // Validate dive site name
+      if (!currentDiveSiteName.trim()) {
+        errors.push('Dive site name is required');
+      }
+      
+      // Validate coordinates
+      if (!currentLatitude.trim() || !currentLongitude.trim()) {
+        errors.push('Both latitude and longitude coordinates are required');
+      }
+      
+      const lat = parseFloat(currentLatitude);
+      const lng = parseFloat(currentLongitude);
+      
+      if (isNaN(lat) || isNaN(lng)) {
+        errors.push('Coordinates must be valid numbers');
+      }
+      
+      // Validate coordinate ranges
+      if (lat < -90 || lat > 90) {
+        errors.push('Latitude must be between -90 and 90 degrees');
+      }
+      
+      if (lng < -180 || lng > 180) {
+        errors.push('Longitude must be between -180 and 180 degrees');
+      }
+      
+      return { isValid: errors.length === 0, errors };
+    };
+    
+    const { isValid, errors } = validateCurrentForm();
+    
+    if (!isValid) {
+      console.log('[DEBUG] handleSubmit: Validation failed', errors);
+      Alert.alert('Validation Error', errors.join('\n'));
       return;
     }
     
     try {
-      const lat = parseFloat(latitude);
-      const lng = parseFloat(longitude);
+      const lat = parseFloat(currentLatitude);
+      const lng = parseFloat(currentLongitude);
+      
+      console.log('[DEBUG] handleSubmit: Parsed coordinates', { lat, lng });
       
       // Create a new dive site using the new Legend-State implementation
       createDiveSite({
-        name: diveSiteName,
+        name: currentDiveSiteName,
         latitude: lat,
         longitude: lng,
         osm_id: null
@@ -285,23 +401,107 @@ const AddDiveSiteScreen = () => {
       console.error('Error creating dive site:', error);
       Alert.alert('Error', 'Failed to add dive site. Please try again.');
     }
-  }, [diveSiteName, latitude, longitude, validateForm, validationErrors, createDiveSite]);
+  }, [diveSiteName, createDiveSite]);
 
   // Handle coordinate selection and update the draggable marker
-  const handleMapPress = (event: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => {
-    handleCoordinateSelect(event);
+  const handleMapPress = (event: any) => {
+    console.log('[DEBUG] handleMapPress: Called with event', event);
+    // Handle different event structures from Expo Maps
+    let coordinate;
+    if (event && event.nativeEvent && event.nativeEvent.coordinate) {
+      // Standard React Native event structure
+      coordinate = event.nativeEvent.coordinate;
+    } else if (event && event.coordinate) {
+      // Expo Maps direct coordinate structure
+      coordinate = event.coordinate;
+    } else if (event && event.coordinates) {
+      // Expo Maps alternative event structure with 'coordinates' (plural)
+      coordinate = event.coordinates;
+    } else {
+      // Fallback if we can't find coordinates
+      console.warn('Could not extract coordinates from event:', event);
+      return;
+    }
+    
+    console.log('[DEBUG] handleMapPress: Setting latitude to', coordinate.latitude.toString());
+    setLatitude(coordinate.latitude.toString());
+    console.log('[DEBUG] handleMapPress: Setting longitude to', coordinate.longitude.toString());
+    setLongitude(coordinate.longitude.toString());
+    
+    // Update the coordinates ref
+    coordinatesRef.current = { 
+      latitude: coordinate.latitude.toString(), 
+      longitude: coordinate.longitude.toString() 
+    };
+    console.log('[DEBUG] handleMapPress: coordinatesRef updated to', coordinatesRef.current);
+    
+    // Call handleCoordinateSelect with the proper structure
+    const formattedEvent = {
+      nativeEvent: {
+        coordinate
+      }
+    };
+    handleCoordinateSelect(formattedEvent);
+    
     if (isSelectingCoordinates) {
-      const { coordinate } = event.nativeEvent;
+      console.log('[DEBUG] handleMapPress: Setting selectedCoordinate to', coordinate);
       setSelectedCoordinate(coordinate);
     }
   };
 
   // Handle marker drag end event
-  const handleMarkerDragEnd = (event: { nativeEvent: { coordinate: { latitude: number; longitude: number } } }) => {
-    const { coordinate } = event.nativeEvent;
+  const handleMarkerDragEnd = (event: any) => {
+    console.log('[DEBUG] handleMarkerDragEnd: Called with event', event);
+    // Handle different event structures from Expo Maps
+    let coordinate;
+    if (event && event.nativeEvent && event.nativeEvent.coordinate) {
+      // Standard React Native event structure
+      coordinate = event.nativeEvent.coordinate;
+    } else if (event && event.coordinate) {
+      // Expo Maps direct coordinate structure
+      coordinate = event.coordinate;
+    } else if (event && event.coordinates) {
+      // Expo Maps alternative event structure with 'coordinates' (plural)
+      coordinate = event.coordinates;
+    } else {
+      // Fallback if we can't find coordinates
+      console.warn('Could not extract coordinates from event:', event);
+      return;
+    }
+    
+    console.log('[DEBUG] handleMarkerDragEnd: Setting latitude to', coordinate.latitude.toString());
     setLatitude(coordinate.latitude.toString());
+    console.log('[DEBUG] handleMarkerDragEnd: Setting longitude to', coordinate.longitude.toString());
     setLongitude(coordinate.longitude.toString());
+    console.log('[DEBUG] handleMarkerDragEnd: Setting selectedCoordinate to', coordinate);
     setSelectedCoordinate(coordinate);
+    
+    // Update the coordinates ref
+    coordinatesRef.current = { 
+      latitude: coordinate.latitude.toString(), 
+      longitude: coordinate.longitude.toString() 
+    };
+    console.log('[DEBUG] handleMarkerDragEnd: coordinatesRef updated to', coordinatesRef.current);
+    
+    // Show confirmation that the marker was moved
+    Alert.alert(
+      'Marker Moved', 
+      `New position set\nLatitude: ${coordinate.latitude.toFixed(6)}\nLongitude: ${coordinate.longitude.toFixed(6)}`,
+      [{ text: 'OK' }]
+    );
+  };
+
+  // Function to safely enable scroll
+  const enableScroll = () => {
+    // Clear any existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    
+    // Set a timeout to ensure the scroll is enabled
+    scrollTimeoutRef.current = setTimeout(() => {
+      setScrollEnabled(true);
+    }, 100); // Small delay to ensure proper cleanup
   };
 
   // Get validation errors for specific fields
@@ -312,16 +512,8 @@ const AddDiveSiteScreen = () => {
       <ScrollView 
         style={styles.container} 
         keyboardShouldPersistTaps="handled"
-        scrollEnabled={true}
+        scrollEnabled={scrollEnabled} // Control scroll behavior
         nestedScrollEnabled={true}
-        // Allow the map to handle gestures by not intercepting them
-        onStartShouldSetResponderCapture={(e) => {
-          // Allow map gestures to work properly
-          return false;
-        }}
-        // Additional gesture handling for better map interaction
-        onMoveShouldSetResponderCapture={() => false}
-        onResponderTerminationRequest={() => false}
       >
         <ScreenHeader 
           title="Add New Dive Site"
@@ -361,7 +553,28 @@ const AddDiveSiteScreen = () => {
             handleMapPress={handleMapPress}
             handleMarkerDragEnd={handleMarkerDragEnd}
             selectedCoordinate={selectedCoordinate}
+            // Pass scroll control functions to disable/enable parent scroll
+            onMapGestureBegin={() => setScrollEnabled(false)}
+            onMapGestureEnd={enableScroll}
           />
+          
+          {/* Display current coordinates */}
+          {(latitude || longitude) ? (
+            <View style={styles.coordinatesDisplay}>
+              <Text style={styles.coordinatesTitle}>Current Coordinates:</Text>
+              <Text style={styles.coordinateText}>Latitude: {latitude || 'Not set'}</Text>
+              <Text style={styles.coordinateText}>Longitude: {longitude || 'Not set'}</Text>
+            </View>
+          ) : null}
+          
+          {/* Instructions for dragging marker */}
+          {selectedCoordinate && (
+            <View style={styles.dragInstructions}>
+              <Text style={styles.dragInstructionsText}>
+                Tip: Long press on the map to move the marker to a new location
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -391,6 +604,38 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  dragInstructions: {
+    backgroundColor: COLORS.SURFACE,
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER_SECONDARY,
+  },
+  dragInstructionsText: {
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  coordinatesDisplay: {
+    backgroundColor: COLORS.SURFACE,
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER_SECONDARY,
+  },
+  coordinatesTitle: {
+    color: COLORS.TEXT_PRIMARY,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  coordinateText: {
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: 14,
+    marginBottom: 2,
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { GoogleMaps, AppleMaps } from 'expo-maps';
 import CustomClusteredMapView from '@/components/CustomClusteredMapView';
@@ -10,6 +10,8 @@ interface DiveSiteMapProps {
   selectedDiveSiteId: string | null;
   onDeselectDiveSite: () => void;
   onDiveSiteSelect: (siteId: string) => void;
+  onMapGestureBegin?: () => void; // Add gesture control props
+  onMapGestureEnd?: () => void;   // Add gesture control props
 }
 
 const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
@@ -17,36 +19,79 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
   selectedDiveSiteId,
   onDeselectDiveSite,
   onDiveSiteSelect,
+  onMapGestureBegin,
+  onMapGestureEnd,
 }) => {
+  const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (gestureTimeoutRef.current) {
+        clearTimeout(gestureTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  // Function to safely end gestures
+  const endGesture = () => {
+    // Clear any existing timeout
+    if (gestureTimeoutRef.current) {
+      clearTimeout(gestureTimeoutRef.current);
+    }
+    
+    // Set a timeout to ensure the gesture ends
+    gestureTimeoutRef.current = setTimeout(() => {
+      if (onMapGestureEnd) {
+        onMapGestureEnd();
+      }
+    }, 100); // Small delay to ensure proper cleanup
+  };
+
   // Helper function to calculate initial region focused on area with most dive sites
   const calculateInitialRegionForDenseArea = (sites: any[]) => {
-    // Europe region to show a broader view
-    const europeRegion = {
+    if (sites.length === 0) {
+    return {
       latitude: 54,
       longitude: 15,
       latitudeDelta: 40,
       longitudeDelta: 40,
     };
-    
-    if (sites.length === 0) {
-      return europeRegion;
-    }
+  }
 
-    // Check if any sites are in the Netherlands area
-    const netherlandsSites = sites.filter(site => {
-      const lat = site.geometry.coordinates[1];
-      const lng = site.geometry.coordinates[0];
-      // Rough bounds for Netherlands: lat 50-54, lng 3-8
-      return lat >= 50 && lat <= 54 && lng >= 3 && lng <= 8;
-    });
+  if (sites.length === 1) {
+    return {
+      latitude: sites[0].geometry.coordinates[1],
+      longitude: sites[0].geometry.coordinates[0],
+      latitudeDelta: 10,
+      longitudeDelta: 10,
+    };
+  }
 
-    // If we have sites in Netherlands, still show Europe view to provide context
-    if (netherlandsSites.length > 0) {
-      return europeRegion;
-    }
+  let minLat = 90;
+  let maxLat = -90;
+  let minLng = 180;
+  let maxLng = -180;
 
-    // If no sites in Netherlands, still default to Europe view for better context
-    return europeRegion;
+  for (const site of sites) {
+    const lat = site.geometry.coordinates[1];
+    const lng = site.geometry.coordinates[0];
+
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+  }
+
+  const latDelta = (maxLat - minLat) * 1.2; // 20% padding
+  const lngDelta = (maxLng - minLng) * 1.2; // 20% padding
+
+  return {
+    latitude: (maxLat + minLat) / 2,
+    longitude: (maxLng + minLng) / 2,
+    latitudeDelta: latDelta,
+    longitudeDelta: lngDelta,
+  };
   };
 
   return (
@@ -63,7 +108,30 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
         )}
       </View>
       
-      <View style={styles.mapContainer}>
+      <View 
+        style={styles.mapContainer}
+        // These handlers will help us detect when the user is interacting with the map
+        onStartShouldSetResponder={() => {
+          // Notify parent that map interaction has started
+          if (onMapGestureBegin) {
+            onMapGestureBegin();
+          }
+          return false; // Don't capture the responder, just notify
+        }}
+        onResponderRelease={() => {
+          // End gesture safely
+          endGesture();
+        }}
+        onResponderTerminate={() => {
+          // End gesture safely
+          endGesture();
+        }}
+        // Add additional handlers to ensure cleanup
+        onTouchEnd={() => {
+          // End gesture safely
+          endGesture();
+        }}
+      >
         {selectedDiveSiteId ? (
           (() => {
             const selectedSite = diveSites?.find(site => site.id === selectedDiveSiteId);
@@ -78,7 +146,7 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
               };
               
               // Platform-specific map view
-              const MapViewComponent = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
+              const MapView = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
               
               // Create marker
               const markers = [{
@@ -91,7 +159,7 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
               }];
               
               return (
-                <MapViewComponent
+                <MapView
                   style={styles.map}
                   cameraPosition={cameraPosition}
                   markers={markers}
@@ -124,7 +192,7 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
                 },
                 geometry: {
                   type: 'Point',
-                  coordinates: [site.longitude!, site.latitude!], // [longitude, latitude]
+                  coordinates: [site.longitude, site.latitude], // [longitude, latitude]
                 },
               }));
 
@@ -159,82 +227,20 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
               return markerData;
             };
 
-            // Render function for clusters
-            const renderCluster = (cluster: any, onPress: () => void) => {
-              // Add safety checks for cluster data
-              if (!cluster || !cluster.geometry || !cluster.geometry.coordinates || 
-                  !Array.isArray(cluster.geometry.coordinates) || 
-                  cluster.geometry.coordinates.length < 2) {
-                return null;
-              }
-              
-              const latitude = cluster.geometry.coordinates[1];
-              const longitude = cluster.geometry.coordinates[0];
-              
-              // Validate coordinates
-              if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-                return null;
-              }
-                
-              const pointCount = cluster && cluster.properties && cluster.properties.point_count ? 
-                                cluster.properties.point_count : 0;
-
-              // Create marker data for cluster
-              const clusterMarkerData = {
-                id: `cluster-${cluster.properties?.cluster_id || 'unknown'}`,
-                title: `${pointCount} sites`,
-                coordinates: { latitude, longitude },
-                onPress: onPress,
-              };
-              
-              return clusterMarkerData;
-            };
-
             return (
               <CustomClusteredMapView
                 style={styles.map}
                 data={validSites}
                 initialRegion={initialRegion}
                 renderMarker={renderMarker}
-                renderCluster={renderCluster}
-                clusteringEnabled={validSites.length > 5} // Only enable clustering if there are more than 5 sites
-                onClusterPress={(clusterId: string, children: any[]) => {
-                  // When a cluster is pressed, show a selection dialog or zoom in
-                  try {
-                    if (children && children.length > 0) {
-                      // If there's only one site in the cluster, select it directly
-                      if (children.length === 1) {
-                        onDiveSiteSelect(children[0].properties.id);
-                      } 
-                      // If there are only a few sites (2-5), show selection dialog
-                      else if (children.length <= 5) {
-                        const siteOptions = children.map((child: any) => ({ text: child.properties.name, onPress: () => onDiveSiteSelect(child.properties.id) }));
-                          
-                        // Show an alert to let the user choose a dive site
-                        Alert.alert(
-                          'Select a Dive Site',
-                          'Multiple dive sites are clustered here. Please choose one:',
-                          [...siteOptions, { text: 'Cancel', style: 'cancel' }]
-                        );
-                      }
-                      // If there are many sites, zoom in
-                      else {
-                        // Zoom in by reducing the delta values
-                        const currentRegion = {
-                          latitude: children[0].geometry.coordinates[1],
-                          longitude: children[0].geometry.coordinates[0],
-                          latitudeDelta: initialRegion.latitudeDelta * 0.5,
-                          longitudeDelta: initialRegion.longitudeDelta * 0.5,
-                        };
-                      }
-                    }
-                  } catch (error) {
-                    console.warn('Error handling cluster press:', error);
-                  }
-                }}
+                clusteringEnabled={false}
                 onPress={(event: any) => {
-                  // Map onPress handler - no longer needed as coordinate selection is in AddDiveSiteScreen
+                  if (event.nativeEvent && event.nativeEvent.id) {
+      onDiveSiteSelect(event.nativeEvent.id);
+    }
                 }}
+                onMapGestureBegin={onMapGestureBegin}
+                onMapGestureEnd={onMapGestureEnd}
               />
             );
           })()

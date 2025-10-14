@@ -11,7 +11,7 @@ const MapDiagnostic = () => {
   const [mapLoadError, setMapLoadError] = useState<string | null>(null);
 
   // Platform-specific map view
-  const MapViewComponent = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
+  const MapView = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
 
   useEffect(() => {
     checkLocationPermission();
@@ -114,7 +114,7 @@ console.log('api key:', process.env.GOOGLE_MAPS_API_KEY);
       <View style={styles.mapContainer}>
         <Text style={styles.mapLabel}>Map Preview:</Text>
         <View style={styles.mapPlaceholder}>
-          <MapViewComponent 
+          <MapView 
             style={styles.map}
             cameraPosition={cameraPosition}
             markers={markers}

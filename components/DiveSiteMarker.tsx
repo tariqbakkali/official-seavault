@@ -27,7 +27,7 @@ const DiveSiteMarker: React.FC<DiveSiteMarkerProps> = ({
   onDragEnd
 }) => {
   // Platform-specific map view
-  const MapViewComponent = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
+  const MapView = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
 
   // Convert to camera position
   const cameraPosition = {
@@ -46,7 +46,7 @@ const DiveSiteMarker: React.FC<DiveSiteMarkerProps> = ({
 
   return (
     <View style={styles.container}>
-      <MapViewComponent
+      <MapView
         style={styles.map}
         cameraPosition={cameraPosition}
         markers={markers}

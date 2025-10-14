@@ -4,7 +4,7 @@ import { GoogleMaps, AppleMaps } from 'expo-maps';
 
 const MinimalMapTest = () => {
   // Platform-specific map view
-  const MapViewComponent = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
+  const MapView = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
 
   // Simple camera position
   const cameraPosition = {
@@ -16,7 +16,7 @@ const MinimalMapTest = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Minimal Map Test</Text>
       <View style={styles.mapContainer}>
-        <MapViewComponent
+        <MapView
           style={styles.map}
           cameraPosition={cameraPosition}
         />
