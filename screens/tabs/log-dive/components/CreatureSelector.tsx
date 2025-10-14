@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Dimensions } from 'react-native';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { Database } from '@/types/database';
-import { ImageWithFallback } from '@/components';
+import OfflineImageHandler from '@/components/OfflineImageHandler';
 
 interface CreatureSelectorProps {
   catalog: any;
@@ -141,7 +141,7 @@ const CreatureSelector: React.FC<CreatureSelectorProps> = ({
                 }}
               >
                 <View style={[styles.modalItemContent, selectedCategory?.id === category.id && styles.selectedModalItem]}>
-                  <ImageWithFallback
+                  <OfflineImageHandler
                     uri={category.image_url}
                     style={styles.modalItemImage}
                     containerStyle={styles.modalItemImageContainer}
@@ -205,7 +205,7 @@ const CreatureSelector: React.FC<CreatureSelectorProps> = ({
                 }}
               >
                 <View style={[styles.modalItemContent, selectedCreature?.id === creature.id && styles.selectedModalItem]}>
-                  <ImageWithFallback
+                  <OfflineImageHandler
                     uri={creature.image_url}
                     style={styles.modalItemImage}
                     containerStyle={styles.modalItemImageContainer}

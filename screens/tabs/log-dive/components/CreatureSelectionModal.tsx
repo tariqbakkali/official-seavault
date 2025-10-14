@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Search, Camera, X, Check } from 'lucide-react-native';
 import { Creature } from '@/types/database';
-import { ImageWithFallback } from '@/components';
+import OfflineImageHandler from '@/components/OfflineImageHandler';
 import * as ImagePicker from 'expo-image-picker';
 
 const { width, height } = Dimensions.get('window');
@@ -139,7 +139,7 @@ const CreatureSelectionModal: React.FC<CreatureSelectionModalProps> = ({
           ]}
           onPress={() => handleCreaturePress(item)}
         >
-          <ImageWithFallback
+          <OfflineImageHandler
             uri={item.image_url}
             style={styles.creatureImage}
             containerStyle={styles.imageContainer}

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { MapPin } from 'lucide-react-native';
 import { Database } from '@/types/database';
-import { ImageWithFallback } from '@/components';
+import OfflineImageHandler from '@/components/OfflineImageHandler';
 
 type DiveSite = Database['public']['Tables']['dive_sites']['Row'];
 
@@ -30,7 +30,7 @@ export default function ExploreDiveSiteCard({ diveSite, onPress }: ExploreDiveSi
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.imageContainer}>
-        <ImageWithFallback 
+        <OfflineImageHandler 
           uri={mapUrl}
           style={styles.image}
         />

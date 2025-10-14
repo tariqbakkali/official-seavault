@@ -14,7 +14,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Heart, Plus, Calendar, MapPin, Clock, Trophy } from 'lucide-react-native';
 import { Creature, Sighting, DiveSite } from '@/types/database';
 import { supabase } from '@/services/supabase';
-import { ImageWithFallback } from '@/components';
+import OfflineImageHandler from '@/components/OfflineImageHandler';
 import { formatDate, formatTime } from '@/utils/format';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -275,7 +275,7 @@ export default function CreatureDetailScreen() {
       >
         {/* Creature Image */}
         <View style={styles.imageContainer}>
-          <ImageWithFallback
+          <OfflineImageHandler
             uri={creature.image_url}
             style={styles.image}
             fallbackColor="#333"

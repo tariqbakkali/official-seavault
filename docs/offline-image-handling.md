@@ -1,131 +1,134 @@
 # Offline Image Handling
 
-This document explains how the improved offline image handling works in the Seavault application.
+This document explains how the offline-first image handling system works in the Seavault application.
 
 ## Overview
 
-The [ImageWithFallback](file:///d:/Work/official-seavault/components/ImageWithFallback.tsx#L7-L62) component has been enhanced to provide comprehensive offline support with the following features:
+The Seavault application implements a robust offline-first image handling system that ensures users can view their images even when they don't have an internet connection. The system prioritizes local images and only attempts to download remote images when online.
 
-1. Network connectivity detection using `@react-native-community/netinfo`
-2. Smart caching mechanisms for better offline image availability
-3. Retry mechanism for failed image loads
-4. Visual indicators for offline status
-5. Fallback strategies for various offline scenarios
+## Key Components
 
-## Key Features
+### 1. OptimizedImage Component
 
-### Network Connectivity Detection
+The [OptimizedImage](file:///Users/applevalley/Work/official-seavault/components/OptimizedImage.tsx#L15-L125) component is responsible for displaying images with the following priority:
 
-The component uses NetInfo to monitor network connectivity and determine if the device is online or offline:
+1. **Local URI First**: Always tries to use local images when available, regardless of online status
+2. **Remote URL When Online**: Downloads and caches remote images when device is online
+3. **Cached Images Offline**: Uses cached versions of remote images when offline
+4. **Fallback Handling**: Shows any available image even in error states
+
+### 2. Image Sync Service
+
+The [imageSyncService](file:///Users/applevalley/Work/official-seavault/services/imageSyncService.ts#L12-L365) handles synchronization between local storage and Supabase Storage with improved offline handling:
+
+- Checks network connectivity before attempting downloads
+- Verifies local file existence before using local URIs
+- Provides graceful degradation when offline
+
+### 3. Image Storage Service
+
+The [imageStorageService](file:///Users/applevalley/Work/official-seavault/services/imageStorageService.ts#L0-L236) manages local file operations with dynamic imports for native modules:
+
+- Dynamic import of ImageManipulator to handle native module issues
+- Graceful fallbacks when native modules aren't available
+- Proper error handling for file operations
+
+## Offline Handling Improvements
+
+### Local Image Prioritization
+
+The system now prioritizes local images over remote ones and verifies their existence:
 
 ```typescript
-import NetInfo from '@react-native-community/netinfo';
-
-// Check initial connectivity
-const state = await NetInfo.fetch();
-setIsOnline(state.isConnected && state.isInternetReachable !== false);
-
-// Subscribe to connectivity changes
-const unsubscribe = NetInfo.addEventListener(state => {
-  setIsOnline(state.isConnected && state.isInternetReachable !== false);
-});
-```
-
-### Retry Mechanism
-
-Failed image loads are automatically retried with exponential backoff:
-
-```typescript
-const handleRetry = React.useCallback(() => {
-  if (retryAttempt < retryCount && uri) {
-    setRetryAttempt(prev => prev + 1);
-    setLoading(true);
-    setError(false);
-    
-    // Exponential backoff
-    retryTimeoutRef.current = setTimeout(() => {
-      setLoading(false);
-      setTimeout(() => setLoading(true), 50);
-    }, 500 * (retryAttempt + 1));
-  } else {
-    setError(true);
+// PRIORITY 1: Always try to use local URI first (works offline and online)
+if (imageMetadata.localUri) {
+  // Verify local file exists before using it
+  try {
+    const fileInfo = await FileSystem.getInfoAsync(imageMetadata.localUri);
+    if (fileInfo.exists) {
+      setImageUri(imageMetadata.localUri);
+      setIsLoading(false);
+      return;
+    }
+  } catch (error) {
+    console.log('Local file check failed:', error);
   }
-}, [retryAttempt, retryCount, uri]);
+}
 ```
 
-### Offline Indicators
+### Network Awareness
 
-When the `showOfflineIndicator` prop is set to `true`, a visual indicator is displayed on images when the device is offline:
+Before attempting to download remote images, the system checks network connectivity:
 
 ```typescript
-{showOfflineIndicator && isOnline === false && (
-  <View style={styles.offlineBadge}>
-    <View style={styles.offlineDot} />
-  </View>
-)}
+// Check if we're online before trying to download
+const isOnline = await isDeviceOnline();
+if (!isOnline) {
+  console.log('Device is offline, cannot download image:', imageMetadata.id);
+  return null;
+}
 ```
 
-### Cache Control
+### No Fallback Images When Offline
 
-Images are loaded with cache control settings optimized for offline usage:
+When offline, the system no longer shows fallback images and instead displays proper error messages:
 
 ```typescript
-<Image
-  source={{ uri }}
-  cache={Platform.OS === 'ios' ? 'only-if-cached' : 'force-cache'}
-/>
+// When offline and no local image is available
+if (!isOnline) {
+  // Don't try to show fallback images
+  setHasError(true);
+  setIsLoading(false);
+  return;
+}
 ```
 
-## Usage
+## Usage Examples
 
-To use the enhanced offline image handling, simply add the `showOfflineIndicator` prop to any [ImageWithFallback](file:///d:/Work/official-seavault/components/ImageWithFallback.tsx#L7-L62) component:
+### Displaying Images Offline
 
-```typescript
-<ImageWithFallback
-  uri={imageUrl}
+```tsx
+<OptimizedImage 
+  imageMetadata={imageMetadata}
   style={styles.image}
-  containerStyle={styles.imageContainer}
-  showOfflineIndicator={true}
+  showSyncStatus={true}
 />
 ```
 
-## Configuration Options
+### Ensuring Images are Available Offline
 
-The [ImageWithFallback](file:///d:/Work/official-seavault/components/ImageWithFallback.tsx#L7-L62) component accepts the following props for offline handling:
+```typescript
+const localUri = await ensureImageDownloaded(imageMetadata);
+if (localUri) {
+  // Image is available locally
+  displayImage(localUri);
+} else {
+  // Handle case where image isn't available
+}
+```
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `uri` | string | undefined | The image URI to load |
-| `style` | ImageStyle | undefined | Style for the image component |
-| `containerStyle` | ViewStyle | undefined | Style for the container view |
-| `fallbackColor` | string | '#2a2a2a' | Background color when image fails to load |
-| `defaultImageSource` | ImageSourcePropType | undefined | Default image to show when URI is null/undefined |
-| `retryCount` | number | 3 | Number of retry attempts for failed loads |
-| `showOfflineIndicator` | boolean | false | Show visual indicator when offline |
+## Best Practices
 
-## Fallback Strategies
+1. **Always provide local URIs** when images are captured or selected locally
+2. **Verify local file existence** before using local URIs
+3. **Check network connectivity** before attempting remote operations
+4. **Implement graceful fallbacks** for all image operations
+5. **Use appropriate error handling** to ensure UI remains responsive
 
-The component implements multiple fallback strategies:
+## Testing Offline Scenarios
 
-1. **No URI**: Shows default image or fallback color
-2. **Network Error**: Shows default image or fallback color
-3. **Offline Mode**: Shows cached version if available, otherwise default image or fallback color
-4. **Loading Timeout**: Retries with exponential backoff
+To test offline image handling:
 
-## Testing Offline Mode
+1. Enable airplane mode on the device
+2. Navigate to a screen with images
+3. Verify that locally stored images are still displayed
+4. Confirm that remote-only images show appropriate fallbacks
 
-To test the offline functionality:
+## Error Handling
 
-1. Enable Airplane Mode on your device
-2. Navigate to any screen with images
-3. Observe the offline indicators on images
-4. Images should show cached versions or fallbacks when available
+The system implements comprehensive error handling:
 
-## Future Improvements
-
-Potential future enhancements could include:
-
-1. Pre-caching of frequently accessed images
-2. Progressive image loading (low-res then high-res)
-3. Storage of images in local database for offline access
-4. Bandwidth-aware image loading (different quality based on connection)
+- Network connectivity checks before remote operations
+- File existence verification for local images
+- Graceful degradation when native modules aren't available
+- Fallback mechanisms for all image operations

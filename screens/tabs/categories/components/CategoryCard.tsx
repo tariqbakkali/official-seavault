@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ImageWithFallback } from '@/components';
+import OfflineImageHandler from '@/components/OfflineImageHandler';
 
 interface CategoryWithStats {
   id: string;
@@ -23,7 +23,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, onPress }: { cate
       style={styles.categoryCard}
       onPress={onPress}
     >
-      <ImageWithFallback
+      <OfflineImageHandler
         uri={category.image_url}
         style={styles.categoryImage}
         containerStyle={styles.imageContainer}

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Trophy } from 'lucide-react-native';
-import { ImageWithFallback } from '@/components';
+import OfflineImageHandler from '@/components/OfflineImageHandler';
 
 interface LeaderboardUser {
   id: string;
@@ -58,7 +58,7 @@ const LeaderboardEntry: React.FC<LeaderboardEntryProps> = ({ entry, rank }) => {
           <Text style={[styles.rankText, getRankTextStyle()]}>{rank}</Text>
         </View>
         <View style={styles.avatar}>
-          <ImageWithFallback
+          <OfflineImageHandler
             uri={entry.avatar}
             style={styles.avatarImage}
             fallbackColor="#333"

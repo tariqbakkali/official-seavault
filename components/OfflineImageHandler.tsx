@@ -1,30 +1,32 @@
 import * as React from 'react';
-import { View, StyleSheet, ImageStyle, ViewStyle, ImageSourcePropType, Platform } from 'react-native';
+import { View, StyleSheet, ImageStyle, ViewStyle, ImageSourcePropType } from 'react-native';
 import { Image } from 'expo-image';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import LoadingShimmer from './LoadingShimmer';
 import DefaultImagePlaceholder from './DefaultImagePlaceholder';
 import { getImageUrlOptions } from '@/utils/imageProxy';
 
-interface ImageWithFallbackProps {
+interface OfflineImageHandlerProps {
   uri: string | null | undefined;
+  localUri?: string | null; // Local image URI for offline use
   style?: ImageStyle;
   containerStyle?: ViewStyle;
   fallbackColor?: string;
   defaultImageSource?: ImageSourcePropType;
-  retryCount?: number; // Number of retry attempts
-  showOfflineIndicator?: boolean; // Show offline indicator
+  retryCount?: number;
+  showOfflineIndicator?: boolean;
 }
 
-export default function ImageWithFallback({ 
+export default function OfflineImageHandler({ 
   uri, 
+  localUri,
   style, 
   containerStyle,
   fallbackColor = '#2a2a2a',
   defaultImageSource,
   retryCount = 3,
   showOfflineIndicator = false
-}: ImageWithFallbackProps) {
+}: OfflineImageHandlerProps) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
   const [isOnline, setIsOnline] = React.useState<boolean>(true);
@@ -42,7 +44,7 @@ export default function ImageWithFallback({
         const online = state.isConnected !== false; // Consider connected if not explicitly false
         setIsOnline(online);
       } catch (err) {
-        console.warn('ImageWithFallback: Error checking connectivity', err);
+        console.warn('OfflineImageHandler: Error checking connectivity', err);
         // If we can't determine connectivity, assume we're online to avoid blocking image loads
         setIsOnline(true);
       }
@@ -73,9 +75,14 @@ export default function ImageWithFallback({
 
   // Get current URL to try
   const currentUrl = React.useMemo(() => {
+    // If offline and we have a local URI, use it
+    if (!isOnline && localUri) {
+      return localUri;
+    }
+    
     const urls = [urlOptions.original, urlOptions.encoded, urlOptions.proxied].filter(Boolean) as string[];
     return urls[currentUrlIndex] || urlOptions.original;
-  }, [urlOptions, currentUrlIndex]);
+  }, [urlOptions, currentUrlIndex, isOnline, localUri]);
 
   // Reset loading state when URI changes
   React.useEffect(() => {
@@ -83,10 +90,17 @@ export default function ImageWithFallback({
     setError(false);
     setRetryAttempt(0);
     setCurrentUrlIndex(0);
-  }, [uri]);
+  }, [uri, localUri]);
 
   // Retry mechanism for failed image loads
   const handleRetry = React.useCallback(() => {
+    // Don't retry when offline
+    if (!isOnline) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
+    
     const urls = [urlOptions.original, urlOptions.encoded, urlOptions.proxied].filter(Boolean) as string[];
     
     // Try next URL option if available
@@ -114,10 +128,10 @@ export default function ImageWithFallback({
     } else {
       setError(true);
     }
-  }, [retryAttempt, retryCount, urlOptions, currentUrlIndex]);
+  }, [retryAttempt, retryCount, urlOptions, currentUrlIndex, isOnline]);
 
   // If no URI, render the default image or fallback
-  if (!uri) {
+  if (!uri && !localUri) {
     if (defaultImageSource) {
       return (
         <View style={containerStyle}>
@@ -133,54 +147,35 @@ export default function ImageWithFallback({
     );
   }
 
-  // If offline and no cached version, show appropriate fallback
-  // But only do this if showOfflineIndicator is true
-  if (!isOnline && showOfflineIndicator) {
-    // According to user requirement: when internet is off, must show real images from local storage
-    // instead of fallback images or placeholders. So we'll try to load the image anyway
-    // and only show the offline indicator
-    console.log('Device is offline, but still attempting to load image:', uri);
-  }
-
   // If error and we have a default image, render it
-  // Only consider offline if showOfflineIndicator is true
-  if ((error || (!isOnline && showOfflineIndicator)) && defaultImageSource) {
-    // According to user requirement: when internet is off, must show real images from local storage
-    // instead of fallback images or placeholders. So we'll only show default image if there's an actual error
-    if (error) {
-      return (
-        <View style={containerStyle}>
-          <Image source={defaultImageSource} style={style} />
-          {showOfflineIndicator && !isOnline && (
-            <View style={styles.offlineBadge}>
-              <View style={styles.offlineDot} />
-            </View>
-          )}
-        </View>
-      );
-    }
+  if (error && defaultImageSource) {
+    return (
+      <View style={containerStyle}>
+        <Image source={defaultImageSource} style={style} />
+        {showOfflineIndicator && !isOnline && (
+          <View style={styles.offlineBadge}>
+            <View style={styles.offlineDot} />
+          </View>
+        )}
+      </View>
+    );
   }
 
-  // If error or offline and no default image, render the fallback color view
-  // Only consider offline if showOfflineIndicator is true
-  if (error || (!isOnline && showOfflineIndicator)) {
-    // According to user requirement: when internet is off, must show real images from local storage
-    // instead of fallback images or placeholders. So we'll only show fallback if there's an actual error
-    if (error) {
-      return (
-        <View style={containerStyle}>
-          <DefaultImagePlaceholder 
-            style={style} 
-            containerStyle={containerStyle} 
-          />
-          {showOfflineIndicator && !isOnline && (
-            <View style={styles.offlineBadge}>
-              <View style={styles.offlineDot} />
-            </View>
-          )}
-        </View>
-      );
-    }
+  // If error and no default image, render the fallback color view
+  if (error) {
+    return (
+      <View style={containerStyle}>
+        <DefaultImagePlaceholder 
+          style={style} 
+          containerStyle={containerStyle} 
+        />
+        {showOfflineIndicator && !isOnline && (
+          <View style={styles.offlineBadge}>
+            <View style={styles.offlineDot} />
+          </View>
+        )}
+      </View>
+    );
   }
 
   return (
@@ -197,27 +192,18 @@ export default function ImageWithFallback({
         cachePolicy="memory-disk"
         allowDownscaling={true}
         onLoad={() => {
-          // Log additional load details if available
           setLoading(false);
           setRetryAttempt(0); // Reset retry attempts on successful load
         }}
         onLoadEnd={() => {
         }}
         onError={(e) => {
-          console.warn('ImageWithFallback: Image load error:', e, 'URL:', currentUrl);
-          // Log additional error details if available
-          console.warn('ImageWithFallback: Error details:', JSON.stringify(e, null, 2));
-          
+          console.warn('OfflineImageHandler: Image load error:', e, 'URL:', currentUrl);
           setLoading(false);
-          // Only handle retry if we're online, otherwise just show error
-          if (isOnline) {
-            handleRetry();
-          } else {
-            setError(true);
-          }
+          handleRetry();
         }}
       />
-      {showOfflineIndicator && !isOnline && (
+      {showOfflineIndicator && !isOnline && localUri && (
         <View style={styles.offlineBadge}>
           <View style={styles.offlineDot} />
         </View>
@@ -231,18 +217,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#2a2a2a',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  offlineContainer: {
-    position: 'relative',
-  },
-  offlineIndicator: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF3B30',
   },
   offlineBadge: {
     position: 'absolute',

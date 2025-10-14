@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Camera, AlertCircle } from 'lucide-react-native';
-import { ImageWithFallback } from '@/components';
+import OfflineImageHandler from '@/components/OfflineImageHandler';
 import DefaultAvatar from '@/assets/images/AVATAR.png';
 import { styles } from '../styles';
 
@@ -23,7 +23,7 @@ export const AvatarSection: React.FC<AvatarSectionProps> = ({
       <View style={styles.avatarContainer}>
         <TouchableOpacity onPress={onPickImage} disabled={uploadingAvatar}>
           <View style={styles.avatarWrapper}>
-            <ImageWithFallback
+            <OfflineImageHandler
               uri={avatarUri}
               style={styles.avatar}
               containerStyle={styles.avatarImageContainer}

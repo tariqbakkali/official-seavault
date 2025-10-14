@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ImageWithFallback } from '@/components';
+import OfflineImageHandler from '@/components/OfflineImageHandler';
 import WikimediaImage from '@/components/WikimediaImage';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
@@ -94,7 +94,7 @@ export default function CategoryDetailScreen() {
             fallbackColor="#333"
           />
         ) : (
-          <ImageWithFallback
+          <OfflineImageHandler
             uri={item.image_url}
             style={styles.creatureImage}
             fallbackColor="#333"

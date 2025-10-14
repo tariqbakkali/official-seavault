@@ -14,7 +14,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Search, Filter } from 'lucide-react-native';
 import { Database } from '@/types/database';
 import { useSyncedData } from '@/hooks/useSyncedData';
-import { ImageWithFallback } from '@/components';
+import OfflineImageHandler from '@/components/OfflineImageHandler';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
 
@@ -85,7 +85,7 @@ export default function CreaturePickerScreen() {
         onPress={() => handleCreatureSelect(item.id)}
       >
         <View style={styles.imageContainer}>
-          <ImageWithFallback 
+          <OfflineImageHandler 
             uri={item.image_url || undefined}
             style={styles.image}
           />

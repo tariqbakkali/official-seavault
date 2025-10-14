@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { ImageWithFallback } from '@/components';
+import OfflineImageHandler from '@/components/OfflineImageHandler';
 import { DIMENSIONS, COLORS, TYPOGRAPHY } from '@/constants';
 import { Creature } from '@/types/database';
 
@@ -18,7 +18,7 @@ const ExploreCreatureCard: React.FC<ExploreCreatureCardProps> = ({ creature, onP
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.imageContainer}>
-        <ImageWithFallback
+        <OfflineImageHandler
           uri={creature.image_url || ''}
           style={styles.image}
           fallbackColor={COLORS.SURFACE_SECONDARY}
