@@ -202,7 +202,7 @@ export const useProfile = () => {
           }
 
           console.log("User_ID Profile data : ", profileData, session?.access_token)
-          
+
           const response = await fetch('https://hqqebvozpvwpopxtixyt.supabase.co/functions/v1/delete-user-auth', {
             method: 'POST',
             headers,

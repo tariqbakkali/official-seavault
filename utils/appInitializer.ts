@@ -1,4 +1,4 @@
-import { initializeSync, initializeUserSync } from './syncUtils';
+import { initializeSync, initializeUserSync, clearUserSync } from './syncUtils';
 import { supabase } from '../services/supabase';
 import { setCurrentUserID } from '../stores/syncedObservables';
 import AsyncStorage from '@react-native-async-storage/async-storage';
