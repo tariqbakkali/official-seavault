@@ -19,7 +19,7 @@ import {
   achievements$, // Import achievements$ observable
   userAchievements$, // Import userAchievements$ observable
 } from '../stores/syncedObservables';
-// import { customSynced } from '@/services/legendStateConfig';
+import { images$ } from '../stores/imageState'; // Add this import
 
 /**
  * Utility functions for data synchronization in the local-first app
@@ -59,6 +59,10 @@ export const clearUserSync = () => {
     currentUserSightings$.set({});
     wishlists$.set({});
     profile$.set({} as any);
+    userAchievements$.set({}); // Clear user achievements
+    
+    // Clear user-specific image data
+    images$.set({});
     
   } catch (error) {
     console.error('Error clearing user sync:', error);

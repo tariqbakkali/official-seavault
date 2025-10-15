@@ -40,10 +40,13 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   
   // Use the new specialized stores
-  const { creatures: allCreatures, categories: allCategories, currentUserSightings, allUsersSightings, profile: userProfile, allProfiles, achievements: allAchievements, userAchievements: allUserAchievements, wishlists: allWishlists, allUsersAchievements } = useSyncedData();
+  const { creatures: allCreatures, categories: allCategories, currentUserSightings, allUsersSightings, profile: userProfile, allProfiles, achievements: allAchievements, userAchievements: allUserAchievements, wishlists: allWishlists, allUsersAchievements, fetchUserData } = useSyncedData();
 
-  const loadData = React.useCallback(() => {
+  const loadData = React.useCallback(async() => {
     try {
+      // Fetching user data
+      await fetchUserData( )
+
       // Extract data from observables with proper typing
       const creaturesObj = allCreatures || {};
       const categoriesObj = allCategories || {};
@@ -266,6 +269,8 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    backgroundColor: '#000',
+
   },
   scrollView: {
     flex: 1,

@@ -157,10 +157,12 @@ export const useSyncedData = () => {
       }
 
       // Create new profile if it doesn't exist
+      // Use email username as default full name
+      const defaultFullName = user.email ? user.email.split('@')[0] : null;
       const newProfile: Database['public']['Tables']['profiles']['Insert'] = {
         id: user.id,
         email: user.email || null,
-        full_name: null, // We don't have user metadata here
+        full_name: defaultFullName, // Use email username as default full name
         avatar_url: null, // We don't have user metadata here
         membership_tier: null,
         is_premium: null,
@@ -204,11 +206,12 @@ export const useSyncedData = () => {
 
       if (!user) throw new Error('No authenticated user');
 
-      // Create the profile data with the correct structure
+      // Use email username as default full name if not provided
+      const defaultFullName = user.email ? user.email.split('@')[0] : null;
       const fullProfileData: Database['public']['Tables']['profiles']['Row'] = {
         id: user.id,
         email: user.email || null,
-        full_name: profileData.full_name || null,
+        full_name: profileData.full_name || defaultFullName, // Use provided name or email username
         avatar_url: profileData.avatar_url || null,
         membership_tier: profileData.membership_tier || null,
         is_premium: profileData.is_premium || null,

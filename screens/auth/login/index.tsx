@@ -16,6 +16,7 @@ import { ROUTES, COLORS, DIMENSIONS, APP_CONFIG } from '@/constants';
 import { isValidEmail } from './utils/authValidation';
 import { showAlert } from '@/utils/alertUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSyncedData } from '@/hooks/useSyncedData'; // Import useSyncedData hook
 
 export default function LoginScreen() {
   const [email, setEmail] = React.useState('naeemcharbagh1274@gmail.com');
@@ -23,6 +24,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = React.useState(false);
   const [isSignUp, setIsSignUp] = React.useState(false);
   const insets = useSafeAreaInsets();
+  const { createProfileForCurrentUser } = useSyncedData(); // Get the createProfileForCurrentUser function
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -43,7 +45,8 @@ export default function LoginScreen() {
           password,
           options: {
             data: {
-              full_name: email.split('@')[0], // Use part of email as name
+              // Ensure full_name is always set to the part of the email before '@' if not explicitly provided
+              full_name: email.split('@')[0] || 'user_name',
             },
           },
         });
@@ -61,7 +64,10 @@ export default function LoginScreen() {
             // Switch to sign in mode so user can sign in after confirming email
             setIsSignUp(false);
           } else {
-            // User is already signed in
+            // User is already signed in, ensure profile is created
+            await createProfileForCurrentUser({
+              full_name: email.split('@')[0] || 'user_name',
+            });
             showAlert('Success', 'Account created successfully!');
           }
         } else {
@@ -76,6 +82,8 @@ export default function LoginScreen() {
         if (error) throw error;
 
         if (data) {
+          // After successful login, ensure profile exists
+          await createProfileForCurrentUser({});
         } else {
           showAlert('Error', 'Invalid email or password. Please try again.');
         }

@@ -216,11 +216,12 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 AS $function$
 BEGIN
   -- Insert a new profile for the new user
+  -- Use the full_name from user metadata if available, otherwise extract from email
   INSERT INTO public.profiles (id, email, full_name, avatar_url, membership_tier, is_premium, has_seen_onboarding)
   VALUES (
     NEW.id,
     NEW.email,
-    NULL,  -- full_name
+    COALESCE(NEW.raw_user_meta_data->>'full_name', SPLIT_PART(NEW.email, '@', 1)),  -- full_name from metadata or email username
     NULL,  -- avatar_url
     NULL,  -- membership_tier
     FALSE, -- is_premium

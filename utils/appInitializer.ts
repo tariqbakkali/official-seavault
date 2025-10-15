@@ -1,6 +1,7 @@
 import { initializeSync, initializeUserSync } from './syncUtils';
 import { supabase } from '../services/supabase';
 import { setCurrentUserID } from '../stores/syncedObservables';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Application initializer for local-first functionality
@@ -18,6 +19,20 @@ export const initializeApp = async () => {
   } catch (error) {
     console.error('Error initializing local-first app:', error);
     throw error;
+  }
+};
+
+/**
+ * Clear AsyncStorage data on app load
+ * This function safely clears all AsyncStorage data for the app
+ */
+export const clearAsyncStorageOnLoad = async () => {
+  try {
+    // Clear all AsyncStorage data
+    await AsyncStorage.clear();
+    console.log('AsyncStorage cleared successfully on app load');
+  } catch (error) {
+    console.error('Error clearing AsyncStorage on app load:', error);
   }
 };
 
@@ -68,6 +83,7 @@ export const handleAppStateChange = (isActive: boolean) => {
 
 export default {
   initializeApp,
+  clearAsyncStorageOnLoad,
   initializeUserSession,
   cleanupUserSession,
   handleAppStateChange,

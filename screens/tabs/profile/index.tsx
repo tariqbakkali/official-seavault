@@ -17,10 +17,8 @@ import { calculateUserStats } from '@/services/statsService';
 import { ROUTES} from '@/constants';
 import { supabase } from '@/services/supabase';
 import StatsSection from './components/StatsSection';
-import CategoryProgressSection from './components/CategoryProgressSection';
-import AchievementsPreview from './components/AchievementsPreview';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import { forceSyncAll } from '@/utils/syncUtils';
+import { forceSyncAll, clearUserSync } from '@/utils/syncUtils';
 import LoadingState from '@/components/LoadingState';
 
 interface MenuItem {
@@ -140,6 +138,7 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await supabase.auth.signOut();
+              clearUserSync(); // Clear user sync data on logout
               router.replace(ROUTES.AUTH.LOGIN);
             } catch (error) {
               console.error('Error signing out:', error);
@@ -231,19 +230,6 @@ export default function ProfileScreen() {
           totalPoints={userStats?.totalPoints || 0}
           achievementsUnlocked={unlockedCount}
           totalAchievements={totalCount}
-        />
-
-        {/* Achievements Preview */}
-        <AchievementsPreview
-          achievements={achievementsWithStatus}
-          unlockedCount={unlockedCount}
-          totalCount={totalCount}
-        />
-
-        {/* Category Progress Section */}
-        <CategoryProgressSection 
-          categoryStats={userStats?.categoryStats || {}}
-          categoryNames={userStats?.categoryNames || {}}
         />
 
         {/* Menu Items */}

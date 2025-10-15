@@ -17,6 +17,7 @@ import { Category } from '@/types/database';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
+import NetInfo from '@react-native-community/netinfo';
 
 interface CategoryWithStats extends Category {
   seen: number;
@@ -35,9 +36,10 @@ export default function CategoriesTab() {
 
   const loadData = React.useCallback(() => {
     try {
-      // Check if we're offline
-      const online = navigator.onLine;
-      setIsOffline(!online);
+      // Check if we're offline using NetInfo
+      NetInfo.fetch().then(state => {
+        setIsOffline(!state.isConnected);
+      });
       
       // Extract data from observables properly
       const categoriesArray = allCategories ? Object.values(allCategories) : [];
@@ -125,7 +127,17 @@ export default function CategoriesTab() {
   };
 
   React.useEffect(() => {
+    // Subscribe to network state updates
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOffline(!state.isConnected);
+    });
+
     loadData();
+
+    // Cleanup subscription on unmount
+    return () => {
+      unsubscribe();
+    };
   }, [loadData]);
 
   // Reload data when screen comes into focus
