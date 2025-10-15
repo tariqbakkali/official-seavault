@@ -27,12 +27,16 @@ export default function LoginScreen() {
   const { createProfileForCurrentUser, fetchUserData } = useSyncedData(); // Get the createProfileForCurrentUser function
 
   const handleAuth = async () => {
+    console.log('[LoginScreen] Starting authentication process', { isSignUp, email });
+    
     if (!email || !password) {
+      console.log('[LoginScreen] Validation failed: Missing email or password');
       showAlert('Error', 'Please fill in all fields');
       return;
     }
 
     if (!isValidEmail(email)) {
+      console.log('[LoginScreen] Validation failed: Invalid email format');
       showAlert('Error', 'Please enter a valid email address');
       return;
     }
@@ -40,16 +44,27 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       if (isSignUp) {
+        console.log('[LoginScreen] Processing signup');
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('[LoginScreen] Signup error:', error);
+          throw error;
+        }
 
         if (data) {
+          console.log('[LoginScreen] Signup successful', { 
+            hasUser: !!data.user,
+            hasSession: !!data.session,
+            userId: data.user?.id
+          });
+          
           // Check if email confirmation is required
           if (data.user && !data.user.email_confirmed_at) {
+            console.log('[LoginScreen] Email confirmation required');
             showAlert(
               'Confirm Your Email',
               'Please check your email and click the confirmation link to complete your registration.',
@@ -59,32 +74,56 @@ export default function LoginScreen() {
             setIsSignUp(false);
           } else {
             // User is already signed in, ensure profile is created
+            console.log('[LoginScreen] Creating profile for new user after signup');
+            // Wait a bit for initial sync to complete
+            await new Promise(resolve => setTimeout(resolve, 200));
             await createProfileForCurrentUser({});
+            console.log('[LoginScreen] Profile created for new user');
             showAlert('Success', 'Account created successfully!');
           }
         } else {
+          console.log('[LoginScreen] Signup failed: No data returned');
           showAlert('Error', 'Failed to create account. Please try again.');
         }
       } else {
+        console.log('[LoginScreen] Processing signin');
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('[LoginScreen] Signin error:', error);
+          throw error;
+        }
 
         if (data) {
+          console.log('[LoginScreen] Signin successful', { 
+            hasUser: !!data.user,
+            hasSession: !!data.session,
+            userId: data.user?.id
+          });
+          
+          console.log('[LoginScreen] User signed in, waiting for initial sync');
+          // Wait a bit for initial sync to complete
+          await new Promise(resolve => setTimeout(resolve, 200));
+          console.log('[LoginScreen] Creating profile if needed');
           // After successful login, ensure profile exists
           await createProfileForCurrentUser({});
+          console.log('[LoginScreen] Profile creation/check completed');
           // Also fetch user data to populate the profile observable
           await fetchUserData();
+          console.log('[LoginScreen] User data fetched');
         } else {
+          console.log('[LoginScreen] Signin failed: No data returned');
           showAlert('Error', 'Invalid email or password. Please try again.');
         }
       }
     } catch (error: any) {
+      console.error('[LoginScreen] Authentication error:', error);
       showAlert('Error', error.message || 'An error occurred. Please try again.');
     } finally {
+      console.log('[LoginScreen] Authentication process completed');
       setLoading(false);
     }
   };
