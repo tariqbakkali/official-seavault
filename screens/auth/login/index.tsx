@@ -24,7 +24,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = React.useState(false);
   const [isSignUp, setIsSignUp] = React.useState(false);
   const insets = useSafeAreaInsets();
-  const { createProfileForCurrentUser } = useSyncedData(); // Get the createProfileForCurrentUser function
+  const { createProfileForCurrentUser, fetchUserData } = useSyncedData(); // Get the createProfileForCurrentUser function
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -43,12 +43,6 @@ export default function LoginScreen() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            data: {
-              // Ensure full_name is always set to the part of the email before '@' if not explicitly provided
-              full_name: email.split('@')[0] || 'user_name',
-            },
-          },
         });
 
         if (error) throw error;
@@ -65,9 +59,7 @@ export default function LoginScreen() {
             setIsSignUp(false);
           } else {
             // User is already signed in, ensure profile is created
-            await createProfileForCurrentUser({
-              full_name: email.split('@')[0] || 'user_name',
-            });
+            await createProfileForCurrentUser({});
             showAlert('Success', 'Account created successfully!');
           }
         } else {
@@ -84,6 +76,8 @@ export default function LoginScreen() {
         if (data) {
           // After successful login, ensure profile exists
           await createProfileForCurrentUser({});
+          // Also fetch user data to populate the profile observable
+          await fetchUserData();
         } else {
           showAlert('Error', 'Invalid email or password. Please try again.');
         }

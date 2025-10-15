@@ -8,6 +8,7 @@ import { setCurrentUserID } from '@/stores/syncedObservables';
 import { forceSyncAll } from '@/utils/syncUtils';
 import { initializeApp, initializeUserSession, cleanupUserSession } from '@/utils/appInitializer'; // Import app initializer functions
 import 'react-native-get-random-values';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Initialize Sentry
 Sentry.init({
@@ -23,8 +24,11 @@ export default function RootLayout() {
   
   // Get the current user's profile from the profile object
   // The profile should be the current user's profile, not all profiles
+
   
   useEffect(() => {
+      // AsyncStorage.clear()
+
     const checkInitialSessionAndSync = async () => {
       try {
         // Initialize the app using the app initializer
@@ -54,7 +58,7 @@ export default function RootLayout() {
     checkInitialSessionAndSync();
 
     // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const userId = session?.user?.id || null;
       
       if (userId) {
@@ -65,6 +69,7 @@ export default function RootLayout() {
         cleanupUserSession();
       }
       
+      await forceSyncAll();
       setCurrentUserID(userId);
       setCurrentUserIDState(userId);
     });
