@@ -137,6 +137,9 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Clear user data from Legend State before signing out
+              clearUserSync();
+              
               await supabase.auth.signOut();
               clearUserSync(); // Clear user sync data on logout
               router.replace(ROUTES.AUTH.LOGIN);

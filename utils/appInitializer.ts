@@ -62,7 +62,7 @@ export const cleanupUserSession = async () => {
     setCurrentUserID(null);
     
     // Clear user-specific observables
-    // This is handled in the clearUserSync function
+    clearUserSync();
     
   } catch (error) {
     console.error('Error cleaning up user session:', error);

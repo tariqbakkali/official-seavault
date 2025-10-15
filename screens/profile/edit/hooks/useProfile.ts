@@ -9,29 +9,7 @@ import { AuthError } from '@supabase/auth-js';
 import { hasUnsavedChanges, validateProfileForm } from '../utils/profileUtils';
 import { clearUserSync } from '@/utils/syncUtils';
 
-export const useProfile = (): {
-  // State
-  profile: Profile | undefined;
-  fullName: string;
-  setFullName: React.Dispatch<React.SetStateAction<string>>;
-  avatarUri: string | null;
-  setAvatarUri: React.Dispatch<React.SetStateAction<string | null>>;
-  avatarUploadError: boolean;
-  setAvatarUploadError: React.Dispatch<React.SetStateAction<boolean>>;
-  loading: boolean;
-  saving: boolean;
-  uploadingAvatar: boolean;
-  setUploadingAvatar: React.Dispatch<React.SetStateAction<boolean>>;
-  hasUnsavedChangesState: boolean;
-  validationErrors: { [key: string]: string };
-  
-  // Functions
-  loadProfileData: () => Promise<void>;
-  handlePickImage: () => Promise<void>;
-  handleSaveProfile: () => Promise<void>;
-  handleDeleteAccount: () => Promise<void>;
-  handleBack: () => void;
-} => {
+export const useProfile = () => {
   const [fullName, setFullName] = React.useState('');
   const [avatarUri, setAvatarUri] = React.useState<string | null>(null);
   const [avatarUploadError, setAvatarUploadError] = React.useState(false);
@@ -223,7 +201,7 @@ export const useProfile = (): {
             headers['x-admin-token'] = process.env.ADMIN_DELETE_TOKEN;
           }
 
-          console.log("User_ID Profile data : ", profileData)
+          console.log("User_ID Profile data : ", profileData, session?.access_token)
           
           const response = await fetch('https://hqqebvozpvwpopxtixyt.supabase.co/functions/v1/delete-user-auth', {
             method: 'POST',
