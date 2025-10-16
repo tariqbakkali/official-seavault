@@ -123,10 +123,11 @@ export const currentUserSightings$ = observable(customSynced({
 export const allUsersSightings$ = observable(customSynced({
   supabase,
   collection: 'sightings',
-  actions: ['read'],
+  actions: ['read', 'create', 'update', 'delete'],
   persist: { name: 'all_sightings' },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
+  realtime: true,
 }));
 
 // All users achievements observable - for leaderboard and community features
@@ -249,7 +250,9 @@ export const createSighting = async (sightingData: Omit<Sighting, 'id' | 'create
     created_at: new Date().toISOString(),
   } as Sighting;
 
+  // Update both currentUserSightings$ and allUsersSightings$ observables
   (currentUserSightings$ as any)[id].set(newSighting);
+  (allUsersSightings$ as any)[id].set(newSighting);
 
   // Check for achievements after creating the sighting
   try {
