@@ -82,6 +82,7 @@ export interface Database {
           user_id: string;
           creature_id: string;
           created_at: string;
+          deleted: boolean | null;
         };
         Insert: Omit<Database['public']['Tables']['wishlists']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['wishlists']['Insert']>;

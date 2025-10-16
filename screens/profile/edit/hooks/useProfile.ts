@@ -186,36 +186,20 @@ export const useProfile = () => {
           
           // Clear user sync data on account deletion
           clearUserSync();
-          
-          // Get the current session
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          // Call the deployed Supabase function to delete the user account
-          const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token || ''}`,
-          };
-          
-          // Only add the admin token header if it's defined
-          if (process.env.ADMIN_DELETE_TOKEN) {
-            headers['x-admin-token'] = process.env.ADMIN_DELETE_TOKEN;
-          }
-
-          console.log("User_ID Profile data : ", profileData, session?.access_token)
-
-          const response = await fetch('https://hqqebvozpvwpopxtixyt.supabase.co/functions/v1/delete-user-auth', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              user_id: profileData?.id || ''
-            })
+                    
+          // Call the deployed Supabase function to delete the user account using the new method
+          const { data, error } = await supabase.functions.invoke('delete-user-auth', {
+            body: { user_id: profileData?.id || '' }
           });
           
-          const result = await response.json();
-          
-          if (!response.ok || !result.success) {
-            throw new Error(result.error || 'Failed to delete account');
+          if (error) {
+            throw new Error(error.message || 'Failed to delete account');
           }
+          
+          if (!data?.success) {
+            throw new Error(data?.error || 'Failed to delete account');
+          }
+          
           await supabase.auth.signOut();
           
           showAlert('Success', 'Account deleted successfully');

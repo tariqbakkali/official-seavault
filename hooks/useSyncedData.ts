@@ -8,10 +8,10 @@ import {
   allUsersSightings$,
   allUsersAchievements$,
   wishlists$, 
-  profile$,
+  currentUserProfile$,
+  allUsersProfiles$, // Added profiles$
   achievements$,
   userAchievements$,
-  profiles$, // Added profiles$
   createSighting,
   createWishlistItem,
   createDiveSite,
@@ -36,8 +36,8 @@ export const useSyncedData = () => {
   const allUsersAchievements = use$(allUsersAchievements$);
   const wishlists = use$(wishlists$);
   // For profile, we need to handle it specially to ensure we get the current user's profile
-  const profile = use$(profile$);
-  const allProfiles = use$(profiles$); // Added allProfiles
+  const profile = use$(currentUserProfile$);
+  const allProfiles = use$(allUsersProfiles$); // Added allProfiles
   const achievements = use$(achievements$);
   const userAchievements = use$(userAchievements$);
 
@@ -51,10 +51,10 @@ export const useSyncedData = () => {
   const allUsersSightingsSyncState = useObservable(syncState(allUsersSightings$));
   const allUsersAchievementsSyncState = useObservable(syncState(allUsersAchievements$));
   const wishlistsSyncState = useObservable(syncState(wishlists$));
-  const profileSyncState = useObservable(syncState(profile$));
+  const profileSyncState = useObservable(syncState(currentUserProfile$));
   const achievementsSyncState = useObservable(syncState(achievements$));
   const userAchievementsSyncState = useObservable(syncState(userAchievements$));
-  const profilesSyncState = useObservable(syncState(profiles$)); // Added profilesSyncState
+  const profilesSyncState = useObservable(syncState(allUsersProfiles$)); // Added profilesSyncState
 
   // Loading states
   const isLoading = {
@@ -100,7 +100,7 @@ export const useSyncedData = () => {
       achievements$.get();
     }
     if (!profilesSyncState.isLoaded.get()) {
-      profiles$.get();
+      allUsersProfiles$.get();
     }
   };
 
@@ -108,7 +108,7 @@ export const useSyncedData = () => {
   const fetchUserData = async () => {
     // Trigger loading of user data if not already loaded
     if (!profileSyncState.isLoaded.get()) {
-      profile$.get();
+      currentUserProfile$.get();
     }
     if (!currentUserSightingsSyncState.isLoaded.get()) {
       currentUserSightings$.get();
@@ -132,7 +132,7 @@ export const useSyncedData = () => {
       console.log('[ensureUserProfile] Starting profile check');
       
       // Try to get user from profile observable first
-      const existingProfile = profile$.get();
+      const existingProfile = currentUserProfile$.get();
       console.log('[ensureUserProfile] Existing profile from observable:', { 
         hasExistingProfile: !!existingProfile,
         profileKeys: existingProfile ? Object.keys(existingProfile) : null,
@@ -165,7 +165,7 @@ export const useSyncedData = () => {
       }
 
       // Try to fetch existing profile by loading the profile observable
-      const currentProfile = profile$.get();
+      const currentProfile = currentUserProfile$.get();
       console.log('[ensureUserProfile] Current profile state:', currentProfile);
       
       // Extract the actual profile object from the observable structure
@@ -195,13 +195,13 @@ export const useSyncedData = () => {
       console.log('[ensureUserProfile] New profile data:', newProfile);
       
       // Set the profile in the observable using the correct structure
-      profile$.assign!({
+      currentUserProfile$.assign!({
         [user.id]: newProfile as Database['public']['Tables']['profiles']['Row']
       });
       
       console.log('[ensureUserProfile] Profile assigned to observable');
       
-      const updatedProfile = profile$.get();
+      const updatedProfile = currentUserProfile$.get();
       const result = updatedProfile ? Object.values(updatedProfile)[0] : null;
       console.log('[ensureUserProfile] Final profile result:', result);
       
@@ -220,7 +220,7 @@ export const useSyncedData = () => {
       console.log('[createProfileForCurrentUser] Starting profile creation process', { profileData });
       
       // Try to get user from profile observable first
-      const existingProfile = profile$.get();
+      const existingProfile = currentUserProfile$.get();
       console.log('[createProfileForCurrentUser] Existing profile from observable:', { 
         hasExistingProfile: !!existingProfile,
         profileKeys: existingProfile ? Object.keys(existingProfile) : null
@@ -323,7 +323,7 @@ export const useSyncedData = () => {
       });
     
       // Set the profile in the observable using the correct structure
-      profile$.assign!({
+      currentUserProfile$.assign!({
         [user.id]: fullProfileData
       });
     
@@ -333,7 +333,7 @@ export const useSyncedData = () => {
       await forceSyncAll();
       await fetchUserData();
     
-      const updatedProfile = profile$.get();
+      const updatedProfile = currentUserProfile$.get();
       const result = updatedProfile ? Object.values(updatedProfile)[0] : null;
       console.log('[createProfileForCurrentUser] Profile creation complete', { 
         hasResult: !!result,

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { 
+import {
   View,
   Text,
   StyleSheet,
@@ -18,8 +18,9 @@ import { ImageWithFallback } from '@/components';
 import { ROUTES, APP_CONFIG } from '@/constants';
 import { getLeaderboardData } from '@/services/leaderboardService';
 import { forceSyncAll } from '@/utils/syncUtils';
-import {  Creature, Category, Sighting, Wishlist } from '@/types/database';
+import { Creature, Category, Sighting, Wishlist } from '@/types/database';
 import StatCard from './components/StatCard';
+import { allUsersProfiles$ } from '@/stores/syncedObservables';
 
 interface LeaderboardEntry {
   user_id: string;
@@ -30,66 +31,92 @@ interface LeaderboardEntry {
   isCurrentUser?: boolean;
 }
 
-
-
 export default function HomeScreen() {
   const [userStats, setUserStats] = React.useState<any | null>(null);
   const [leaderboard, setLeaderboard] = React.useState<LeaderboardEntry[]>([]);
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
-  
-  // Use the new specialized stores
-  const { creatures: allCreatures, categories: allCategories, currentUserSightings, allUsersSightings, profile: userProfile, allProfiles, achievements: allAchievements, userAchievements: allUserAchievements, wishlists: allWishlists, allUsersAchievements, fetchUserData } = useSyncedData();
 
-  const loadData = React.useCallback(async() => {
+  // Use the new specialized stores
+  const {
+    creatures: allCreatures,
+    categories: allCategories,
+    currentUserSightings,
+    allUsersSightings,
+    profile: userProfile,
+    allProfiles,
+    achievements: allAchievements,
+    userAchievements: allUserAchievements,
+    wishlists: allWishlists,
+    allUsersAchievements,
+    fetchUserData,
+  } = useSyncedData();
+
+  console.log('allProfiles: ', allUsersProfiles$.get());
+  console.log("useSyncedData allProfiles: ", allProfiles)
+
+  const loadData = React.useCallback(async () => {
     try {
       // Fetching user data
-      await fetchUserData( )
+      await fetchUserData();
 
       // Extract data from observables with proper typing
       const creaturesObj = allCreatures || {};
       const categoriesObj = allCategories || {};
       const sightingsObj = currentUserSightings || {};
-       
+
       const creaturesArray = Object.values(creaturesObj) as Creature[];
       const categoriesArray = Object.values(categoriesObj) as Category[];
       const sightingsArray = Object.values(sightingsObj) as Sighting[];
 
-      const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
+      const profileData = userProfile
+        ? Object.values(userProfile)[0]
+        : undefined;
       const allProfilesData = allProfiles || {};
 
-      
       // Create mock userData object to match the expected format
       const userData = {
         sightings: sightingsArray,
         wishlists: [], // Keep empty array for compatibility with statsService
-        profile: profileData
+        profile: profileData,
       };
-      
+
       // Create mock catalog object to match the expected format
       const catalog = {
         creatures: creaturesArray,
         categories: categoriesArray,
         achievements: allAchievements ? Object.values(allAchievements) : [],
       };
-      
+
       // Get user achievements
-      const userAchievementsArray = allUserAchievements ? Object.values(allUserAchievements) : [];
-      
+      const userAchievementsArray = allUserAchievements
+        ? Object.values(allUserAchievements)
+        : [];
+
       // Calculate user stats
       if (userData && catalog) {
-        const stats = calculateUserStats(userData, catalog, userAchievementsArray);
+        const stats = calculateUserStats(
+          userData,
+          catalog,
+          userAchievementsArray
+        );
         setUserStats(stats);
       }
-      
+
       // Populate leaderboard data using all users sightings
-      const allSightingsArray = allUsersSightings ? Object.values(allUsersSightings) : [];
-      const allUsersAchievementsArray = allUsersAchievements ? Object.values(allUsersAchievements) : [];
-      const achievementsArray = allAchievements ? Object.values(allAchievements) : [];
+      const allSightingsArray = allUsersSightings
+        ? Object.values(allUsersSightings)
+        : [];
+      const allUsersAchievementsArray = allUsersAchievements
+        ? Object.values(allUsersAchievements)
+        : [];
+      const achievementsArray = allAchievements
+        ? Object.values(allAchievements)
+        : [];
       const generatedLeaderboard = getLeaderboardData(
-        allProfilesData, 
-        allSightingsArray as Sighting[], 
+        allProfilesData,
+        allSightingsArray as Sighting[],
         creaturesArray,
         allUsersAchievementsArray,
         achievementsArray
@@ -100,7 +127,17 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, [allCreatures, allCategories, currentUserSightings, allUsersSightings, userProfile, allProfiles, allAchievements, allUserAchievements, allUsersAchievements]);
+  }, [
+    allCreatures,
+    allCategories,
+    currentUserSightings,
+    allUsersSightings,
+    userProfile,
+    allProfiles,
+    allAchievements,
+    allUserAchievements,
+    allUsersAchievements,
+  ]);
 
   React.useEffect(() => {
     loadData();
@@ -143,12 +180,17 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { 
-        paddingTop: insets.top, 
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right
-      }]}>
+      <View
+        style={[
+          styles.container,
+          {
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+          },
+        ]}
+      >
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={styles.title}>{APP_CONFIG.NAME}</Text>
@@ -161,7 +203,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         // Add this to test map gestures
         scrollEnabled={true}
@@ -178,20 +220,20 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <Text style={styles.welcomeText}>Welcome back,</Text>
           <Text style={styles.usernameText}>
-            {userProfile && Object.values(userProfile).length > 0 
-              ? Object.values(userProfile)[0]?.full_name || 'Diver' 
+            {userProfile && Object.values(userProfile).length > 0
+              ? Object.values(userProfile)[0]?.full_name || 'Diver'
               : 'Diver'}
           </Text>
         </View>
 
         <View style={styles.statsContainer}>
           {stats.map((stat, index) => (
-            <View 
-              key={index} 
+            <View
+              key={index}
               style={[
                 styles.statCardWrapper,
                 index === 0 && styles.firstCard,
-                index === stats.length - 1 && styles.lastCard
+                index === stats.length - 1 && styles.lastCard,
               ]}
             >
               <StatCard
@@ -209,26 +251,27 @@ export default function HomeScreen() {
               <Trophy size={20} color="#FF9500" />
               <Text style={styles.sectionTitle}>Top Explorers</Text>
             </View>
-            <TouchableOpacity onPress={() => router.push(ROUTES.MODAL.LEADERBOARD)}>
+            <TouchableOpacity
+              onPress={() => router.push(ROUTES.MODAL.LEADERBOARD)}
+            >
               <Text style={styles.seeAllButton}>See All</Text>
             </TouchableOpacity>
           </View>
 
           {leaderboard.map((entry, index) => (
-            <View 
-              key={entry.user_id} 
+            <View
+              key={entry.user_id}
               style={[
                 styles.leaderboardEntry,
                 entry.isCurrentUser && styles.currentUserEntry,
-                index === leaderboard.length - 1 && { borderBottomWidth: 0 }
+                index === leaderboard.length - 1 && { borderBottomWidth: 0 },
               ]}
             >
               <View style={styles.leaderboardLeft}>
                 <View style={styles.rankContainer}>
-                  <Text style={[
-                    styles.rankText,
-                    index < 3 && styles.rankTextTop
-                  ]}>
+                  <Text
+                    style={[styles.rankText, index < 3 && styles.rankTextTop]}
+                  >
                     {index + 1}
                   </Text>
                 </View>
@@ -242,7 +285,9 @@ export default function HomeScreen() {
                 <View>
                   <Text style={styles.leaderboardName}>
                     {entry.name}
-                    {entry.isCurrentUser && <Text style={styles.youText}> </Text>}
+                    {entry.isCurrentUser && (
+                      <Text style={styles.youText}> </Text>
+                    )}
                   </Text>
                   <Text style={styles.leaderboardSubtext}>
                     {entry.creatures} creatures discovered
@@ -270,7 +315,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-
   },
   scrollView: {
     flex: 1,

@@ -185,35 +185,39 @@ export const wishlists$ = observable(customSynced({
 }));
 
 // Profile observable - user-specific
-export const profile$ = observable(customSynced({
+export const currentUserProfile$ = observable(customSynced({
   supabase,
   collection: 'profiles',
   filter: (select: any) => {
     const userId = currentUserID$.get();
-    console.log('[profile$ filter] Filtering profiles for user:', userId);
+    console.log('[currentUserProfile$ filter] Filtering profiles for user:', userId);
     if (!userId) {
-      console.log('[profile$ filter] No user ID, returning no auth filter');
+      console.log('[currentUserProfile$ filter] No user ID, returning no auth filter');
       return select.eq('id', 'no auth'); 
     }
-    console.log('[profile$ filter] Returning user ID filter for:', userId);
+    console.log('[currentUserProfile$ filter] Returning user ID filter for:', userId);
     const result = select.eq('id', userId);
-    console.log('[profile$ filter] Filter result:', result);
+    console.log('[currentUserProfile$ filter] Filter result:', result);
     return result;
   },
   actions: ['read', 'update'],
-  persist: { name: 'profile', retrySync: true },
+  persist: { name: 'currentUserProfile', retrySync: true },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all, filtering will be done by Supabase
 }))
 
-export const profiles$ = observable(customSynced({
+export const allUsersProfiles$ = observable(customSynced({
   supabase,
   collection: 'profiles',
   actions: ['read'],
-  persist: { name: 'profiles' },
+  persist: { name: 'allUsersProfiles' },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
+  realtime: true,
+  onError: (error: any) => {
+    console.error('[allUsersProfiles$ onError] Error syncing profiles:', error);
+  }
 }));
 
 // Utility functions for working with the observables
@@ -229,7 +233,8 @@ export const getDiveSites = () => diveSites$.get();
 export const getCurrentUserSightings = () => currentUserSightings$.get();
 export const getAllUsersSightings = () => allUsersSightings$.get();
 export const getWishlists = () => wishlists$.get();
-export const getProfile = () => profile$.get();
+export const getCurrentUserProfile = () => currentUserProfile$.get();
+export const getAllUsersProfiles = () => allUsersProfiles$.get();
 
 // Utility functions for creating new records
 export const createSighting = async (sightingData: Omit<Sighting, 'id' | 'created_at' | 'user_id'>) => {
@@ -355,7 +360,7 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
   console.log('[updateUserProfile] Starting profile update for user:', { userId, updates });
   
   // Get the current profile data
-  const currentProfile = profile$.get();
+  const currentProfile = currentUserProfile$.get();
   
   // Get the existing profile object for this user, or create a default one
   const existingUserProfile = currentProfile?.[userId];
@@ -387,12 +392,12 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
   });
   
   // Update the profile observable with the new data
-  profile$.assign!({
+  currentUserProfile$.assign!({
     [userId]: updatedProfile
   });
   
   console.log('[updateUserProfile] Profile update completed successfully', { 
-    result: profile$.get()?.[userId],
+    result: currentUserProfile$.get()?.[userId],
     timestamp: new Date().toISOString()
   });
 };

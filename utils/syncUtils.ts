@@ -6,7 +6,8 @@ import {
   currentUserSightings$, 
   allUsersSightings$,
   wishlists$, 
-  profile$,
+  currentUserProfile$,
+  allUsersProfiles$,
   setCurrentUserID,
   getCategories,
   getCreatures,
@@ -14,8 +15,8 @@ import {
   getCurrentUserSightings,
   getAllUsersSightings,
   getWishlists,
-  getProfile,
-  profiles$, // Import profiles$ observable
+  getCurrentUserProfile,
+  getAllUsersProfiles,
   achievements$, // Import achievements$ observable
   userAchievements$, // Import userAchievements$ observable
 } from '../stores/syncedObservables';
@@ -65,7 +66,7 @@ export const clearUserSync = () => {
     console.log('[clearUserSync] Clearing wishlists');
     wishlists$.set({});
     console.log('[clearUserSync] Clearing profile');
-    profile$.set({} as any);
+    currentUserProfile$.set({} as any);
     console.log('[clearUserSync] Clearing user achievements');
     userAchievements$.set({}); // Clear user achievements
     
@@ -117,10 +118,10 @@ export const forceSyncAll = async () => {
     wishlists$.get();
     
     console.log('[forceSyncAll] Syncing profile');
-    profile$.get();
+    currentUserProfile$.get();
     
     console.log('[forceSyncAll] Syncing profiles');
-    profiles$.get(); // Force sync profiles observable
+    allUsersProfiles$.get(); // Force sync profiles observable
     
     console.log('[forceSyncAll] Syncing achievements');
     achievements$.get(); // Force sync achievements observable
@@ -144,8 +145,8 @@ export const onSyncPress = async () => {
     // customSynced(currentUserSightings$);
     // customSynced(allUsersSightings$);
     // customSynced(wishlists$);
-    // customSynced(profile$);
-    // customSynced(profiles$);
+    // customSynced(currentUserProfile$);
+    // customSynced(allUsersProfiles$);
     // customSynced(achievements$);
 
   } catch (error) {
@@ -163,8 +164,8 @@ export const getSyncStatus = () => {
     currentUserSightingsLoaded: getCurrentUserSightings() !== undefined,
     allUsersSightingsLoaded: getAllUsersSightings() !== undefined,
     wishlistsLoaded: getWishlists() !== undefined,
-    profileLoaded: getProfile() !== undefined,
-    profilesLoaded: profiles$.get() !== undefined, // Include profiles loading status
+    profileLoaded: getCurrentUserProfile() !== undefined,
+    profilesLoaded: getAllUsersProfiles() !== undefined, // Include profiles loading status
     achievementsLoaded: achievements$.get() !== undefined, // Include achievements loading status
     userAchievementsLoaded: userAchievements$.get() !== undefined, // Include user achievements loading status
   };
