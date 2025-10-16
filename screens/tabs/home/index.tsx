@@ -53,8 +53,8 @@ export default function HomeScreen() {
     fetchUserData,
   } = useSyncedData();
 
-  console.log('allProfiles: ', allUsersProfiles$.get());
-  console.log("useSyncedData allProfiles: ", allProfiles)
+  // Log allProfiles data
+  // Log useSyncedData allProfiles
 
   const loadData = React.useCallback(async () => {
     try {

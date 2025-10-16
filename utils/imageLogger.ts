@@ -105,20 +105,7 @@ class ImageLogger {
     const { timestamp, level, category, message, data, error } = logEntry;
     const formattedMessage = `[${timestamp}] [${level.toUpperCase()}] [${category}] ${message}`;
 
-    switch (level) {
-      case 'debug':
-        console.debug(formattedMessage, data);
-        break;
-      case 'info':
-        console.info(formattedMessage, data);
-        break;
-      case 'warn':
-        console.warn(formattedMessage, data);
-        break;
-      case 'error':
-        console.error(formattedMessage, data, error);
-        break;
-    }
+    // Log output disabled
   }
 
   /**

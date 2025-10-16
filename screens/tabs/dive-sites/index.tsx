@@ -43,24 +43,24 @@ const AddDiveSiteScreen = () => {
   // Update coordinates ref when latitude or longitude changes
   useEffect(() => {
     coordinatesRef.current = { latitude, longitude };
-    console.log('[DEBUG] AddDiveSiteScreen: coordinatesRef updated to', coordinatesRef.current);
+    // AddDiveSiteScreen: coordinatesRef updated
   }, [latitude, longitude]);
   
   // Debug state changes
   useEffect(() => {
-    console.log('[DEBUG] AddDiveSiteScreen: diveSiteName changed to', diveSiteName);
+    // AddDiveSiteScreen: diveSiteName changed
   }, [diveSiteName]);
   
   useEffect(() => {
-    console.log('[DEBUG] AddDiveSiteScreen: latitude changed to', latitude);
+    // AddDiveSiteScreen: latitude changed
   }, [latitude]);
   
   useEffect(() => {
-    console.log('[DEBUG] AddDiveSiteScreen: longitude changed to', longitude);
+    // AddDiveSiteScreen: longitude changed
   }, [longitude]);
   
   useEffect(() => {
-    console.log('[DEBUG] AddDiveSiteScreen: selectedCoordinate changed to', selectedCoordinate);
+    // AddDiveSiteScreen: selectedCoordinate changed
   }, [selectedCoordinate]);
   
   const { diveSites, createDiveSite } = useSyncedData();
@@ -102,69 +102,69 @@ const AddDiveSiteScreen = () => {
    * Handle suggestion selection from Google Places API
    */
   const handleSuggestionSelect = useCallback(async (suggestion: any) => {
-    console.log('[DEBUG] AddDiveSiteScreen: handleSuggestionSelect called with', suggestion);
+    // AddDiveSiteScreen: handleSuggestionSelect called
     try {
       // Get API key from environment
       const apiKey = Constants.expoConfig?.extra?.GOOGLE_MAPS_API_KEY;
       
       if (!apiKey) {
-        console.warn('[DEBUG] AddDiveSiteScreen: Google Maps API key not found');
+        // AddDiveSiteScreen: Google Maps API key not found
         Alert.alert('Error', 'Google Maps API key not configured.');
         return;
       }
 
-      console.log('[DEBUG] AddDiveSiteScreen: API key found, proceeding with place details fetch');
+      // AddDiveSiteScreen: API key found
       
       // Fetch place details to get coordinates
       const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${suggestion.place_id}&key=${apiKey}`;
-      console.log('[DEBUG] AddDiveSiteScreen: Fetching place details from', detailsUrl);
+      // AddDiveSiteScreen: Fetching place details
       
       const response = await fetch(detailsUrl);
       const data = await response.json();
-      console.log('[DEBUG] AddDiveSiteScreen: Place details response received', data);
+      // AddDiveSiteScreen: Place details response received
       
       if (data.result && data.result.geometry && data.result.geometry.location) {
         const { lat, lng } = data.result.geometry.location;
-        console.log('[DEBUG] AddDiveSiteScreen: Coordinates found in response', { lat, lng });
+        // AddDiveSiteScreen: Coordinates found in response
         
         // Ensure coordinates are valid numbers
         const latitude = parseFloat(lat.toString());
         const longitude = parseFloat(lng.toString());
         
-        console.log('[DEBUG] AddDiveSiteScreen: Parsed coordinates', { latitude, longitude });
+        // AddDiveSiteScreen: Parsed coordinates
         
         if (isNaN(latitude) || isNaN(longitude)) {
-          console.error('[DEBUG] AddDiveSiteScreen: Invalid coordinates after parsing', { lat, lng });
+          // AddDiveSiteScreen: Invalid coordinates after parsing
           Alert.alert('Error', 'Invalid coordinates received. Please try another location.');
           return;
         }
         
         // Set the dive site name first
-        console.log('[DEBUG] AddDiveSiteScreen: Setting dive site name to', suggestion.description);
+        // AddDiveSiteScreen: Setting dive site name
         setDiveSiteName(suggestion.description);
-        console.log('[DEBUG] AddDiveSiteScreen: Dive site name set successfully');
+        // AddDiveSiteScreen: Dive site name set successfully
         
         // Then set the coordinates
-        console.log('[DEBUG] AddDiveSiteScreen: Setting latitude to', latitude.toString());
+        // AddDiveSiteScreen: Setting latitude
         setLatitude(latitude.toString());
-        console.log('[DEBUG] AddDiveSiteScreen: Latitude set successfully');
+        // AddDiveSiteScreen: Latitude set successfully
         
-        console.log('[DEBUG] AddDiveSiteScreen: Setting longitude to', longitude.toString());
+        // AddDiveSiteScreen: Setting longitude
         setLongitude(longitude.toString());
-        console.log('[DEBUG] AddDiveSiteScreen: Longitude set successfully');
+        // AddDiveSiteScreen: Longitude set successfully
         
         // Update the coordinates ref
         coordinatesRef.current = { 
           latitude: latitude.toString(), 
           longitude: longitude.toString() 
         };
-        console.log('[DEBUG] AddDiveSiteScreen: coordinatesRef updated to', coordinatesRef.current);
+        // AddDiveSiteScreen: coordinatesRef updated
         
         // Set the selected coordinate to show the marker on the map
         const coordinate = { latitude, longitude };
-        console.log('[DEBUG] AddDiveSiteScreen: Setting selected coordinate to', coordinate);
+        // AddDiveSiteScreen: Setting selected coordinate
         setSelectedCoordinate(coordinate);
-        console.log('[DEBUG] AddDiveSiteScreen: Selected coordinate set successfully');
+        // AddDiveSiteScreen: Selected coordinate set successfully
         
         // Update initial region to focus on the selected location
         const newRegion = {
@@ -173,27 +173,27 @@ const AddDiveSiteScreen = () => {
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         };
-        console.log('[DEBUG] AddDiveSiteScreen: Setting initial region to', newRegion);
+        // AddDiveSiteScreen: Setting initial region
         setInitialRegion(newRegion);
-        console.log('[DEBUG] AddDiveSiteScreen: Initial region set successfully');
+        // AddDiveSiteScreen: Initial region set successfully
         
         // Show confirmation
-        console.log('[DEBUG] AddDiveSiteScreen: Showing success alert');
+        // AddDiveSiteScreen: Showing success alert
         Alert.alert(
           'Location Found', 
           `Coordinates for "${suggestion.description}" have been set`,
           [{ text: 'OK' }]
         );
-        console.log('[DEBUG] AddDiveSiteScreen: Success alert shown');
+        // AddDiveSiteScreen: Success alert shown
       } else {
-        console.warn('[DEBUG] AddDiveSiteScreen: No geometry data found in place details response', data);
+        // AddDiveSiteScreen: No geometry data found in place details response
         Alert.alert('Error', 'Could not fetch location details. Please try another location.');
       }
     } catch (err) {
-      console.error('[DEBUG] AddDiveSiteScreen: Error fetching place details', err);
+      // AddDiveSiteScreen: Error fetching place details
       Alert.alert('Error', 'Could not fetch location details. Please enter coordinates manually.');
     }
-    console.log('[DEBUG] AddDiveSiteScreen: handleSuggestionSelect completed');
+    // AddDiveSiteScreen: handleSuggestionSelect completed
   }, []);
 
   /**
@@ -219,7 +219,7 @@ const AddDiveSiteScreen = () => {
         latitude: latitude.toString(), 
         longitude: longitude.toString() 
       };
-      console.log('[DEBUG] getCurrentLocation: coordinatesRef updated to', coordinatesRef.current);
+      // getCurrentLocation: coordinatesRef updated
       
       // Update initial region to focus on current location
       setInitialRegion({
@@ -235,7 +235,7 @@ const AddDiveSiteScreen = () => {
         [{ text: 'OK' }]
       );
     } catch (error) {
-      console.error('Error getting current location:', error);
+      // Error getting current location
       Alert.alert('Error', 'Could not get current location. Please try again.');
     }
   };
@@ -244,7 +244,7 @@ const AddDiveSiteScreen = () => {
    * Handle coordinate selection from map tap
    */
   const handleCoordinateSelect = useCallback((event: any) => {
-    console.log('[DEBUG] handleCoordinateSelect: Called with event', event);
+    // handleCoordinateSelect: Called with event
     if (isSelectingCoordinates) {
       // Handle different event structures from Expo Maps
       let coordinate;
@@ -259,13 +259,13 @@ const AddDiveSiteScreen = () => {
         coordinate = event.coordinates;
       } else {
         // Fallback if we can't find coordinates
-        console.warn('Could not extract coordinates from event:', event);
+        // Could not extract coordinates from event
         return;
       }
       
-      console.log('[DEBUG] handleCoordinateSelect: Setting latitude to', coordinate.latitude.toString());
+      // handleCoordinateSelect: Setting latitude
       setLatitude(coordinate.latitude.toString());
-      console.log('[DEBUG] handleCoordinateSelect: Setting longitude to', coordinate.longitude.toString());
+      // handleCoordinateSelect: Setting longitude
       setLongitude(coordinate.longitude.toString());
       
       // Update the coordinates ref
@@ -273,7 +273,7 @@ const AddDiveSiteScreen = () => {
         latitude: coordinate.latitude.toString(), 
         longitude: coordinate.longitude.toString() 
       };
-      console.log('[DEBUG] handleCoordinateSelect: coordinatesRef updated to', coordinatesRef.current);
+      // handleCoordinateSelect: coordinatesRef updated
       
       // Show confirmation
       Alert.alert(
@@ -324,16 +324,16 @@ const AddDiveSiteScreen = () => {
    * Handle form submission
    */
   const handleSubmit = useCallback(async () => {
-    console.log('[DEBUG] handleSubmit: Called');
-    console.log('[DEBUG] handleSubmit: Current state values', { diveSiteName, latitude, longitude });
-    console.log('[DEBUG] handleSubmit: Current ref values', coordinatesRef.current);
+    // handleSubmit: Called
+    // handleSubmit: Current state values
+    // handleSubmit: Current ref values
     
     // Get the latest coordinate values from the ref
     const currentLatitude = coordinatesRef.current.latitude;
     const currentLongitude = coordinatesRef.current.longitude;
     const currentDiveSiteName = diveSiteName;
     
-    console.log('[DEBUG] handleSubmit: Using values', { currentDiveSiteName, currentLatitude, currentLongitude });
+    // handleSubmit: Using values
     
     // Create a validation function that uses current values
     const validateCurrentForm = () => {
@@ -371,7 +371,7 @@ const AddDiveSiteScreen = () => {
     const { isValid, errors } = validateCurrentForm();
     
     if (!isValid) {
-      console.log('[DEBUG] handleSubmit: Validation failed', errors);
+      // handleSubmit: Validation failed
       Alert.alert('Validation Error', errors.join('\n'));
       return;
     }
@@ -380,7 +380,7 @@ const AddDiveSiteScreen = () => {
       const lat = parseFloat(currentLatitude);
       const lng = parseFloat(currentLongitude);
       
-      console.log('[DEBUG] handleSubmit: Parsed coordinates', { lat, lng });
+      // handleSubmit: Parsed coordinates
       
       // Create a new dive site using the new Legend-State implementation
       createDiveSite({
@@ -398,14 +398,14 @@ const AddDiveSiteScreen = () => {
         [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (error) {
-      console.error('Error creating dive site:', error);
+      // Error creating dive site
       Alert.alert('Error', 'Failed to add dive site. Please try again.');
     }
   }, [diveSiteName, createDiveSite]);
 
   // Handle coordinate selection and update the draggable marker
   const handleMapPress = (event: any) => {
-    console.log('[DEBUG] handleMapPress: Called with event', event);
+    // handleMapPress: Called with event
     // Handle different event structures from Expo Maps
     let coordinate;
     if (event && event.nativeEvent && event.nativeEvent.coordinate) {
@@ -419,13 +419,13 @@ const AddDiveSiteScreen = () => {
       coordinate = event.coordinates;
     } else {
       // Fallback if we can't find coordinates
-      console.warn('Could not extract coordinates from event:', event);
+      // Could not extract coordinates from event
       return;
     }
     
-    console.log('[DEBUG] handleMapPress: Setting latitude to', coordinate.latitude.toString());
+    // handleMapPress: Setting latitude
     setLatitude(coordinate.latitude.toString());
-    console.log('[DEBUG] handleMapPress: Setting longitude to', coordinate.longitude.toString());
+    // handleMapPress: Setting longitude
     setLongitude(coordinate.longitude.toString());
     
     // Update the coordinates ref
@@ -433,7 +433,7 @@ const AddDiveSiteScreen = () => {
       latitude: coordinate.latitude.toString(), 
       longitude: coordinate.longitude.toString() 
     };
-    console.log('[DEBUG] handleMapPress: coordinatesRef updated to', coordinatesRef.current);
+    // handleMapPress: coordinatesRef updated
     
     // Call handleCoordinateSelect with the proper structure
     const formattedEvent = {
@@ -444,14 +444,14 @@ const AddDiveSiteScreen = () => {
     handleCoordinateSelect(formattedEvent);
     
     if (isSelectingCoordinates) {
-      console.log('[DEBUG] handleMapPress: Setting selectedCoordinate to', coordinate);
+      // handleMapPress: Setting selectedCoordinate
       setSelectedCoordinate(coordinate);
     }
   };
 
   // Handle marker drag end event
   const handleMarkerDragEnd = (event: any) => {
-    console.log('[DEBUG] handleMarkerDragEnd: Called with event', event);
+    // handleMarkerDragEnd: Called with event
     // Handle different event structures from Expo Maps
     let coordinate;
     if (event && event.nativeEvent && event.nativeEvent.coordinate) {
@@ -465,15 +465,15 @@ const AddDiveSiteScreen = () => {
       coordinate = event.coordinates;
     } else {
       // Fallback if we can't find coordinates
-      console.warn('Could not extract coordinates from event:', event);
+      // Could not extract coordinates from event
       return;
     }
     
-    console.log('[DEBUG] handleMarkerDragEnd: Setting latitude to', coordinate.latitude.toString());
+    // handleMarkerDragEnd: Setting latitude
     setLatitude(coordinate.latitude.toString());
-    console.log('[DEBUG] handleMarkerDragEnd: Setting longitude to', coordinate.longitude.toString());
+    // handleMarkerDragEnd: Setting longitude
     setLongitude(coordinate.longitude.toString());
-    console.log('[DEBUG] handleMarkerDragEnd: Setting selectedCoordinate to', coordinate);
+    // handleMarkerDragEnd: Setting selectedCoordinate
     setSelectedCoordinate(coordinate);
     
     // Update the coordinates ref
@@ -481,7 +481,7 @@ const AddDiveSiteScreen = () => {
       latitude: coordinate.latitude.toString(), 
       longitude: coordinate.longitude.toString() 
     };
-    console.log('[DEBUG] handleMarkerDragEnd: coordinatesRef updated to', coordinatesRef.current);
+    // handleMarkerDragEnd: coordinatesRef updated
     
     // Show confirmation that the marker was moved
     Alert.alert(
@@ -530,7 +530,7 @@ const AddDiveSiteScreen = () => {
               label="Dive Site Name"
               value={diveSiteName}
               onChangeText={(text) => {
-                console.log('[DEBUG] AddDiveSiteScreen: Autocomplete text changed to', text);
+                // AddDiveSiteScreen: Autocomplete text changed
                 setDiveSiteName(text);
               }}
               placeholder="Search for dive site location"

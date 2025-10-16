@@ -67,7 +67,7 @@ export const useImageSync = () => {
       // Update queue status
       updateQueueStatus();
       
-      console.log('Image synchronization started');
+      // Image synchronization started
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to start synchronization';
       setSyncError(errorMessage);
@@ -99,11 +99,9 @@ export const useImageSync = () => {
         .map(([imageId, _]) => imageId);
       
       if (failedImageIds.length === 0) {
-        console.log('No failed uploads to retry');
+        // No failed uploads to retry
         return;
       }
-      
-      console.log('Retrying failed uploads:', failedImageIds.length);
       
       // Retry failed uploads
       await batchUploadImages(failedImageIds);
@@ -111,7 +109,7 @@ export const useImageSync = () => {
       // Update queue status
       updateQueueStatus();
       
-      console.log('Failed uploads retried');
+      // Failed uploads retried
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to retry uploads';
       setSyncError(errorMessage);
@@ -171,7 +169,6 @@ export const useImageSync = () => {
       
       // If we just came online, start sync process
       if (online) {
-        console.log('Network connectivity restored, starting sync process');
         startSync();
       }
     });
@@ -188,7 +185,6 @@ export const useImageSync = () => {
     // Listen for app state changes (foreground/background)
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
-        console.log('App came to foreground, checking for pending uploads');
         startSync();
       }
     });

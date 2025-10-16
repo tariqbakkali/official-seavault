@@ -73,7 +73,7 @@ export class DebugLogger {
     if (!this.isDebugEnabled) return;
     
     const timestamp = new Date().toISOString();
-    console.error(`[DEBUG][ERROR][${timestamp}][${context}]`, error);
+    // Debug error logging disabled
   }
 
   /**

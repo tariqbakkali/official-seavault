@@ -53,28 +53,28 @@ export const initializeUserSync = async (userId: string) => {
 // Clear user-specific data when logging out
 export const clearUserSync = () => {
   try {
-    console.log('[clearUserSync] Starting user sync cleanup');
+    // Starting user sync cleanup
     
     // Clear the current user ID
-    console.log('[clearUserSync] Clearing current user ID');
+    // Clearing current user ID
     setCurrentUserID(null);
     
     // Clear user-specific observables
-    console.log('[clearUserSync] Clearing user-specific observables');
-    console.log('[clearUserSync] Clearing current user sightings');
+    // Clearing user-specific observables
+    // Clearing current user sightings
     currentUserSightings$.set({});
-    console.log('[clearUserSync] Clearing wishlists');
+    // Clearing wishlists
     wishlists$.set({});
-    console.log('[clearUserSync] Clearing profile');
+    // Clearing profile
     currentUserProfile$.set({} as any);
-    console.log('[clearUserSync] Clearing user achievements');
+    // Clearing user achievements
     userAchievements$.set({}); // Clear user achievements
     
     // Clear user-specific image data
-    console.log('[clearUserSync] Clearing images');
+    // Clearing images
     images$.set({});
     
-    console.log('[clearUserSync] User sync cleanup completed');
+    // User sync cleanup completed
   } catch (error) {
     console.error('[clearUserSync] Error clearing user sync:', error);
   }
@@ -96,40 +96,40 @@ export const waitForDataLoad = async () => {
 // Force sync all data - removing the refresh calls as they may not exist
 export const forceSyncAll = async () => {
   try {
-    console.log('[forceSyncAll] Starting force sync of all observables');
+    // Starting force sync of all observables
     
     // Instead of refresh, we can re-get the data to trigger sync
-    console.log('[forceSyncAll] Syncing categories');
+    // Syncing categories
     categories$.get();
     
-    console.log('[forceSyncAll] Syncing creatures');
+    // Syncing creatures
     creatures$.get();
     
-    console.log('[forceSyncAll] Syncing dive sites');
+    // Syncing dive sites
     diveSites$.get();
     
-    console.log('[forceSyncAll] Syncing current user sightings');
+    // Syncing current user sightings
     currentUserSightings$.get();
     
-    console.log('[forceSyncAll] Syncing all users sightings');
+    // Syncing all users sightings
     allUsersSightings$.get();
     
-    console.log('[forceSyncAll] Syncing wishlists');
+    // Syncing wishlists
     wishlists$.get();
     
-    console.log('[forceSyncAll] Syncing profile');
+    // Syncing profile
     currentUserProfile$.get();
     
-    console.log('[forceSyncAll] Syncing profiles');
+    // Syncing profiles
     allUsersProfiles$.get(); // Force sync profiles observable
     
-    console.log('[forceSyncAll] Syncing achievements');
+    // Syncing achievements
     achievements$.get(); // Force sync achievements observable
     
-    console.log('[forceSyncAll] Syncing user achievements');
+    // Syncing user achievements
     userAchievements$.get(); // Force sync user achievements observable
 
-    console.log('[forceSyncAll] Completed force sync of all observables');
+    // Completed force sync of all observables
   } catch (error) {
     console.error('[forceSyncAll] Error during forced sync:', error);
   }

@@ -35,7 +35,7 @@ export const useProfile = () => {
         setAvatarUploadError(false);
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      // Error loading profile
       showAlert('Error', 'Failed to load profile data');
     } finally {
       setLoading(false);
@@ -100,7 +100,7 @@ export const useProfile = () => {
         setTimeout(() => setUploadingAvatar(false), 1000);
       }
     } catch (error) {
-      console.error('Image picker error:', error);
+      // Image picker error
       showAlert('Error', 'Failed to pick image');
       setUploadingAvatar(false);
     }

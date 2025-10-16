@@ -31,30 +31,20 @@ export default function RootLayout() {
 
     const checkInitialSessionAndSync = async () => {
       try {
-        console.log('[RootLayout] Checking initial session and syncing data');
-        
         // Initialize the app using the app initializer
         await initializeApp();
         
         const { data: { session } } = await supabase.auth.getSession();
         const userId = session?.user?.id || null;
         
-        console.log('[RootLayout] Initial session check:', { 
-          hasSession: !!session, 
-          userId, 
-          isAuthenticated: !!userId 
-        });
-        
         // Initialize user session if user is logged in
         if (userId) {
-          console.log('[RootLayout] Initializing user session for:', userId);
           await initializeUserSession(userId);
         }
         
         setCurrentUserID(userId);
         setCurrentUserIDState(userId);
         
-        console.log('[RootLayout] Forcing initial sync');
         await forceSyncAll(); // Ensure all data is synchronized after session check
       } catch (error) {
         console.error('Error checking initial session or syncing data:', error);
@@ -69,34 +59,15 @@ export default function RootLayout() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const userId = session?.user?.id || null;
       
-      console.log('[RootLayout] Auth state changed:', { 
-        event: _event, 
-        userId, 
-        isAuthenticated: !!userId,
-        hasSession: !!session,
-        sessionUser: session?.user ? {
-          id: session.user.id,
-          email: session.user.email,
-        } : null,
-        sessionExpiresAt: session?.expires_at,
-      });
-      
       if (userId) {
-        console.log('[RootLayout] Initializing user session for:', userId);
         await initializeUserSession(userId);
-        console.log('[RootLayout] User session initialized for:', userId);
       } else {
-        console.log('[RootLayout] Cleaning up user session');
         await cleanupUserSession();
-        console.log('[RootLayout] User session cleaned up');
       }
       
-      console.log('[RootLayout] Forcing sync after auth state change');
       await forceSyncAll();
-      console.log('[RootLayout] Sync completed after auth state change');
       setCurrentUserID(userId);
       setCurrentUserIDState(userId);
-      console.log('[RootLayout] Current user ID state updated to:', userId);
     });
 
     // Cleanup subscription

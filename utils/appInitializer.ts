@@ -30,7 +30,7 @@ export const clearAsyncStorageOnLoad = async () => {
   try {
     // Clear all AsyncStorage data
     await AsyncStorage.clear();
-    console.log('AsyncStorage cleared successfully on app load');
+    // AsyncStorage cleared successfully on app load
   } catch (error) {
     console.error('Error clearing AsyncStorage on app load:', error);
   }

@@ -9,7 +9,7 @@ let ImageManipulator: any;
 try {
   ImageManipulator = require('expo-image-manipulator');
 } catch (error) {
-  console.warn('expo-image-manipulator not available, image compression will be disabled', error);
+  // expo-image-manipulator not available, image compression will be disabled
   ImageManipulator = null;
 }
 
@@ -24,7 +24,7 @@ export const ensureImageDirectory = async (): Promise<void> => {
     const dirInfo = await FileSystem.getInfoAsync(IMAGE_BASE_DIR);
     if (!dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(IMAGE_BASE_DIR, { intermediates: true });
-      console.log('Image directory created:', IMAGE_BASE_DIR);
+      // Image directory created
     }
   } catch (error) {
     debugLogger.logError('Error ensuring image directory:', error);
@@ -41,7 +41,7 @@ export const createDiveSiteDirectory = async (diveSiteId: string): Promise<strin
     const dirInfo = await FileSystem.getInfoAsync(diveSiteDir);
     if (!dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(diveSiteDir, { intermediates: true });
-      console.log('Dive site directory created:', diveSiteDir);
+      // Dive site directory created
     }
     return diveSiteDir;
   } catch (error) {
@@ -82,7 +82,7 @@ export const saveImageLocally = async (
     const fileInfo = await FileSystem.getInfoAsync(localUri);
     const size = fileInfo.exists && 'size' in fileInfo ? fileInfo.size : 0;
     
-    console.log('Image saved locally:', { localUri, fileName, size });
+    // Image saved locally
     return { localUri, fileName, size: size || 0 };
   } catch (error) {
     debugLogger.logError('Error saving image locally:', error);
@@ -97,7 +97,7 @@ export const generateThumbnail = async (uri: string): Promise<string> => {
   try {
     // Check if ImageManipulator is available
     if (!ImageManipulator) {
-      console.warn('Image manipulation not available, returning original URI');
+      // Image manipulation not available, returning original URI
       return uri;
     }
     
@@ -110,7 +110,7 @@ export const generateThumbnail = async (uri: string): Promise<string> => {
       }
     );
     
-    console.log('Thumbnail generated:', result.uri);
+    // Thumbnail generated
     return result.uri;
   } catch (error) {
     debugLogger.logError('Error generating thumbnail:', error);
@@ -126,7 +126,7 @@ export const compressImage = async (
   try {
     // Check if ImageManipulator is available
     if (!ImageManipulator) {
-      console.warn('Image manipulation not available, returning original image');
+      // Image manipulation not available, returning original image
       const fileInfo = await FileSystem.getInfoAsync(uri);
       const size = fileInfo.exists && 'size' in fileInfo ? fileInfo.size : 0;
       return { uri, size: size || 0 };
@@ -145,7 +145,7 @@ export const compressImage = async (
     const fileInfo = await FileSystem.getInfoAsync(result.uri);
     const size = fileInfo.exists && 'size' in fileInfo ? fileInfo.size : 0;
     
-    console.log('Image compressed:', { uri: result.uri, size });
+    // Image compressed
     return { uri: result.uri, size };
   } catch (error) {
     debugLogger.logError('Error compressing image:', error);
@@ -164,7 +164,7 @@ export const deleteLocalImage = async (localUri: string): Promise<void> => {
     const fileInfo = await FileSystem.getInfoAsync(localUri);
     if (fileInfo.exists) {
       await FileSystem.deleteAsync(localUri);
-      console.log('Local image deleted:', localUri);
+      // Local image deleted
     }
   } catch (error) {
     debugLogger.logError('Error deleting local image:', error);
@@ -190,7 +190,7 @@ export const getLocalImagesForDiveSite = async (diveSiteId: string): Promise<str
     );
     
     const imageUris = imageFiles.map(file => `${diveSiteDir}${file}`);
-    console.log('Local images for dive site:', { diveSiteId, count: imageUris.length });
+    // Local images for dive site
     return imageUris;
   } catch (error) {
     debugLogger.logError('Error getting local images for dive site:', error);
@@ -225,7 +225,7 @@ export const clearOldImages = async (maxAgeDays: number = 30): Promise<void> => 
             const modificationTime = fileInfo.modificationTime * 1000; // Convert to milliseconds
             if (modificationTime < cutoffTime) {
               await FileSystem.deleteAsync(filePath);
-              console.log('Old image cleared:', filePath);
+              // Old image cleared
             }
           }
         }

@@ -24,7 +24,7 @@ export const addToUploadQueue = (imageId: string): void => {
   // Check if image is already in queue
   const existingItem = uploadQueue.find(item => item.imageId === imageId);
   if (existingItem) {
-    console.log('Image already in upload queue:', imageId);
+    // Image already in upload queue
     return;
   }
   
@@ -35,7 +35,7 @@ export const addToUploadQueue = (imageId: string): void => {
     attemptCount: 0,
   });
   
-  console.log('Image added to upload queue:', imageId);
+  // Image added to upload queue
   
   // Start syncing if not already syncing
   if (!isSyncing) {
@@ -48,7 +48,7 @@ export const addToUploadQueue = (imageId: string): void => {
  */
 export const removeFromUploadQueue = (imageId: string): void => {
   uploadQueue = uploadQueue.filter(item => item.imageId !== imageId);
-  console.log('Image removed from upload queue:', imageId);
+  // Image removed from upload queue
 };
 
 /**
@@ -60,7 +60,7 @@ export const startSyncProcess = async (): Promise<void> => {
   }
   
   isSyncing = true;
-  console.log('Starting image sync process');
+  // Starting image sync process
   
   try {
     // Process the queue
@@ -69,7 +69,7 @@ export const startSyncProcess = async (): Promise<void> => {
     debugLogger.logError('Error in sync process:', error);
   } finally {
     isSyncing = false;
-    console.log('Image sync process completed');
+    // Image sync process completed
   }
 };
 
@@ -81,16 +81,16 @@ export const processUploadQueue = async (): Promise<void> => {
   const pendingItems = uploadQueue.filter(item => item.status === 'pending');
   
   if (pendingItems.length === 0) {
-    console.log('No pending items in upload queue');
+    // No pending items in upload queue
     return;
   }
   
-  console.log('Processing upload queue:', pendingItems.length, 'items');
+  // Processing upload queue
   
   // Check network connectivity
   const isOnline = await isDeviceOnline();
   if (!isOnline) {
-    console.log('Device is offline, skipping upload queue processing');
+    // Device is offline, skipping upload queue processing
     return;
   }
   
@@ -102,7 +102,7 @@ export const processUploadQueue = async (): Promise<void> => {
       queueItem.attemptCount += 1;
       queueItem.lastAttempt = new Date().toISOString();
       
-      console.log('Processing image upload:', queueItem.imageId);
+      // Processing image upload
       
       // Get image metadata from Legend State (this would be implemented later)
       // For now, we'll simulate the process
@@ -110,10 +110,10 @@ export const processUploadQueue = async (): Promise<void> => {
       
       if (success) {
         queueItem.status = 'completed';
-        console.log('Successfully uploaded image:', queueItem.imageId);
+        // Successfully uploaded image
       } else {
         queueItem.status = 'failed';
-        console.log('Failed to upload image:', queueItem.imageId);
+        // Failed to upload image
         
         // Retry logic - exponential backoff
         if (queueItem.attemptCount < 3) {
@@ -143,7 +143,7 @@ const simulateImageUpload = async (imageId: string): Promise<boolean> => {
   // 3. Update the database record with the remote URL
   // 4. Update the sync status
   
-  console.log('Simulating upload for image:', imageId);
+  // Simulating upload for image
   
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -165,7 +165,7 @@ export const ensureImageDownloaded = async (
       if (imageMetadata.localUri.startsWith('file://')) {
         const fileInfo = await FileSystem.getInfoAsync(imageMetadata.localUri);
         if (fileInfo.exists) {
-          console.log('Using existing local image:', imageMetadata.id);
+          // Using existing local image
           return imageMetadata.localUri;
         }
       } else {
@@ -177,7 +177,7 @@ export const ensureImageDownloaded = async (
     // Check if we're online before trying to download
     const isOnline = await isDeviceOnline();
     if (!isOnline) {
-      console.log('Device is offline, cannot download image:', imageMetadata.id);
+      // Device is offline, cannot download image
       return null;
     }
     
@@ -192,7 +192,7 @@ export const ensureImageDownloaded = async (
         // Check if the local file already exists
         const fileInfo = await FileSystem.getInfoAsync(localPath);
         if (fileInfo.exists) {
-          console.log('Using cached local image:', imageMetadata.id);
+          // Using cached local image
           return localPath;
         }
         
@@ -203,17 +203,17 @@ export const ensureImageDownloaded = async (
         );
         
         if (localUri) {
-          console.log('Image downloaded successfully:', imageMetadata.id);
+          // Image downloaded successfully
           return localUri;
         }
       } catch (error) {
-        console.log('Could not download image:', imageMetadata.id, error);
+        // Could not download image
         // Return null to indicate download failed
         return null;
       }
     }
     
-    console.log('No local or remote image available:', imageMetadata.id);
+    // No local or remote image available
     return null;
   } catch (error) {
     debugLogger.logError('Error ensuring image download:', error);
@@ -236,7 +236,7 @@ export const batchUploadImages = async (
     failed: [] as string[],
   };
   
-  console.log('Starting batch upload for', imageIds.length, 'images');
+  // Starting batch upload for images
   
   // Process images in parallel (with concurrency limit)
   const CONCURRENCY_LIMIT = 3;
@@ -267,7 +267,7 @@ export const batchUploadImages = async (
     });
   }
   
-  console.log('Batch upload completed:', results);
+  // Batch upload completed
   return results;
 };
 
@@ -276,12 +276,12 @@ export const batchUploadImages = async (
  */
 const uploadSingleImage = async (imageId: string): Promise<boolean> => {
   try {
-    console.log('Uploading image:', imageId);
+    // Uploading image
     
     // Check network connectivity
     const isOnline = await isDeviceOnline();
     if (!isOnline) {
-      console.log('Device is offline, cannot upload image:', imageId);
+      // Device is offline, cannot upload image
       return false;
     }
     
@@ -289,7 +289,7 @@ const uploadSingleImage = async (imageId: string): Promise<boolean> => {
     // For now, we'll simulate the process
     const success = await simulateImageUpload(imageId);
     
-    console.log('Image upload result:', imageId, success);
+    // Image upload result
     return success;
   } catch (error) {
     debugLogger.logError(`Error uploading image ${imageId}:`, error);
@@ -301,12 +301,12 @@ const uploadSingleImage = async (imageId: string): Promise<boolean> => {
  * Initialize the sync service
  */
 export const initializeImageSyncService = (): void => {
-  console.log('Initializing image sync service');
+  // Initializing image sync service
   
   // Listen for network connectivity changes
   NetInfo.addEventListener(state => {
     if (state.isConnected && state.isInternetReachable) {
-      console.log('Network connectivity restored, starting sync process');
+      // Network connectivity restored, starting sync process
       startSyncProcess();
     }
   });
@@ -314,7 +314,7 @@ export const initializeImageSyncService = (): void => {
   // Listen for app state changes (foreground/background)
   AppState.addEventListener('change', (nextAppState) => {
     if (nextAppState === 'active') {
-      console.log('App came to foreground, checking for pending uploads');
+      // App came to foreground, checking for pending uploads
       startSyncProcess();
     }
   });
@@ -349,7 +349,7 @@ export const getUploadQueueStatus = (): {
  */
 export const clearUploadQueue = (): void => {
   uploadQueue = [];
-  console.log('Upload queue cleared');
+  // Upload queue cleared
 };
 
 /**
@@ -359,11 +359,11 @@ export const retryFailedUploads = async (): Promise<void> => {
   const failedItems = uploadQueue.filter(item => item.status === 'failed');
   
   if (failedItems.length === 0) {
-    console.log('No failed items to retry');
+    // No failed items to retry
     return;
   }
   
-  console.log('Retrying', failedItems.length, 'failed uploads');
+  // Retrying failed uploads
   
   // Reset status for failed items
   failedItems.forEach(item => {

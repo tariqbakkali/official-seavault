@@ -21,9 +21,18 @@ const LogDiveScreen = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  // State to control header visibility
+  const [showHeader, setShowHeader] = useState(true);
+  
   // Cleanup timeout on unmount
   useEffect(() => {
+    // Set timeout to hide header after 3 seconds
+    const headerTimeout = setTimeout(() => {
+      setShowHeader(false);
+    }, 3000); // 3 seconds
+    
     return () => {
+      clearTimeout(headerTimeout);
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
@@ -107,9 +116,11 @@ const LogDiveScreen = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Record your dive detail and Creature spotted</Text>
-        </View>
+        {showHeader && (
+          <View style={styles.header}>
+            <Text style={styles.headerText}>Record your dive detail and Creature spotted</Text>
+          </View>
+        )}
 
         <View style={styles.content}>
           <DiveSitePicker

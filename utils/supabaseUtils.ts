@@ -36,7 +36,7 @@ export const executeWithRetry = async <T>(
       return await operation();
     } catch (error: any) {
       lastError = error;
-      console.error(`SupabaseUtils: Operation failed on attempt ${attempt}:`, error);
+      // SupabaseUtils: Operation failed on attempt
       
       // If it's a schema cache error, refresh the cache
       if (error.code === 'PGRST205') {

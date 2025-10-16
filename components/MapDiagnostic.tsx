@@ -118,7 +118,7 @@ console.log('api key:', process.env.GOOGLE_MAPS_API_KEY);
             style={styles.map}
             cameraPosition={cameraPosition}
             markers={markers}
-            onMapLoaded={() => console.log('Map loaded successfully')}
+            onMapLoaded={() => {}}
           />
         </View>
       </View>

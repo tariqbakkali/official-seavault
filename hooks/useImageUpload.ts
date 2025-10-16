@@ -146,7 +146,7 @@ export const useImageUpload = () => {
             progress: 100,
           });
           
-          console.log('Image uploaded successfully:', remoteUrl);
+          // Image uploaded successfully
           return remoteUrl;
         } else {
           // Update upload queue status

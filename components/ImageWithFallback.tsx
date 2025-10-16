@@ -139,7 +139,7 @@ export default function ImageWithFallback({
     // According to user requirement: when internet is off, must show real images from local storage
     // instead of fallback images or placeholders. So we'll try to load the image anyway
     // and only show the offline indicator
-    console.log('Device is offline, but still attempting to load image:', uri);
+    // Device is offline, but still attempting to load image
   }
 
   // If error and we have a default image, render it

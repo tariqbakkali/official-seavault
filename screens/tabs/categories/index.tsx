@@ -94,7 +94,7 @@ export default function CategoriesTab() {
         setCategories(categoriesWithStats);
       }
     } catch (error) {
-      console.error('Error loading categories:', error);
+      // Error loading categories
       // Try to load from cache if online fetch fails
       try {
         const categoriesArray = allCategories ? Object.values(allCategories) : [];
@@ -108,7 +108,7 @@ export default function CategoriesTab() {
           setCategories(categoriesWithStats);
         }
       } catch (cacheError) {
-        console.error('Error loading categories from cache:', cacheError);
+        // Error loading categories from cache
       }
     } finally {
       setLoading(false);
@@ -120,7 +120,7 @@ export default function CategoriesTab() {
     try {
       await forceSyncAll();
     } catch (error) {
-      console.error('Error during refresh:', error);
+      // Error during refresh
     } finally {
       setRefreshing(false);
     }

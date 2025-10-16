@@ -87,7 +87,7 @@ const CoordinateSelectionSection: React.FC<CoordinateSelectionSectionProps> = ({
     };
   };
 
-  console.log('[DEBUG] CoordinateSelectionSection: Passing selectedCoordinate to MapContainer', selectedCoordinate);
+  // CoordinateSelectionSection: Passing selectedCoordinate to MapContainer
 
   return (
     <FormSection title="Location">

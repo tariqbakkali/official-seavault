@@ -8,22 +8,21 @@ export default function ProxyTest() {
   
   const testProxyUtility = () => {
     try {
-      console.log('ProxyTest: Testing proxy utility with URL', testUrl);
-      
       // Test getProxyImageUrl
       const proxiedUrl = getProxyImageUrl(testUrl);
-      console.log('ProxyTest: Proxied URL', proxiedUrl);
       
       // Test getImageUrlOptions
       const urlOptions = getImageUrlOptions(testUrl);
-      console.log('ProxyTest: URL options', urlOptions);
       
       Alert.alert(
         'Proxy Test Results',
-        `Original: ${urlOptions.original}\n\nEncoded: ${urlOptions.encoded}\n\nProxied: ${urlOptions.proxied}`
+        `Original: ${urlOptions.original}
+
+Encoded: ${urlOptions.encoded}
+
+Proxied: ${urlOptions.proxied}`
       );
     } catch (error: unknown) {
-      console.log('ProxyTest: Error testing proxy utility', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       Alert.alert('Error', `Error testing proxy utility: ${errorMessage}`);
     }
@@ -36,7 +35,7 @@ export default function ProxyTest() {
       <TouchableOpacity style={styles.button} onPress={testProxyUtility}>
         <Text style={styles.buttonText}>Test Proxy Utility</Text>
       </TouchableOpacity>
-      <Text style={styles.note}>Check console logs for detailed information</Text>
+      <Text style={styles.note}>Test results will appear in an alert</Text>
     </View>
   );
 }

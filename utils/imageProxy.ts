@@ -35,7 +35,7 @@ export function getProxyImageUrl(imageUrl: string | null | undefined): string | 
     // Return original URL for other images
     return imageUrl;
   } catch (e) {
-    console.warn('Invalid image URL:', imageUrl, e);
+    // Invalid image URL
     return null;
   }
 }
@@ -74,7 +74,7 @@ export function getImageUrlOptions(imageUrl: string | null | undefined): {
         const encodedPath = encodeURI(decodeURI(url.pathname));
         encoded = `${url.protocol}//${url.hostname}${encodedPath}${url.search}${url.hash}`;
       } catch (e) {
-        console.warn('Error encoding URL path:', url.pathname, e);
+        // Error encoding URL path
         encoded = imageUrl;
       }
     }
@@ -85,7 +85,7 @@ export function getImageUrlOptions(imageUrl: string | null | undefined): {
       encoded,
     };
   } catch (e) {
-    console.warn('Invalid image URL:', imageUrl, e);
+    // Invalid image URL
     return {
       original: null,
       proxied: null,

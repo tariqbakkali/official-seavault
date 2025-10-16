@@ -190,14 +190,10 @@ export const currentUserProfile$ = observable(customSynced({
   collection: 'profiles',
   filter: (select: any) => {
     const userId = currentUserID$.get();
-    console.log('[currentUserProfile$ filter] Filtering profiles for user:', userId);
     if (!userId) {
-      console.log('[currentUserProfile$ filter] No user ID, returning no auth filter');
       return select.eq('id', 'no auth'); 
     }
-    console.log('[currentUserProfile$ filter] Returning user ID filter for:', userId);
     const result = select.eq('id', userId);
-    console.log('[currentUserProfile$ filter] Filter result:', result);
     return result;
   },
   actions: ['read', 'update'],
@@ -353,24 +349,14 @@ export const toggleWishlistItem = async (creatureId: string): Promise<boolean> =
 export const updateUserProfile = async (updates: Partial<Profile>) => {
   const userId = currentUserID$.get();
   if (!userId) {
-    console.log('[updateUserProfile] Cannot update profile - no authenticated user');
     throw new Error('User must be logged in to update profile');
   }
-  
-  console.log('[updateUserProfile] Starting profile update for user:', { userId, updates });
   
   // Get the current profile data
   const currentProfile = currentUserProfile$.get();
   
   // Get the existing profile object for this user, or create a default one
   const existingUserProfile = currentProfile?.[userId];
-  
-  console.log('[updateUserProfile] Current profile state:', { 
-    hasCurrentProfile: !!currentProfile,
-    hasExistingUserProfile: !!existingUserProfile,
-    existingFullName: existingUserProfile?.full_name,
-    existingEmail: existingUserProfile?.email
-  });
   
   // Create the updated profile object
   const updatedProfile = {
@@ -385,20 +371,9 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
     ...updates,
   } as Profile;
   
-  console.log('[updateUserProfile] Creating updated profile with:', { 
-    finalFullName: updatedProfile.full_name,
-    changes: updates,
-    timestamp: new Date().toISOString()
-  });
-  
   // Update the profile observable with the new data
   currentUserProfile$.assign!({
     [userId]: updatedProfile
-  });
-  
-  console.log('[updateUserProfile] Profile update completed successfully', { 
-    result: currentUserProfile$.get()?.[userId],
-    timestamp: new Date().toISOString()
   });
 };
 

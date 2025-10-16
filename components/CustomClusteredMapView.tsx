@@ -156,7 +156,7 @@ const CustomClusteredMapView = ({
       const newClusters = supercluster.getClusters(bbox, zoom);
       setClusters(newClusters);
     } catch (error) {
-      console.warn('Error updating clusters:', error);
+      // Error updating clusters
       setClusters(data);
     }
   };
@@ -269,7 +269,7 @@ const CustomClusteredMapView = ({
     if (!marker) return false;
     if (!marker.coordinates) return false;
     if (typeof marker.coordinates.latitude !== 'number' || typeof marker.coordinates.longitude !== 'number') {
-      console.warn('Invalid marker coordinates', marker);
+      // Invalid marker coordinates
       return false;
     }
     return true;
@@ -295,7 +295,6 @@ const CustomClusteredMapView = ({
 
   // Handle map click for ending drag or setting new position
   const handleMapClick = (event: any) => {
-    console.log('[DEBUG] CustomClusteredMapView: handleMapClick called with event', event);
     if (isDragging) {
       // End dragging simulation
       setIsDragging(false);
@@ -307,7 +306,6 @@ const CustomClusteredMapView = ({
       
       // Call onMarkerDragEnd with the new position
       if (onMarkerDragEnd) {
-        console.log('[DEBUG] CustomClusteredMapView: Calling onMarkerDragEnd with event', event);
         // Ensure the event has the expected structure
         if (event && event.coordinate) {
           // Expo Maps passes coordinates directly in the event object
@@ -339,7 +337,6 @@ const CustomClusteredMapView = ({
     } else {
       // Call the original onPress handler if provided
       if (onPress) {
-        console.log('[DEBUG] CustomClusteredMapView: Calling onPress with event', event);
         // Ensure the event has the expected structure
         if (event && event.coordinate) {
           // Expo Maps passes coordinates directly in the event object

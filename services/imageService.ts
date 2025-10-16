@@ -72,7 +72,7 @@ export const uploadImageToSupabase = async (
       data: { publicUrl },
     } = supabase.storage.from('images').getPublicUrl(filePath);
     
-    console.log('Image uploaded to Supabase:', publicUrl);
+    // Image uploaded to Supabase
     return publicUrl;
   } catch (error) {
     debugLogger.logError('Error uploading image to Supabase:', error);
@@ -99,7 +99,6 @@ export const downloadImageFromSupabase = async (
     const { uri, status } = await FileSystem.downloadAsync(remoteUrl, localPath);
     
     if (status === 200) {
-      console.log('Image downloaded from Supabase:', uri);
       return uri;
     } else {
       throw new Error(`Download failed with status ${status}`);
@@ -129,7 +128,7 @@ export const processNewImage = async (
     const imageMetadata = createImageMetadata(diveSiteId, localUri, fileName, size, mimeType);
     imageMetadata.thumbnailUri = thumbnailUri;
     
-    console.log('New image processed:', imageMetadata);
+    // New image processed
     return imageMetadata;
   } catch (error) {
     debugLogger.logError('Error processing new image:', error);
@@ -159,7 +158,7 @@ export const getImagesForDiveSite = async (diveSiteId: string): Promise<ImageMet
       syncStatus: 'synced',
     }));
     
-    console.log('Images for dive site:', { diveSiteId, count: images.length });
+    // Images for dive site
     return images;
   } catch (error) {
     debugLogger.logError('Error getting images for dive site:', error);
@@ -197,7 +196,7 @@ export const deleteImage = async (imageMetadata: ImageMetadata): Promise<boolean
       await deleteLocalImage(imageMetadata.thumbnailUri);
     }
     
-    console.log('Image deleted:', imageMetadata.id);
+    // Image deleted
     return true;
   } catch (error) {
     debugLogger.logError('Error deleting image:', error);
@@ -229,12 +228,12 @@ export const retryFailedUploads = async (images: ImageMetadata[]): Promise<void>
       return;
     }
     
-    console.log('Retrying failed image uploads:', failedImages.length);
+    // Retrying failed image uploads
     
     for (const image of failedImages) {
       // Check if we should retry (max 3 attempts)
       if ((image.retryCount || 0) >= 3) {
-        console.log('Skipping retry for image (max attempts reached):', image.id);
+        // Skipping retry for image (max attempts reached)
         continue;
       }
       
@@ -253,10 +252,10 @@ export const retryFailedUploads = async (images: ImageMetadata[]): Promise<void>
         if (remoteUrl) {
           image.remoteUrl = remoteUrl;
           image.syncStatus = 'synced';
-          console.log('Successfully retried upload for image:', image.id);
+          // Successfully retried upload for image
         } else {
           image.syncStatus = 'failed';
-          console.log('Failed to retry upload for image:', image.id);
+          // Failed to retry upload for image
         }
       }
     }

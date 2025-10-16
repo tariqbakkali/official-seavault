@@ -6,7 +6,7 @@ let ImageManipulator: any;
 try {
   ImageManipulator = require('expo-image-manipulator');
 } catch (error) {
-  console.warn('expo-image-manipulator not available, image utilities will be limited', error);
+  // expo-image-manipulator not available, image utilities will be limited
   ImageManipulator = null;
 }
 
@@ -25,7 +25,7 @@ export const compressImage = async (
   try {
     // Check if ImageManipulator is available
     if (!ImageManipulator) {
-      console.warn('Image manipulation not available, returning original image');
+      // Image manipulation not available, returning original image
       // In a real implementation, you would use FileSystem.getInfoAsync to get the actual file size
       return { uri, size: await getImageFileSize(uri) };
     }
@@ -43,7 +43,7 @@ export const compressImage = async (
     // Get file size (this would need to be implemented)
     const size = await getImageFileSize(result.uri);
     
-    console.log('Image compressed:', { originalUri: uri, compressedUri: result.uri, originalSize: 0, compressedSize: size });
+    // Image compressed
     return { uri: result.uri, size };
   } catch (error) {
     debugLogger.logError('Error compressing image:', error);
@@ -63,7 +63,7 @@ export const resizeImage = async (
   try {
     // Check if ImageManipulator is available
     if (!ImageManipulator) {
-      console.warn('Image manipulation not available, returning original image');
+      // Image manipulation not available, returning original image
       return { uri, size: await getImageFileSize(uri) };
     }
     
@@ -78,7 +78,7 @@ export const resizeImage = async (
     
     const size = await getImageFileSize(result.uri);
     
-    console.log('Image resized:', { originalUri: uri, resizedUri: result.uri, size });
+    // Image resized
     return { uri: result.uri, size };
   } catch (error) {
     debugLogger.logError('Error resizing image:', error);
@@ -98,7 +98,7 @@ export const generateThumbnail = async (
   try {
     // Check if ImageManipulator is available
     if (!ImageManipulator) {
-      console.warn('Image manipulation not available, returning original image');
+      // Image manipulation not available, returning original image
       return { uri, size: await getImageFileSize(uri) };
     }
     
@@ -113,7 +113,7 @@ export const generateThumbnail = async (
     
     const size = await getImageFileSize(result.uri);
     
-    console.log('Thumbnail generated:', { originalUri: uri, thumbnailUri: result.uri, size });
+    // Thumbnail generated
     return { uri: result.uri, size };
   } catch (error) {
     debugLogger.logError('Error generating thumbnail:', error);
@@ -132,7 +132,7 @@ export const convertImageFormat = async (
   try {
     // Check if ImageManipulator is available
     if (!ImageManipulator) {
-      console.warn('Image manipulation not available, returning original image');
+      // Image manipulation not available, returning original image
       return { uri, size: await getImageFileSize(uri) };
     }
     
@@ -147,7 +147,7 @@ export const convertImageFormat = async (
     
     const size = await getImageFileSize(result.uri);
     
-    console.log('Image format converted:', { originalUri: uri, convertedUri: result.uri, format, size });
+    // Image format converted
     return { uri: result.uri, size };
   } catch (error) {
     debugLogger.logError('Error converting image format:', error);
@@ -165,7 +165,7 @@ export const applyGrayscaleFilter = async (
   try {
     // Check if ImageManipulator is available
     if (!ImageManipulator) {
-      console.warn('Image manipulation not available, returning original image');
+      // Image manipulation not available, returning original image
       return { uri, size: await getImageFileSize(uri) };
     }
     
@@ -181,7 +181,7 @@ export const applyGrayscaleFilter = async (
     
     const size = await getImageFileSize(result.uri);
     
-    console.log('Grayscale filter applied:', { originalUri: uri, filteredUri: result.uri, size });
+    // Grayscale filter applied
     return { uri: result.uri, size };
   } catch (error) {
     debugLogger.logError('Error applying grayscale filter:', error);
@@ -199,7 +199,7 @@ export const getImageDimensions = async (
   try {
     // Check if ImageManipulator is available
     if (!ImageManipulator) {
-      console.warn('Image manipulation not available, returning default dimensions');
+      // Image manipulation not available, returning default dimensions
       return { width: 0, height: 0 };
     }
     
@@ -230,7 +230,7 @@ export const generateMultipleSizes = async (
   try {
     // Check if ImageManipulator is available
     if (!ImageManipulator) {
-      console.warn('Image manipulation not available, returning original image for all sizes');
+      // Image manipulation not available, returning original image for all sizes
       const size = await getImageFileSize(uri);
       return { 
         original: { uri, size }, 
@@ -252,7 +252,7 @@ export const generateMultipleSizes = async (
     // Thumbnail (128px on longest side)
     const thumbnail = await resizeImage(uri, 128, 128);
     
-    console.log('Multiple image sizes generated');
+    // Multiple image sizes generated
     return { original, large, medium, thumbnail };
   } catch (error) {
     debugLogger.logError('Error generating multiple image sizes:', error);
@@ -276,7 +276,7 @@ export const optimizeImageForWeb = async (
   try {
     // Check if ImageManipulator is available
     if (!ImageManipulator) {
-      console.warn('Image manipulation not available, returning original image');
+      // Image manipulation not available, returning original image
       return { uri, size: await getImageFileSize(uri) };
     }
     
@@ -292,7 +292,7 @@ export const optimizeImageForWeb = async (
     
     const size = await getImageFileSize(result.uri);
     
-    console.log('Image optimized for web:', { originalUri: uri, optimizedUri: result.uri, size });
+    // Image optimized for web
     return { uri: result.uri, size };
   } catch (error) {
     debugLogger.logError('Error optimizing image for web:', error);
