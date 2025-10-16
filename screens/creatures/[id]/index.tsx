@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Heart, Plus, Calendar, MapPin, Clock, Trophy } from 'lucide-react-native';
+import { Heart, Plus, Calendar, MapPin, Clock, Trophy, ArrowLeft } from 'lucide-react-native';
 import { Creature, Sighting, DiveSite } from '@/types/database';
 import { supabase } from '@/services/supabase';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
@@ -19,7 +19,7 @@ import { formatDate, formatTime } from '@/utils/format';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { toggleWishlistItem } from '@/stores/syncedObservables';
-import { ROUTES } from '@/constants';
+import { ROUTES, APP_CONFIG, DIMENSIONS, COLORS } from '@/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -206,10 +206,42 @@ export default function CreatureDetailScreen() {
           </View>
         )}
         
+        {item.dive_type && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabelNew}>Dive Type:</Text>
+            <Text style={styles.detailValueNew}>{item.dive_type}</Text>
+          </View>
+        )}
+        
+        {item.depth && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabelNew}>Depth:</Text>
+            <Text style={styles.detailValueNew}>{item.depth}</Text>
+          </View>
+        )}
+        
         {item.dive_notes && (
           <View style={styles.notesSection}>
-            <Text style={styles.notesLabel}>Notes</Text>
+            <Text style={styles.notesLabel}>Dive Notes</Text>
             <Text style={styles.notesText}>{item.dive_notes}</Text>
+          </View>
+        )}
+        
+        {item.creature_notes && (
+          <View style={styles.notesSection}>
+            <Text style={styles.notesLabel}>Creature Notes</Text>
+            <Text style={styles.notesText}>{item.creature_notes}</Text>
+          </View>
+        )}
+        
+        {item.image_url && (
+          <View style={styles.imageSection}>
+            <OfflineImageHandler
+              uri={item.image_url}
+              style={styles.sightingImage}
+              fallbackColor="#333"
+              showOfflineIndicator={true}
+            />
           </View>
         )}
       </View>
@@ -263,11 +295,9 @@ export default function CreatureDetailScreen() {
       paddingLeft: insets.left,
       paddingRight: insets.right
     }]}>
-      <ScreenHeader 
-        title={creature.name} 
-        onBackPress={() => router.back()}
-        showBackButton={true}
-      />
+      <TouchableOpacity onPress={() => router.back()} style={[styles.backButton, { top: insets.top + 10 }]}>
+        <ArrowLeft size={DIMENSIONS.ICON_LG} color={COLORS.TEXT_PRIMARY} />
+      </TouchableOpacity>
       
       <ScrollView 
         style={styles.scrollView}
@@ -287,36 +317,23 @@ export default function CreatureDetailScreen() {
         <View style={styles.infoContainer}>
           <View style={styles.nameRow}>
             <Text style={styles.name}>{creature.name}</Text>
-            <TouchableOpacity 
-              style={[styles.heartButton, isWishlisted && styles.heartButtonActive]}
-              onPress={handleWishlistToggle}
-            >
-              <Heart 
-                size={24} 
-                color={isWishlisted ? "#FF3B30" : "#666"} 
-                fill={isWishlisted ? "#FF3B30" : "none"} 
-              />
-            </TouchableOpacity>
           </View>
           
-          {creature.scientific_name && (
-            <Text style={styles.scientificName}>{creature.scientific_name}</Text>
-          )}
+                    <View style={styles.scientificNameRow}>
           
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{creature.points}</Text>
-              <Text style={styles.statLabel}>Points</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{sightings.length}</Text>
-              <Text style={styles.statLabel}>Sightings</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{unlockedAchievements}</Text>
-              <Text style={styles.statLabel}>Achievements</Text>
-            </View>
-          </View>
+                      {creature.scientific_name && (
+          
+                        <Text style={styles.scientificName}>{creature.scientific_name}</Text>
+          
+                      )}
+          
+                      <View style={styles.pointsBadge}>
+          
+                        <Text style={styles.pointsBadgeText}>{creature.points} PTS</Text>
+          
+                      </View>
+          
+                    </View>
         </View>
         
         {/* Tab Navigation */}
@@ -419,21 +436,47 @@ export default function CreatureDetailScreen() {
             )}
           </View>
         )}
-        
-        {/* Action Button */}
-        <TouchableOpacity 
-          style={styles.actionButton}
+      </ScrollView>
+
+      {/* Action Buttons */}
+      <View style={[styles.actionButtonsContainer, { bottom: insets.bottom + 10 }]}>
+        <TouchableOpacity
+          style={[
+            styles.wishlistButton,
+            isWishlisted && styles.wishlistButtonActive,
+          ]}
+          onPress={handleWishlistToggle}
+        >
+          <Heart
+            size={24}
+            color={'#FF3B30'}
+            fill={isWishlisted ? '#FF3B30' : 'none'}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.logDiveButton}
           onPress={handleAddSighting}
         >
           <Plus size={20} color="#fff" />
           <Text style={styles.actionButtonText}>Log a Dive</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  backButton: {
+    position: 'absolute',
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: '#000',
@@ -449,7 +492,6 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   infoContainer: {
     padding: 20,
@@ -477,27 +519,29 @@ const styles = StyleSheet.create({
   heartButtonActive: {
     backgroundColor: 'rgba(255, 59, 48, 0.2)',
   },
+  scientificNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
   scientificName: {
     fontSize: 18,
     color: '#666',
     fontStyle: 'italic',
-    marginBottom: 16,
+    flex: 1,
   },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#2a2a2a',
-    borderRadius: 16,
-    padding: 16,
+  pointsBadge: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginLeft: 10,
   },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  pointsBadgeText: {
     color: '#fff',
-    marginBottom: 4,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   statLabel: {
     fontSize: 12,
@@ -505,11 +549,10 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#1a1a1a',
     marginHorizontal: 20,
-    borderRadius: 16,
     marginBottom: 20,
-    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
   },
   tab: {
     flex: 1,
@@ -517,7 +560,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTab: {
-    backgroundColor: '#007AFF',
+    borderBottomWidth: 2,
+    borderBottomColor: '#fff',
   },
   tabText: {
     fontSize: 16,
@@ -619,6 +663,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  detailRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  detailLabelNew: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+    width: 100,
+  },
+  detailValueNew: {
+    fontSize: 14,
+    color: '#ccc',
+    flex: 1,
+  },
+  imageSection: {
+    marginTop: 12,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  sightingImage: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#333',
+  },
   notesSection: {
     borderTopWidth: 1,
     borderTopColor: '#333',
@@ -649,19 +718,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#444',
   },
-  actionButton: {
+  actionButtonsContainer: {
     position: 'absolute',
-    bottom: 30,
     left: 20,
     right: 20,
-    backgroundColor: '#007AFF',
-    borderRadius: 16,
-    paddingVertical: 16,
+    bottom: 0,
+    paddingTop: 10,
     flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    shadowColor: '#007AFF',
+    gap: 10,
+    backgroundColor: '#000', 
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 4,
@@ -669,6 +735,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
+  },
+  wishlistButton: {
+    backgroundColor: '#333',
+    padding: 16,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wishlistButtonActive: {
+    borderColor: '#FF3B30',
+    borderWidth: 2,
+  },
+  logDiveButton: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
   },
   actionButtonText: {
     color: '#fff',

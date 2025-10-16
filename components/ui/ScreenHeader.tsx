@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { ArrowLeft } from 'lucide-react-native';
 
@@ -10,6 +10,7 @@ interface ScreenHeaderProps {
   actionText?: string;
   showBackButton?: boolean;
   showActionButton?: boolean;
+  style?: ViewStyle;
 }
 
 /**
@@ -21,10 +22,11 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   onActionPress,
   actionText,
   showBackButton = true,
-  showActionButton = false
+  showActionButton = false,
+  style
 }) => {
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, style]}>
       {showBackButton && onBackPress && (
         <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
           <ArrowLeft size={DIMENSIONS.ICON_LG} color={COLORS.PRIMARY} />

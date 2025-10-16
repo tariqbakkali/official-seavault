@@ -218,12 +218,8 @@ export default function HomeScreen() {
       >
         {/* <MapTest /> Add this to test map functionality */}
         <View style={styles.header}>
-          <Text style={styles.welcomeText}>Welcome back,</Text>
-          <Text style={styles.usernameText}>
-            {userProfile && Object.values(userProfile).length > 0
-              ? Object.values(userProfile)[0]?.full_name || 'Diver'
-              : 'Diver'}
-          </Text>
+          <Text style={styles.usernameText}>{APP_CONFIG.NAME}</Text>
+          <Text style={styles.welcomeText}>{APP_CONFIG.TAGLINE}</Text>
         </View>
 
         <View style={styles.statsContainer}>
@@ -332,7 +328,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   usernameText: {
-    fontSize: 24,
+    fontSize: 36,
     fontWeight: 'bold',
     color: '#fff',
   },
