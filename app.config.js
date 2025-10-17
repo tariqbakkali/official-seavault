@@ -3,18 +3,21 @@ import 'dotenv/config';
 export default ({ config }) => {
   const appJsonConfig = {
     name: 'SeaVault',
-    slug: 'seavault',
+    slug: 'SeaVault',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
-    scheme: 'seavault',
+    scheme: 'SeaVault',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.seavault.app',
       config: {
-        googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
+        googleMapsApiKey:
+          process.env.GOOGLE_MAPS_API_KEY ||
+          process.env.GOOGLE_MAPS_API_KEY ||
+          '',
       },
     },
     android: {
@@ -23,11 +26,14 @@ export default ({ config }) => {
       permissions: [
         'android.permission.RECORD_AUDIO',
         'android.permission.ACCESS_FINE_LOCATION',
-        'android.permission.ACCESS_COARSE_LOCATION'
+        'android.permission.ACCESS_COARSE_LOCATION',
       ],
       config: {
         googleMaps: {
-          apiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
+          apiKey:
+            process.env.GOOGLE_MAPS_API_KEY ||
+            process.env.GOOGLE_MAPS_API_KEY ||
+            '',
         },
       },
     },
@@ -38,12 +44,18 @@ export default ({ config }) => {
       // Add Google Maps API key and script for web
       config: {
         googleMaps: {
-          apiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
+          apiKey:
+            process.env.GOOGLE_MAPS_API_KEY ||
+            process.env.GOOGLE_MAPS_API_KEY ||
+            '',
         },
       },
       // Add the Google Maps JavaScript API script
       // This ensures the Google Maps API is loaded for web
-      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
+      googleMapsApiKey:
+        process.env.GOOGLE_MAPS_API_KEY ||
+        process.env.GOOGLE_MAPS_API_KEY ||
+        '',
     },
     plugins: [
       'expo-router',
@@ -61,16 +73,22 @@ export default ({ config }) => {
         'expo-maps',
         {
           googleMaps: {
-            apiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
+            apiKey:
+              process.env.GOOGLE_MAPS_API_KEY ||
+              process.env.GOOGLE_MAPS_API_KEY ||
+              '',
           },
           android: {
             googleMaps: {
-              apiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || '',
-            }
+              apiKey:
+                process.env.GOOGLE_MAPS_API_KEY ||
+                process.env.GOOGLE_MAPS_API_KEY ||
+                '',
+            },
           },
           requestLocationPermission: true,
-          locationPermission: "Allow SeaVault to use your location"
-        }
+          locationPermission: 'Allow SeaVault to use your location',
+        },
       ],
       'expo-secure-store',
       'sentry-expo',
@@ -87,7 +105,7 @@ export default ({ config }) => {
         origin: false,
       },
       eas: {
-        projectId: '61041964-a99c-4b5e-874e-5250ca4e93e1',
+        projectId: '52fe00cb-8f63-49f2-981a-c93ef80d05bd',
       },
     },
     assetBundlePatterns: ['**/*'],
