@@ -12,12 +12,15 @@ export default ({ config }) => {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.seavault.app',
+      bundleIdentifier: 'co.uk.seavault.app',
       config: {
         googleMapsApiKey:
           process.env.GOOGLE_MAPS_API_KEY ||
           process.env.GOOGLE_MAPS_API_KEY ||
           '',
+      },
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
       },
     },
     android: {
@@ -91,7 +94,7 @@ export default ({ config }) => {
         },
       ],
       'expo-secure-store',
-      'sentry-expo',
+      // 'sentry-expo',
     ],
     experiments: {
       typedRoutes: true,

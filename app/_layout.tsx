@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { ActivityIndicator, View, Text } from 'react-native';
 import { supabase } from '@/services/supabase';
-import * as Sentry from 'sentry-expo';
+import * as Sentry from '@sentry/react-native';
 import { setCurrentUserID } from '@/stores/syncedObservables';
 import { forceSyncAll } from '@/utils/syncUtils';
 import { initializeApp, initializeUserSession, cleanupUserSession } from '@/utils/appInitializer'; // Import app initializer functions
@@ -13,7 +13,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Initialize Sentry
 Sentry.init({
   dsn: "https://dc149a7492f76fc80c8634923f23401f@o4510096340864000.ingest.us.sentry.io/4510114340864000",
-  enableInExpoDevelopment: true,
   debug: true, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending an event.
 });
 
