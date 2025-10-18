@@ -19,16 +19,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSyncedData } from '@/hooks/useSyncedData'; // Import useSyncedData hook
 
 export default function LoginScreen() {
-  const [email, setEmail] = React.useState('naeemcharbagh1274@gmail.com');
-  const [password, setPassword] = React.useState('1274886naeem');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [isSignUp, setIsSignUp] = React.useState(false);
   const insets = useSafeAreaInsets();
   const { createProfileForCurrentUser, fetchUserData } = useSyncedData(); // Get the createProfileForCurrentUser function
 
   const handleAuth = async () => {
-    console.log('[LoginScreen] Starting authentication process', { isSignUp, email });
-    
+    console.log('[LoginScreen] Starting authentication process', {
+      isSignUp,
+      email,
+    });
+
     if (!email || !password) {
       console.log('[LoginScreen] Validation failed: Missing email or password');
       showAlert('Error', 'Please fill in all fields');
@@ -56,12 +59,12 @@ export default function LoginScreen() {
         }
 
         if (data) {
-          console.log('[LoginScreen] Signup successful', { 
+          console.log('[LoginScreen] Signup successful', {
             hasUser: !!data.user,
             hasSession: !!data.session,
-            userId: data.user?.id
+            userId: data.user?.id,
           });
-          
+
           // Check if email confirmation is required
           if (data.user && !data.user.email_confirmed_at) {
             console.log('[LoginScreen] Email confirmation required');
@@ -74,9 +77,11 @@ export default function LoginScreen() {
             setIsSignUp(false);
           } else {
             // User is already signed in, ensure profile is created
-            console.log('[LoginScreen] Creating profile for new user after signup');
+            console.log(
+              '[LoginScreen] Creating profile for new user after signup'
+            );
             // Wait a bit for initial sync to complete
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
             await createProfileForCurrentUser({});
             console.log('[LoginScreen] Profile created for new user');
             showAlert('Success', 'Account created successfully!');
@@ -98,15 +103,15 @@ export default function LoginScreen() {
         }
 
         if (data) {
-          console.log('[LoginScreen] Signin successful', { 
+          console.log('[LoginScreen] Signin successful', {
             hasUser: !!data.user,
             hasSession: !!data.session,
-            userId: data.user?.id
+            userId: data.user?.id,
           });
-          
+
           console.log('[LoginScreen] User signed in, waiting for initial sync');
           // Wait a bit for initial sync to complete
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise((resolve) => setTimeout(resolve, 200));
           console.log('[LoginScreen] Creating profile if needed');
           // After successful login, ensure profile exists
           await createProfileForCurrentUser({});
@@ -121,7 +126,10 @@ export default function LoginScreen() {
       }
     } catch (error: any) {
       console.error('[LoginScreen] Authentication error:', error);
-      showAlert('Error', error.message || 'An error occurred. Please try again.');
+      showAlert(
+        'Error',
+        error.message || 'An error occurred. Please try again.'
+      );
     } finally {
       console.log('[LoginScreen] Authentication process completed');
       setLoading(false);
@@ -129,13 +137,18 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.container, { 
-      paddingTop: insets.top, 
-      paddingBottom: insets.bottom,
-      paddingLeft: insets.left,
-      paddingRight: insets.right
-    }]}>
-      <KeyboardAvoidingView 
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+      ]}
+    >
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -155,7 +168,7 @@ export default function LoginScreen() {
               autoCorrect={false}
               editable={!loading}
             />
-            
+
             <TextInput
               style={styles.input}
               placeholder="Password"
@@ -189,7 +202,9 @@ export default function LoginScreen() {
               disabled={loading}
             >
               <Text style={styles.switchText}>
-                {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
+                {isSignUp
+                  ? 'Already have an account? Sign In'
+                  : 'Need an account? Sign Up'}
               </Text>
             </TouchableOpacity>
           </View>

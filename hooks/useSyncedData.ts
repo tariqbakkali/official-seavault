@@ -18,9 +18,6 @@ import {
   toggleWishlistItem, // Added toggleWishlistItem
   removeWishlistItem,
   updateUserProfile,
-  getCurrentUserSightings,
-  getAllUsersSightings,
-  getAllUsersAchievements
 } from '../stores/syncedObservables';
 import { supabase } from '../services/supabase';
 import { Database } from '../types/database';

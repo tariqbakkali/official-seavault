@@ -7,6 +7,11 @@ export default ({ config }) => {
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
+    splash: {
+      image: './assets/images/icon.png',
+      backgroundColor: '#1B87E1',
+      resizeMode: 'contain',
+    },
     scheme: 'SeaVault',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,

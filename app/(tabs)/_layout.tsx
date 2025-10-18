@@ -6,7 +6,7 @@ import { TAB_CONFIG, COLORS, DIMENSIONS } from '@/constants';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  
+
   return (
     <Tabs
       screenOptions={{
@@ -14,9 +14,9 @@ export default function TabLayout() {
         tabBarStyle: [
           styles.tabBar,
           {
-            height: DIMENSIONS.TAB_BAR_HEIGHT + insets.bottom,
+            height: DIMENSIONS.TAB_BAR_HEIGHT + insets.bottom - 12,
             paddingBottom: insets.bottom,
-          }
+          },
         ],
         tabBarActiveTintColor: COLORS.PRIMARY,
         tabBarInactiveTintColor: COLORS.TEXT_DISABLED,
@@ -28,9 +28,7 @@ export default function TabLayout() {
         name={TAB_CONFIG.HOME.name}
         options={{
           title: TAB_CONFIG.HOME.title,
-          tabBarIcon: ({ color, size }) => (
-            <Fish size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Fish size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -46,18 +44,14 @@ export default function TabLayout() {
         name={TAB_CONFIG.LOG_DIVE.name}
         options={{
           title: TAB_CONFIG.LOG_DIVE.title,
-          tabBarIcon: ({ color, size }) => (
-            <Plus size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Plus size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name={TAB_CONFIG.PROFILE.name}
         options={{
           title: TAB_CONFIG.PROFILE.title,
-          tabBarIcon: ({ color, size }) => (
-            <User size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
         }}
       />
     </Tabs>
