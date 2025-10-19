@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DateTimePickerSectionProps {
   date: Date;
@@ -25,6 +26,9 @@ const DateTimePickerSection: React.FC<DateTimePickerSectionProps> = ({
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimeOfDayModal, setShowTimeOfDayModal] = useState(false);
+
+  const insets = useSafeAreaInsets();
+
 
   // Get today's date with time set to end of day to allow today's date
   const today = new Date();
@@ -80,7 +84,7 @@ const DateTimePickerSection: React.FC<DateTimePickerSectionProps> = ({
         transparent={false}
         onRequestClose={() => setShowTimeOfDayModal(false)}
       >
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer,{paddingTop: insets.top}]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select Time of Day</Text>
             <TouchableOpacity 
@@ -172,6 +176,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     backgroundColor: COLORS.BACKGROUND,
+    
   },
   modalHeader: {
     flexDirection: 'row',

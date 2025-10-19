@@ -33,6 +33,7 @@ export const categories$ = observable(customSynced({
   persist: { name: 'categories' },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
+  realtime: true, // Enable realtime for all catalog data
 }));
 
 export const creatures$ = observable(customSynced({
@@ -42,6 +43,7 @@ export const creatures$ = observable(customSynced({
   persist: { name: 'creatures' },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
+  realtime: true, // Enable realtime for all catalog data
 }));
 
 export const achievements$ = observable(customSynced({
@@ -51,6 +53,7 @@ export const achievements$ = observable(customSynced({
   persist: { name: 'achievements' },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
+  realtime: true, // Enable realtime for all catalog data
 }));
 
 export const userAchievements$ = observable(customSynced({
@@ -85,6 +88,7 @@ export const diveSites$ = observable(customSynced({
       } 
   return { data, error: null };
   },
+  realtime: true, // Enable realtime for dive sites
 }));
 
 // Synced observables for user-specific data
@@ -138,6 +142,7 @@ export const allUsersAchievements$ = observable(customSynced({
   persist: { name: 'all_user_achievements' },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
+  realtime: true, // Enable realtime for all user achievements
 }));
 
 // Wishlists observable - user-specific
@@ -381,4 +386,3 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
 };
 
 export const getSightings = getCurrentUserSightings;
-

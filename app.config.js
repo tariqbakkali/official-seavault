@@ -106,9 +106,8 @@ export default ({ config }) => {
     },
     extra: {
       GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || '',
-      supabaseUrl: 'https://hqqebvozpvwpopxtixyt.supabase.co',
-      supabaseAnonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhxcWVidm96cHZ3cG9weHRpeHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwOTQwODUsImV4cCI6MjA3MzY3MDA4NX0.WYn1ISKphuoVM92XKiVrywxpPrBGvIuV3tGP88Y6Wqc',
+      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
+      supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
       router: {
         origin: false,
       },

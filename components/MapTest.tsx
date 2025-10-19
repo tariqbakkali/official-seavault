@@ -3,8 +3,11 @@ import { View, Text, StyleSheet, Alert } from 'react-native';
 import MapContainer from '@/components/ui/MapContainer';
 
 const MapTest = () => {
-  const [selectedCoordinate, setSelectedCoordinate] = useState<{ latitude: number; longitude: number } | null>(null);
-  
+  const [selectedCoordinate, setSelectedCoordinate] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
   // Sample dive sites data
   const sampleSites = [
     {
@@ -42,26 +45,30 @@ const MapTest = () => {
 
   // Render function for individual markers
   const renderMarker = (data: any) => {
-    if (!data || !data.geometry || !data.geometry.coordinates || 
-        !Array.isArray(data.geometry.coordinates) || 
-        data.geometry.coordinates.length < 2) {
+    if (
+      !data ||
+      !data.geometry ||
+      !data.geometry.coordinates ||
+      !Array.isArray(data.geometry.coordinates) ||
+      data.geometry.coordinates.length < 2
+    ) {
       return null;
     }
-    
+
     const lat = data.geometry.coordinates[1];
     const lng = data.geometry.coordinates[0];
-    
+
     // Validate coordinates
     if (typeof lat !== 'number' || typeof lng !== 'number') {
       return null;
     }
-    
+
     // Return marker data object for CustomClusteredMapView
     return {
       id: data.properties.id,
       coordinates: { latitude: lat, longitude: lng },
       title: data.properties.name,
-      color: "#007AFF"
+      color: '#007AFF',
     };
   };
 
@@ -82,11 +89,13 @@ const MapTest = () => {
       console.warn('Could not extract coordinates from event:', event);
       return;
     }
-    
+
     setSelectedCoordinate(coordinate);
     Alert.alert(
-      'Coordinates Selected', 
-      `Latitude: ${coordinate.latitude.toFixed(6)}\nLongitude: ${coordinate.longitude.toFixed(6)}`,
+      'Coordinates Selected',
+      `Latitude: ${coordinate.latitude.toFixed(
+        6
+      )}\nLongitude: ${coordinate.longitude.toFixed(6)}`,
       [{ text: 'OK' }]
     );
   };
@@ -108,11 +117,13 @@ const MapTest = () => {
       console.warn('Could not extract coordinates from event:', event);
       return;
     }
-    
+
     setSelectedCoordinate(coordinate);
     Alert.alert(
-      'Marker Moved', 
-      `New position:\nLatitude: ${coordinate.latitude.toFixed(6)}\nLongitude: ${coordinate.longitude.toFixed(6)}`,
+      'Marker Moved',
+      `New position:\nLatitude: ${coordinate.latitude.toFixed(
+        6
+      )}\nLongitude: ${coordinate.longitude.toFixed(6)}`,
       [{ text: 'OK' }]
     );
   };
@@ -121,9 +132,10 @@ const MapTest = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Map Test</Text>
       <Text style={styles.description}>
-        Test map functionality: pan, zoom, tap to select coordinates, drag the red marker.
+        Test map functionality: pan, zoom, tap to select coordinates, drag the
+        red marker.
       </Text>
-      
+
       <MapContainer
         data={sampleSites}
         initialRegion={initialRegion}
@@ -132,7 +144,7 @@ const MapTest = () => {
         onPress={handleMapPress}
         onMarkerDragEnd={handleMarkerDragEnd}
         selectedCoordinate={selectedCoordinate}
-        helperText="Tap on the map to select coordinates. Drag the red marker to move it."
+        // helperText="Tap on the map to select coordinates. Drag the red marker to move it."
       />
     </View>
   );

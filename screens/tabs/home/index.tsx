@@ -29,6 +29,7 @@ interface LeaderboardEntry {
   creatures: number;
   points: number;
   isCurrentUser?: boolean;
+  actualRank?: number;
 }
 
 export default function HomeScreen() {
@@ -121,7 +122,113 @@ export default function HomeScreen() {
         allUsersAchievementsArray,
         achievementsArray
       );
-      setLeaderboard(generatedLeaderboard);
+
+      const currentUserId = userProfile ? Object.values(userProfile)[0]?.id : undefined;
+
+      // Sort the leaderboard by points in descending order, then by created_at in ascending order
+      const sortedLeaderboard = [...generatedLeaderboard].sort((a, b) => {
+        if (b.points !== a.points) {
+          return b.points - a.points;
+        }
+        // If points are equal, sort by created_at (oldest first)
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      });
+
+      let top5Leaderboard: LeaderboardEntry[] = [];
+      let currentUserEntry: LeaderboardEntry | undefined;
+      let isCurrentUserInTop5 = false;
+
+      if (currentUserId) {
+        currentUserEntry = sortedLeaderboard.find(entry => entry.user_id === currentUserId);
+      }
+
+      // Take the top 5 explorers
+      top5Leaderboard = sortedLeaderboard.slice(0, 5);
+
+      // Check if current user is in the top 5
+      if (currentUserEntry) {
+        isCurrentUserInTop5 = top5Leaderboard.some(entry => entry.user_id === currentUserId);
+      }
+
+      if (currentUserEntry && !isCurrentUserInTop5) {
+        // If current user is not in top 5, replace the last item with the current user
+        // This ensures the current user is always visible, but not necessarily at their actual rank if outside top 5
+        // To maintain actual rank, we need to insert them at their correct position if they are within the top 5, or just add them if they are outside
+        // For now, let's just add them if they are not in the top 5, and ensure the list is still 5 items.
+        // A more robust solution would be to find their actual rank and insert them, potentially expanding the list to 6 if they are outside top 5 and we want to show 5 + current user.
+        // Given the request to show 'top 5' and 'include current user', we'll prioritize showing 5, with current user replacing the 5th if not in top 5.
+
+        // Find the correct insertion point for the current user based on their points
+        let insertionIndex = top5Leaderboard.length;
+        for (let i = 0; i < top5Leaderboard.length; i++) {
+          if (currentUserEntry.points >= top5Leaderboard[i].points) {
+            insertionIndex = i;
+            break;
+          }
+        }
+
+        // Insert the current user at their correct position
+        top5Leaderboard.splice(insertionIndex, 0, currentUserEntry);
+
+        // Ensure the list is still 5 items long
+        if (top5Leaderboard.length > 5) {
+          top5Leaderboard.pop(); // Remove the lowest ranked if list exceeds 5
+        }
+      }
+
+      // Calculate current user's actual rank from the full sorted leaderboard
+      let currentUserActualRank: number | undefined;
+      if (currentUserEntry) {
+        const actualRankIndex = sortedLeaderboard.findIndex(entry => entry.user_id === currentUserId);
+        if (actualRankIndex !== -1) {
+          currentUserActualRank = actualRankIndex + 1;
+        }
+      }
+
+      let finalLeaderboard: LeaderboardEntry[] = [];
+      let addedCurrentUser = false;
+
+      // Add top explorers (up to 4) to the final leaderboard, excluding current user for now
+      for (let i = 0; i < sortedLeaderboard.length && finalLeaderboard.length < 4; i++) {
+        const entry = sortedLeaderboard[i];
+        if (entry.user_id !== currentUserId) {
+          finalLeaderboard.push(entry);
+        }
+      }
+
+      if (currentUserEntry) {
+        // If current user's actual rank is 5 or greater, place them at the 5th position
+        if (currentUserActualRank && currentUserActualRank >= 5) {
+          // Ensure there are 4 items before adding current user at 5th spot
+          while (finalLeaderboard.length < 4 && sortedLeaderboard.length > finalLeaderboard.length) {
+            const nextEntry = sortedLeaderboard[finalLeaderboard.length];
+            if (nextEntry.user_id !== currentUserId) {
+              finalLeaderboard.push(nextEntry);
+            }
+          }
+          // Add current user as the 5th item
+          finalLeaderboard.push({ ...currentUserEntry, isCurrentUser: true, actualRank: currentUserActualRank });
+          addedCurrentUser = true;
+        } else { // Current user's actual rank is less than 5
+          // Insert current user at their actual rank position
+          const insertionIndex = (currentUserActualRank || 1) - 1; // actualRank is 1-based
+          finalLeaderboard.splice(insertionIndex, 0, { ...currentUserEntry, isCurrentUser: true, actualRank: currentUserActualRank });
+          addedCurrentUser = true;
+        }
+      }
+
+      // Fill remaining slots up to 5, if any, with other explorers
+      for (let i = 0; i < sortedLeaderboard.length && finalLeaderboard.length < 5; i++) {
+        const entry = sortedLeaderboard[i];
+        if (!finalLeaderboard.some(item => item.user_id === entry.user_id)) {
+          finalLeaderboard.push(entry);
+        }
+      }
+
+      // Ensure the list is exactly 5 items (if there are enough explorers)
+      finalLeaderboard = finalLeaderboard.slice(0, 5);
+
+      setLeaderboard(finalLeaderboard);
     } catch (error) {
       console.error('Error loading home data:', error);
     } finally {
@@ -268,7 +375,7 @@ export default function HomeScreen() {
                   <Text
                     style={[styles.rankText, index < 3 && styles.rankTextTop]}
                   >
-                    {index + 1}
+                    {entry.actualRank !== undefined ? entry.actualRank : index + 1}
                   </Text>
                 </View>
                 <View style={styles.avatar}>

@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Settings, LogOut } from 'lucide-react-native';
 import { ImageWithFallback } from '@/components';
 import { useSyncedData } from '@/hooks/useSyncedData';
@@ -110,6 +110,13 @@ export default function ProfileScreen() {
       setLoading(false);
     }
   }, [allCreatures, allCategories, allSightings, allWishlists, userProfile, allAchievements, allUserAchievements]);
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const handleRefresh = async () => {
     setRefreshing(true);

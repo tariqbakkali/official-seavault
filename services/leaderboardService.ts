@@ -6,6 +6,7 @@ interface LeaderboardEntry {
   avatar: string | null;
   creatures: number;
   points: number;
+  created_at: string;
 }
 
 // Updated function to accept arrays instead of Records for sightings and creatures
@@ -64,6 +65,7 @@ export const getLeaderboardData = (
       avatar: stats.profile.avatar_url,
       creatures: stats.creatures.size,
       points: stats.points,
+      created_at: stats.profile.created_at,
     }))
     .sort((a, b) => {
       // Sort by points first (descending), then by creatures discovered (descending)

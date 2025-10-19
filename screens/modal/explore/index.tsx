@@ -36,7 +36,17 @@ export default function ExploreModal() {
   const insets = useSafeAreaInsets();
   
   // Use the new useSyncedData hook instead of useDataStore
-  const { diveSites: diveSitesData } = useSyncedData();
+  const { diveSites: diveSitesData, userId: currentUserId } = useSyncedData();
+
+  const topExploreItems = React.useMemo(() => {
+    if (!diveSites) return [];
+
+    const userDiveSites = diveSites.filter(site => site.user_id === currentUserId);
+    const otherDiveSites = diveSites.filter(site => site.user_id !== currentUserId);
+
+    const combined = [...userDiveSites, ...otherDiveSites];
+    return combined.slice(0, 5);
+  }, [diveSites, currentUserId]);
 
   const loadData = async () => {
     try {
@@ -84,10 +94,12 @@ export default function ExploreModal() {
   };
 
   const renderDiveSite = ({ item }: { item: DiveSite }) => {
+    const isCurrentUserItem = item.user_id === currentUserId;
     return (
       <ExploreDiveSiteCard
         diveSite={item}
         onPress={() => handleDiveSitePress(item.id)}
+        isCurrentUserItem={isCurrentUserItem}
       />
     );
   };
@@ -176,7 +188,7 @@ export default function ExploreModal() {
       )}
 
       <FlatList
-        data={diveSites}
+        data={topExploreItems}
         keyExtractor={(item) => item.id}
         renderItem={renderDiveSite}
         numColumns={2}

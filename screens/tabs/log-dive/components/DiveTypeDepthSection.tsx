@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, Modal } from 'react-native';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DiveTypeDepthSectionProps {
   diveType: string;
@@ -17,7 +18,8 @@ const DiveTypeDepthSection: React.FC<DiveTypeDepthSectionProps> = ({
 }) => {
   const [showDiveTypeDropdown, setShowDiveTypeDropdown] = useState(false);
   const diveTypes = ['recreational', 'technical', 'night', 'drift', 'wreck', 'cave'];
-
+  const insets  =  useSafeAreaInsets();
+  
   return (
     <View style={styles.section}>
       <View style={styles.diveTypeDepthContainer}>
@@ -56,7 +58,7 @@ const DiveTypeDepthSection: React.FC<DiveTypeDepthSectionProps> = ({
         transparent={false}
         onRequestClose={() => setShowDiveTypeDropdown(false)}
       >
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer,{paddingTop: insets.top}]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select Dive Type</Text>
             <TouchableOpacity 
