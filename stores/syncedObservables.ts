@@ -100,7 +100,7 @@ export const currentUserSightings$ = observable(customSynced({
   collection: 'sightings',
   filter: (select: any) => {
     const userId = currentUserID$.get();
-    if (!userId)  return select.eq('id', 'no auth'); 
+    if (!userId) return select.eq('user_id', 'no-auth-user-id'); 
     return select.eq('user_id', userId);
   },
   actions: ['read', 'create', 'update', 'delete'],
@@ -151,7 +151,7 @@ export const wishlists$ = observable(customSynced({
   collection: 'wishlists',
   filter: (select: any) => {
     const userId = currentUserID$.get();
-    if (!userId)  return select.eq('id', 'no auth'); 
+    if (!userId) return select.eq('user_id', 'no-auth-user-id'); 
     return select.eq('user_id', userId);
   },
   actions: ['read', 'update', 'delete'],
@@ -197,7 +197,7 @@ export const currentUserProfile$ = observable(customSynced({
   filter: (select: any) => {
     const userId = currentUserID$.get();
     if (!userId) {
-      return select.eq('id', 'no auth'); 
+      return select.eq('id', 'no-auth-user-id'); 
     }
     const result = select.eq('id', userId);
     return result;

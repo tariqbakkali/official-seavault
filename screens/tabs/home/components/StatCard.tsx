@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { Eye, Heart, Trophy } from 'lucide-react-native';
 import { COLORS } from '@/constants';
 
@@ -100,7 +100,13 @@ const StatCard: React.FC<StatCardProps> = ({ type, value, onPress }) => {
         {getIcon()}
       </Animated.View>
       <Text style={[styles.statValue, { color: getColor() }]}>{value}</Text>
-      <Text style={styles.statLabel}>{getLabel()}</Text>
+      <Text 
+        style={styles.statLabel} 
+        numberOfLines={1} 
+        ellipsizeMode="tail"
+      >
+        {getLabel()}
+      </Text>
     </TouchableOpacity>
   );
 };
@@ -130,7 +136,7 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_PRIMARY,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: Dimensions.get('window').width < 375 ? 8 : Dimensions.get('window').width < 414 ? 9 : 10,
     color: COLORS.TEXT_SECONDARY,
     textAlign: 'center',
     fontWeight: '600',

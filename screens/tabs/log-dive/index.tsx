@@ -9,7 +9,7 @@ import DateTimePickerSection from './components/DateTimePickerSection';
 import DiveTypeDepthSection from './components/DiveTypeDepthSection';
 import DiveNotesSection from './components/DiveNotesSection';
 import ImagePickerSection from './components/ImagePickerSection';
-import CreatureSelector from './components/CreatureSelector';
+import MultipleCreatureSelector from './components/MultipleCreatureSelector';
 import { useLogDive } from './hooks/useLogDive';
 
 const LogDiveScreen = () => {
@@ -164,12 +164,12 @@ const LogDiveScreen = () => {
             }}
           />
 
-          <CreatureSelector
+          <MultipleCreatureSelector
             catalog={catalog}
             selectedCategories={selectedCategories}
-            creatureId={formData.creatureId}
+            creatureSightings={formData.creatureSightings}
             onCategoryChange={setSelectedCategories}
-            onCreatureChange={(creatureId) => setFormData({ ...formData, creatureId })}
+            onCreatureSightingsChange={(creatureSightings) => setFormData({ ...formData, creatureSightings })}
           />
 
           {/* Submit Button */}

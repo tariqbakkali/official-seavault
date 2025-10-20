@@ -1,7 +1,7 @@
 {
   "name": "bolt-expo-starter",
   "main": "expo-router/entry",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "scripts": {
     "dev": "expo start",
@@ -23,8 +23,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "apk": "eas build --platform android --profile preview",
-    "ipa": "eas build --platform ios --profile production --auto-submit",
-    "ipa-new": "eas build --platform ios --profile production --auto-submit --build-number 1.0.1"
+    "ipa": "eas build --platform ios --profile production --auto-submit"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

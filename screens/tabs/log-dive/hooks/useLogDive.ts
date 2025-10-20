@@ -13,6 +13,13 @@ interface SelectedImage {
   fileName: string;
 }
 
+// New interface for creature sighting data
+interface CreatureSighting {
+  creatureId: string | null;
+  notes: string | null;
+  imageUrl: string | null;
+}
+
 interface FormData {
   diveSiteId: string | null;
   date: Date;
@@ -21,7 +28,8 @@ interface FormData {
   depth: string;
   diveNotes: string;
   imageUrl: string;
-  creatureId: string | null;
+  // Changed from single creatureId to array of creature sightings
+  creatureSightings: CreatureSighting[];
 }
 
 export const useLogDive = () => {
@@ -35,7 +43,7 @@ export const useLogDive = () => {
     depth: '',
     diveNotes: '',
     imageUrl: '',
-    creatureId: null,
+    creatureSightings: [],
   });
 
   const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
@@ -68,7 +76,7 @@ export const useLogDive = () => {
     if (selectedCreature && typeof selectedCreature === 'string') {
       setFormData(prev => ({
         ...prev,
-        creatureId: selectedCreature
+        creatureSightings: [{ creatureId: selectedCreature, notes: null, imageUrl: null }],
       }));
     }
   }, [selectedCategory, selectedCreature]);
@@ -112,21 +120,26 @@ export const useLogDive = () => {
       // Format time of day from the time picker
       const timeOfDay = formData.timeOfDay;
       
-      // Create sighting for the main creature only
-      const sightingData = {
-        dive_site_id: formData.diveSiteId,
-        dive_type: formData.diveType || null,
-        date: formData.date.toISOString().split('T')[0],
-        dive_notes: formData.diveNotes || null,
-        depth: formData.depth || null,
-        creature_id: formData.creatureId || null, // Use the main creature ID
-        image_url: formData.imageUrl || null,
-        time_of_day: timeOfDay || null,
-        creature_notes: null, // No creature notes for main creature selection
-      };
+      // Create sightings for all selected creatures
+      const sightingPromises = formData.creatureSightings.map(async (sighting) => {
+        const sightingData = {
+          dive_site_id: formData.diveSiteId,
+          dive_type: formData.diveType || null,
+          date: formData.date.toISOString().split('T')[0],
+          dive_notes: formData.diveNotes || null,
+          depth: formData.depth || null,
+          creature_id: sighting.creatureId || null,
+          // Use creature-specific image if available, otherwise use the main dive image
+          image_url: sighting.imageUrl || formData.imageUrl || null,
+          time_of_day: timeOfDay || null,
+          creature_notes: sighting.notes || null,
+        };
+        
+        return createSighting(sightingData as any); // Cast to any to avoid TypeScript issues
+      });
       
-      // Create the sighting
-      await createSighting(sightingData as any); // Cast to any to avoid TypeScript issues
+      // Create all sightings
+      await Promise.all(sightingPromises);
       
       // Check network status to determine if saved offline or online
       const networkState = await NetInfo.fetch();
@@ -154,7 +167,7 @@ export const useLogDive = () => {
         depth: '',
         diveNotes: '',
         imageUrl: '',
-        creatureId: null,
+        creatureSightings: [],
       });
       
       // Reset image selection
