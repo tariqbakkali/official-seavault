@@ -1,0 +1,404 @@
+[{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'sightingDateInfo' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 190,
+	"startColumn": 31,
+	"endLineNumber": 190,
+	"endColumn": 47
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'dateRow' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 191,
+	"startColumn": 33,
+	"endLineNumber": 191,
+	"endColumn": 40
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'sightingDate' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 193,
+	"startColumn": 35,
+	"endLineNumber": 193,
+	"endColumn": 47
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'dateRow' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 196,
+	"startColumn": 35,
+	"endLineNumber": 196,
+	"endColumn": 42
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'sightingTime' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 198,
+	"startColumn": 37,
+	"endLineNumber": 198,
+	"endColumn": 49
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'diveSiteInfo' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 205,
+	"startColumn": 31,
+	"endLineNumber": 205,
+	"endColumn": 43
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'diveSiteName' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 207,
+	"startColumn": 33,
+	"endLineNumber": 207,
+	"endColumn": 45
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'detailRow' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 212,
+	"startColumn": 31,
+	"endLineNumber": 212,
+	"endColumn": 40
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2551",
+	"severity": 8,
+	"message": "Property 'detailLabelNew' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'. Did you mean 'detailLabel'?",
+	"source": "ts",
+	"startLineNumber": 213,
+	"startColumn": 33,
+	"endLineNumber": 213,
+	"endColumn": 47,
+	"relatedInformation": [
+		{
+			"startLineNumber": 601,
+			"startColumn": 3,
+			"endLineNumber": 605,
+			"endColumn": 4,
+			"message": "'detailLabel' is declared here.",
+			"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx"
+		}
+	]
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2551",
+	"severity": 8,
+	"message": "Property 'detailValueNew' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'. Did you mean 'detailValue'?",
+	"source": "ts",
+	"startLineNumber": 214,
+	"startColumn": 33,
+	"endLineNumber": 214,
+	"endColumn": 47,
+	"relatedInformation": [
+		{
+			"startLineNumber": 606,
+			"startColumn": 3,
+			"endLineNumber": 610,
+			"endColumn": 4,
+			"message": "'detailValue' is declared here.",
+			"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx"
+		}
+	]
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'detailRow' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 219,
+	"startColumn": 31,
+	"endLineNumber": 219,
+	"endColumn": 40
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2551",
+	"severity": 8,
+	"message": "Property 'detailLabelNew' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'. Did you mean 'detailLabel'?",
+	"source": "ts",
+	"startLineNumber": 220,
+	"startColumn": 33,
+	"endLineNumber": 220,
+	"endColumn": 47,
+	"relatedInformation": [
+		{
+			"startLineNumber": 601,
+			"startColumn": 3,
+			"endLineNumber": 605,
+			"endColumn": 4,
+			"message": "'detailLabel' is declared here.",
+			"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx"
+		}
+	]
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2551",
+	"severity": 8,
+	"message": "Property 'detailValueNew' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'. Did you mean 'detailValue'?",
+	"source": "ts",
+	"startLineNumber": 221,
+	"startColumn": 33,
+	"endLineNumber": 221,
+	"endColumn": 47,
+	"relatedInformation": [
+		{
+			"startLineNumber": 606,
+			"startColumn": 3,
+			"endLineNumber": 610,
+			"endColumn": 4,
+			"message": "'detailValue' is declared here.",
+			"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx"
+		}
+	]
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'notesSection' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 226,
+	"startColumn": 31,
+	"endLineNumber": 226,
+	"endColumn": 43
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'notesLabel' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 227,
+	"startColumn": 33,
+	"endLineNumber": 227,
+	"endColumn": 43
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'notesText' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 228,
+	"startColumn": 33,
+	"endLineNumber": 228,
+	"endColumn": 42
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'notesSection' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 233,
+	"startColumn": 31,
+	"endLineNumber": 233,
+	"endColumn": 43
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'notesLabel' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 234,
+	"startColumn": 33,
+	"endLineNumber": 234,
+	"endColumn": 43
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'notesText' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 235,
+	"startColumn": 33,
+	"endLineNumber": 235,
+	"endColumn": 42
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'imageSection' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 240,
+	"startColumn": 31,
+	"endLineNumber": 240,
+	"endColumn": 43
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'sightingImage' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 243,
+	"startColumn": 29,
+	"endLineNumber": 243,
+	"endColumn": 42
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'emptyContainer' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 283,
+	"startColumn": 29,
+	"endLineNumber": 283,
+	"endColumn": 43
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'emptyText' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 284,
+	"startColumn": 31,
+	"endLineNumber": 284,
+	"endColumn": 40
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'emptyContainer' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 422,
+	"startColumn": 35,
+	"endLineNumber": 422,
+	"endColumn": 49
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'emptyText' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 423,
+	"startColumn": 37,
+	"endLineNumber": 423,
+	"endColumn": 46
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'emptySubtext' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 424,
+	"startColumn": 37,
+	"endLineNumber": 424,
+	"endColumn": 49
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'actionButtonsContainer' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 441,
+	"startColumn": 28,
+	"endLineNumber": 441,
+	"endColumn": 50
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'wishlistButton' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 444,
+	"startColumn": 20,
+	"endLineNumber": 444,
+	"endColumn": 34
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'wishlistButtonActive' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 445,
+	"startColumn": 36,
+	"endLineNumber": 445,
+	"endColumn": 56
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'logDiveButton' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 456,
+	"startColumn": 25,
+	"endLineNumber": 456,
+	"endColumn": 38
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'actionButtonText' does not exist on type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }'.",
+	"source": "ts",
+	"startLineNumber": 460,
+	"startColumn": 31,
+	"endLineNumber": 460,
+	"endColumn": 47
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "2345",
+	"severity": 8,
+	"message": "Argument of type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; }' is not assignable to parameter of type '{ backButton: { position: \"absolute\"; left: number; width: number; height: number; borderRadius: number; backgroundColor: string; justifyContent: \"center\"; alignItems: \"center\"; zIndex: number; }; ... 31 more ...; sightingNumberText: { ...; }; } & NamedStyles<...>'.\n  Property 'sightingNumberText' is incompatible with index signature.\n    Object literal may only specify known properties, and 'sightingDateInfo' does not exist in type 'ViewStyle | TextStyle | ImageStyle'.",
+	"source": "ts",
+	"startLineNumber": 636,
+	"startColumn": 3,
+	"endLineNumber": 636,
+	"endColumn": 19
+},{
+	"resource": "/Users/applevalley/Work/official-seavault/screens/creatures/[id]/index.tsx",
+	"owner": "typescript",
+	"code": "1005",
+	"severity": 8,
+	"message": "',' expected.",
+	"source": "ts",
+	"startLineNumber": 764,
+	"startColumn": 2,
+	"endLineNumber": 764,
+	"endColumn": 3
+}]

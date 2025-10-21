@@ -87,6 +87,7 @@ export default function RootLayout() {
   
   // Determine if user is authenticated based on whether we have a current user ID
   const isAuthenticated = !!currentUserID;
+
   
   return (
     <Stack

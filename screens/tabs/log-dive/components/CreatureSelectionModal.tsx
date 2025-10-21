@@ -13,6 +13,7 @@ import { Search, Camera, X, Check } from 'lucide-react-native';
 import { Creature } from '@/types/database';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
 import * as ImagePicker from 'expo-image-picker';
+import { TYPOGRAPHY } from '@/constants';
 
 const { width, height } = Dimensions.get('window');
 const creatureCardWidth = (width - 60) / 3;
@@ -303,7 +304,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: '#fff',
   },
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     paddingVertical: 16,
   },
@@ -345,7 +346,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     color: '#666',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
   },
   activeCategoryText: {
@@ -386,7 +387,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   creatureName: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#fff',
     textAlign: 'center',
   },
@@ -418,7 +419,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   notesLabel: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#fff',
     marginBottom: 8,
   },
@@ -427,7 +428,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#fff',
     minHeight: 60,
   },
@@ -446,7 +447,7 @@ const styles = StyleSheet.create({
   },
   photoButtonText: {
     color: '#007AFF',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
   },
   saveNotesButton: {
@@ -457,7 +458,7 @@ const styles = StyleSheet.create({
   },
   saveNotesText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
   },
   footer: {
@@ -475,7 +476,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#333',
   },
   selectedCount: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
   },
   doneButton: {
@@ -486,7 +487,7 @@ const styles = StyleSheet.create({
   },
   doneButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
 });

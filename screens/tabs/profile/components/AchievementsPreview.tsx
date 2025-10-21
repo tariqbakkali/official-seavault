@@ -5,6 +5,7 @@ import { Trophy } from 'lucide-react-native';
 import { AchievementCard } from '@/components';
 import { COLORS } from '@/constants';
 import { ROUTES } from '@/constants';
+import { TYPOGRAPHY } from '@/constants';
 
 interface AchievementsPreviewProps {
   achievements: any[];
@@ -87,12 +88,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: COLORS.TEXT_PRIMARY,
   },
   counter: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: COLORS.TEXT_SECONDARY,
     fontWeight: '600',
   },
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: COLORS.TEXT_SECONDARY,
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
   viewAllButton: {
     backgroundColor: COLORS.SURFACE,
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     color: COLORS.PRIMARY,
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
 });

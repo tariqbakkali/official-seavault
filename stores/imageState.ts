@@ -17,7 +17,7 @@ export const images$ = observable(customSynced({
   filter: (select: any) => {
     // Filter by current user if available
     const userId = currentUserID$.get();
-    if (!userId) return select.eq('id', 'no-auth-user-id');
+    if (!userId) return select.eq('id', '00000000-0000-0000-0000-000000000000');
     return select.eq('user_id', userId).not('image_url', 'is', null);
   },
   actions: ['read', 'create', 'update', 'delete'],

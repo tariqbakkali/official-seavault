@@ -12,6 +12,7 @@ import { OptimizedImage } from './OptimizedImage';
 import { ImageMetadata } from '@/types/image.types';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useImageSync } from '@/hooks/useImageSync';
+import { TYPOGRAPHY } from '@/constants';
 import { Trash2, Upload, RefreshCw, AlertCircle } from 'lucide-react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: 'bold',
   },
   retryButton: {
@@ -275,7 +276,7 @@ const styles = StyleSheet.create({
   failedSummaryText: {
     flex: 1,
     color: '#c62828',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
   },
   retryAllButton: {
@@ -289,7 +290,7 @@ const styles = StyleSheet.create({
   },
   retryAllButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
   },
   modalContainer: {
@@ -306,7 +307,7 @@ const styles = StyleSheet.create({
   },
   modalCloseText: {
     color: '#fff',
-    fontSize: 36,
+    fontSize: TYPOGRAPHY.SIZE_HERO,
     fontWeight: 'bold',
   },
   modalImageContainer: {
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
   },
   imageInfoText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     marginBottom: 4,
   },
 });

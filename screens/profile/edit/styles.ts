@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -24,7 +25,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: '#fff',
   },
@@ -37,7 +38,7 @@ export const styles = StyleSheet.create({
   },
   unsavedText: {
     color: '#007AFF',
-    fontSize: 24,
+    fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
   },
   scrollView: {
@@ -51,20 +52,20 @@ export const styles = StyleSheet.create({
   },
   loadingText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
   section: {
     paddingHorizontal: 20,
     paddingVertical: 20,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 8,
   },
   sectionSubtitle: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     marginBottom: 16,
   },
@@ -74,7 +75,7 @@ export const styles = StyleSheet.create({
     marginTop: 20,
   },
   dangerSectionTitle: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '600',
     color: '#FF3B30',
     marginBottom: 16,
@@ -114,7 +115,7 @@ export const styles = StyleSheet.create({
   },
   avatarHint: {
     color: '#666',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     textAlign: 'center',
   },
   inputGroup: {
@@ -144,7 +145,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
   eyeIcon: {
     padding: 8,
@@ -161,7 +162,7 @@ export const styles = StyleSheet.create({
   },
   errorText: {
     color: '#FF3B30',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     flex: 1,
   },
   passwordStrengthContainer: {
@@ -179,7 +180,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#333',
   },
   passwordStrengthText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: '500',
     textAlign: 'center',
   },
@@ -209,7 +210,7 @@ export const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     color: '#fff',
   },
@@ -217,7 +218,7 @@ export const styles = StyleSheet.create({
     color: '#FF3B30',
   },
   linkText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#007AFF',
     textAlign: 'center',
     marginVertical: 12,
@@ -244,7 +245,7 @@ export const styles = StyleSheet.create({
   },
   successText: {
     color: '#34C759',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '500',
   },
 });

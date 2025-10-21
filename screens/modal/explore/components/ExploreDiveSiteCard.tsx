@@ -9,7 +9,7 @@ import {
 import { MapPin } from 'lucide-react-native';
 import { Database } from '@/types/database';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
-import { COLORS } from '@/constants';
+import { COLORS, TYPOGRAPHY } from '@/constants';
 
 type DiveSite = Database['public']['Tables']['dive_sites']['Row'];
 
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   name: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     marginBottom: 4,
   },
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   },
   location: {
     color: '#666',
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     flex: 1,
   },
 });

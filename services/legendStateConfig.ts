@@ -20,4 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
     fieldUpdatedAt: 'updated_at', // Use updated_at if possible, else revert to created_at
     fieldDeleted: 'deleted',      // Required for soft deletes in last-sync mode
     generateId: () => uuidv4(),
+    // onError: (error) => {
+    //   console.error('Synced error:', error);
+    // },
   });

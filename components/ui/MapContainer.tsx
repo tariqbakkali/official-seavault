@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import CustomClusteredMapView from '@/components/CustomClusteredMapView';
 
 interface MapContainerProps {
@@ -123,7 +124,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   helperText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#999',
     fontStyle: 'italic',
     marginTop: 5,

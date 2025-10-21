@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import { Trophy } from 'lucide-react-native';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
 
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2a2a2a',
   },
   rankText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: 'bold',
   },
   goldText: {
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   leaderboardName: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     color: '#fff',
   },
@@ -157,19 +158,19 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   leaderboardSubtext: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
   },
   pointsContainer: {
     alignItems: 'flex-end',
   },
   pointsText: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     color: '#FF9500',
   },
   ptsText: {
-    fontSize: 10,
+    fontSize: TYPOGRAPHY.SIZE_XS,
     color: '#666',
     textAlign: 'right',
   },

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import { Image } from 'expo-image';
 
 export default function SimpleTest() {
@@ -35,18 +36,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     marginBottom: 10,
   },
   url: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
     marginBottom: 10,
     fontFamily: 'monospace',
   },
   note: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
     marginBottom: 10,
     fontStyle: 'italic',

@@ -19,6 +19,7 @@ export interface Database {
           image_url: string | null;
           created_at: string;
           class: string | null;
+          updated_at: string;
         };
         Insert: Omit<Database['public']['Tables']['creatures']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['creatures']['Insert']>;
@@ -29,6 +30,7 @@ export interface Database {
           name: string;
           created_at: string;
           image_url: string | null;
+          updated_at: string;
         };
         Insert: Omit<Database['public']['Tables']['categories']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['categories']['Insert']>;
@@ -40,6 +42,7 @@ export interface Database {
           latitude: number | null;
           longitude: number | null;
           osm_id: string | null;
+          updated_at: string;
         };
         Insert: Omit<Database['public']['Tables']['dive_sites']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['dive_sites']['Insert']>;
@@ -72,6 +75,7 @@ export interface Database {
           time_of_day: string | null;
           depth: string | null;
           creature_notes: string | null;
+          updated_at: string;
         };
         Insert: Omit<Database['public']['Tables']['sightings']['Row'], 'created_at'>;
         Update: Partial<Database['public']['Tables']['sightings']['Insert']>;
@@ -97,6 +101,7 @@ export interface Database {
           icon_name: string | null;
           points: number | null;
           created_at: string;
+          updated_at: string;
         };
         Insert: Omit<Database['public']['Tables']['achievements']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['achievements']['Insert']>;

@@ -2,6 +2,7 @@ import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
+import { TYPOGRAPHY } from '@/constants';
 
 interface CategoryWithStats {
   id: string;
@@ -75,13 +76,13 @@ const styles = StyleSheet.create({
     // Content wrapper for the gradient overlay
   },
   categoryName: {
-    fontSize: 24,
+    fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 4,
   },
   categorySubtext: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#ccc',
   },
   completionBadge: {
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
   },
   completionText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: '600',
   },
 });

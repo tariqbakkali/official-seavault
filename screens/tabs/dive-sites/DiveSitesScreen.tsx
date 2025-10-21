@@ -6,6 +6,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import LoadingState from '@/components/LoadingState';
 import ErrorDisplay from '@/components/ErrorDisplay';
 import DiveSiteMarker from '@/components/DiveSiteMarker';
+import { TYPOGRAPHY } from '@/constants';
 
 /**
  * Comprehensive dive sites screen demonstrating best practices
@@ -92,13 +93,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   siteName: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 5,
   },
   coordinates: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#999',
   },
   emptyContainer: {
@@ -107,7 +108,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#999',
   },
 });

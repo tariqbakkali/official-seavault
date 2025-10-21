@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 
 interface LoadingStateProps {
   message?: string;
@@ -32,7 +33,7 @@ const styles = StyleSheet.create({
   },
   message: {
     marginTop: 10,
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
   },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 
 interface FormFieldProps {
   label: string;
@@ -57,7 +58,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 10,
@@ -71,7 +72,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 15,
     backgroundColor: '#1a1a1a',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
   },
   inputError: {
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   errorText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#ff3b30',
     fontStyle: 'italic',
     marginTop: 5,

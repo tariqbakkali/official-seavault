@@ -14,7 +14,7 @@ import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { ImageWithFallback } from '@/components';
 import { formatDate } from '@/utils/format';
-import { DIMENSIONS } from '@/constants/dimensions';
+import { DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
 // Calculate card width based on screen size
 const cardWidth = DIMENSIONS.SCREEN_WIDTH - 40;
@@ -222,13 +222,13 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   creatureName: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 4,
   },
   scientificName: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     fontStyle: 'italic',
     marginBottom: 8,
@@ -244,11 +244,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   firstSightingDate: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
   },
   totalSightings: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#007AFF',
     fontWeight: '600',
   },
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   pointsText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#fff',
     fontWeight: '600',
   },
@@ -272,13 +272,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     color: '#fff',
     fontWeight: '600',
     marginBottom: 8,
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     textAlign: 'center',
   },

@@ -16,6 +16,7 @@ import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
 import { ImageWithFallback } from '@/components';
 import { ROUTES, APP_CONFIG } from '@/constants';
+import { TYPOGRAPHY } from '@/constants';
 import { getLeaderboardData } from '@/services/leaderboardService';
 import { forceSyncAll } from '@/utils/syncUtils';
 import { Creature, Category, Sighting, Wishlist } from '@/types/database';
@@ -100,7 +101,8 @@ export default function HomeScreen() {
         const stats = calculateUserStats(
           userData,
           catalog,
-          userAchievementsArray
+          userAchievementsArray,
+          allCreatures ? Object.values(allCreatures) : []
         );
         setUserStats(stats);
       }
@@ -431,11 +433,11 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   welcomeText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
   },
   usernameText: {
-    fontSize: 36,
+    fontSize: TYPOGRAPHY.SIZE_HERO,
     fontWeight: 'bold',
     color: '#fff',
   },
@@ -445,13 +447,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   title: {
-    fontSize: 32,
+    fontSize: TYPOGRAPHY.SIZE_HERO,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
   },
   logDiveButton: {
@@ -463,7 +465,7 @@ const styles = StyleSheet.create({
   },
   logDiveText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
   statsContainer: {
@@ -485,13 +487,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
     marginVertical: 4,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: TYPOGRAPHY.SIZE_XS,
     color: '#666',
   },
   section: {
@@ -521,13 +523,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: '#fff',
   },
   seeAllButton: {
     color: '#007AFF',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
   leaderboardEntry: {
@@ -558,13 +560,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rankText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: 'bold',
     color: '#666',
   },
   rankTextTop: {
     color: '#FF9500',
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
   },
   rankBadge: {
     backgroundColor: 'transparent',
@@ -587,7 +589,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   leaderboardName: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     fontWeight: '700',
   },
@@ -596,7 +598,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   leaderboardSubtext: {
-    fontSize: 10,
+    fontSize: TYPOGRAPHY.SIZE_XS,
     color: '#888',
     marginTop: 2,
   },
@@ -610,7 +612,7 @@ const styles = StyleSheet.create({
   },
   pointsText: {
     color: '#000',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: 'bold',
   },
 });

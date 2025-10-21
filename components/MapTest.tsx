@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import MapContainer from '@/components/ui/MapContainer';
 
 const MapTest = () => {
@@ -158,14 +159,14 @@ const styles = StyleSheet.create({
     margin: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     marginBottom: 10,
     textAlign: 'center',
     color: '#fff',
   },
   description: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     textAlign: 'center',
     color: '#999',
     marginBottom: 20,

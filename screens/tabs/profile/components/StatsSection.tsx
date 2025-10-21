@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ROUTES } from '@/constants';
 import { Trophy, Fish, Star } from 'lucide-react-native';
 import { COLORS } from '@/constants';
+import { TYPOGRAPHY } from '@/constants';
 
 interface StatsSectionProps {
   uniqueCreatures?: number;
@@ -61,7 +62,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
               {stat.icon}
             </View>
             <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
-            <Text style={styles.statLabel}>{stat.label}</Text>
+            <Text style={styles.statLabel} numberOfLines={1} ellipsizeMode="tail">{stat.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -75,7 +76,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: COLORS.TEXT_PRIMARY,
     marginBottom: 16,
@@ -109,12 +110,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: COLORS.TEXT_SECONDARY,
     textAlign: 'center',
   },

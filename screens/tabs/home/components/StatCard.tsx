@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Eye, Heart, Trophy } from 'lucide-react-native';
-import { COLORS } from '@/constants';
+import { COLORS, TYPOGRAPHY } from '@/constants';
 
 interface StatCardProps {
   type: 'discovered' | 'wishlist' | 'points' | 'achievements';
@@ -131,12 +131,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   statValue: {
-    fontSize: 28,
+    fontSize: TYPOGRAPHY.SIZE_TITLE,
     fontWeight: 'bold',
     color: COLORS.TEXT_PRIMARY,
   },
   statLabel: {
-    fontSize: Dimensions.get('window').width < 375 ? 8 : Dimensions.get('window').width < 414 ? 9 : 10,
+    fontSize: TYPOGRAPHY.SIZE_XS,
     color: COLORS.TEXT_SECONDARY,
     textAlign: 'center',
     fontWeight: '600',

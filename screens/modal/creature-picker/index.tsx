@@ -17,6 +17,7 @@ import { useSyncedData } from '@/hooks/useSyncedData';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
+import { TYPOGRAPHY } from '@/constants';
 
 type Creature = Database['public']['Tables']['creatures']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -300,9 +301,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    height: 44,
-    color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
   filterButton: {
     width: 44,
@@ -344,7 +343,7 @@ const styles = StyleSheet.create({
   },
   filterText: {
     color: '#ccc',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
   },
   filterTextActive: {
     color: '#fff',
@@ -378,13 +377,13 @@ const styles = StyleSheet.create({
   },
   name: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     marginBottom: 4,
   },
   points: {
     color: '#007AFF',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
   },
   loadingContainer: {
@@ -394,7 +393,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
   emptyContainer: {
     flex: 1,
@@ -404,6 +403,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
 });

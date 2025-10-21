@@ -13,6 +13,7 @@ import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { AchievementCard } from '@/components';
 import { COLORS } from '@/constants';
+import { TYPOGRAPHY } from '@/constants';
 
 export default function AchievementsScreen() {
   const [achievementsWithStatus, setAchievementsWithStatus] = React.useState<any[]>([]);
@@ -21,7 +22,7 @@ export default function AchievementsScreen() {
   const insets = useSafeAreaInsets();
   const { id: selectedAchievementId } = useLocalSearchParams();
   
-  const { achievements: allAchievements, userAchievements: allUserAchievements, currentUserSightings } = useSyncedData();
+  const { achievements: allAchievements, userAchievements: allUserAchievements, currentUserSightings, creatures } = useSyncedData();
 
   React.useEffect(() => {
     const loadData = () => {
@@ -30,33 +31,77 @@ export default function AchievementsScreen() {
         const userAchievementsArray = allUserAchievements ? Object.values(allUserAchievements) : [];
         const unlockedAchievementIds = new Set(userAchievementsArray.map((ua: any) => ua.achievement_id));
         
-        // Calculate progress for collection achievements
+        // Create a map for quick creature lookup
+        const creaturesMap = new Map(
+          (creatures ? Object.values(creatures) : []).map((creature: any) => [creature.id, creature])
+        );
+
+        // Calculate progress for collection and beginner achievements
         const sightingsArray = currentUserSightings ? Object.values(currentUserSightings) : [];
-        const uniqueCreatures = new Set(sightingsArray.map((s: any) => s.creature_id)).size;
+        const uniqueCreatureIdsSighted = new Set(sightingsArray.map((s: any) => s.creature_id));
+        const uniqueCreatures = uniqueCreatureIdsSighted.size;
+
+        // Get unique creature names and classes from sighted creatures for rare achievements
+        const sightedCreatureNames = new Set<string>();
+        const sightedCreatureClasses = new Set<string>();
+        uniqueCreatureIdsSighted.forEach(creatureId => {
+          const creature = creaturesMap.get(creatureId);
+          if (creature) {
+            sightedCreatureNames.add(creature.name);
+            sightedCreatureClasses.add(creature.class);
+          }
+        });
         
         // Get all achievements with unlock status and progress
         const achievementsWithStatus = (allAchievements ? Object.values(allAchievements) : [])
           .map((achievement: any) => {
-            // Add progress information for collection achievements
             let progress = 0;
             let total = 0;
             
-            if (achievement.category === 'collection') {
+            if (achievement.category === 'collection' || achievement.category === 'beginner') {
               progress = uniqueCreatures;
-              // Extract the number from the description (e.g., "Log 25 different species")
-              const match = achievement.description?.match(/Log (\d+) different species/);
-              total = match ? parseInt(match[1], 10) : 0;
+              if (achievement.code === 'first_catch') {
+                total = 1;
+              } else {
+                const match = achievement.description?.match(/Log (\d+) different species/);
+                total = match ? parseInt(match[1], 10) : 0;
+              }
+            } else if (achievement.category === 'rare') {
+              total = 1; // Rare achievements are typically "log one of X"
+              switch (achievement.code) {
+                case 'whale_watcher':
+                  progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('whale')) ? 1 : 0;
+                  break;
+                case 'dolphin_friend':
+                  progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('dolphin')) ? 1 : 0;
+                  break;
+                case 'manta_mania':
+                  progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('manta ray')) ? 1 : 0;
+                  break;
+                case 'shark_whisperer':
+                  progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('shark')) ? 1 : 0;
+                  break;
+                case 'elusive_spotter':
+                  progress = sightedCreatureClasses.has('Rare') ? 1 : 0;
+                  break;
+                default:
+                  // Handle other rare achievements if any, or leave progress as 0
+                  break;
+              }
             }
+            
+            const isAlreadyUnlocked = unlockedAchievementIds.has(achievement.id);
+            const isCurrentlyMeetingCriteria = (total > 0 && progress >= total);
+            const unlocked = isAlreadyUnlocked || isCurrentlyMeetingCriteria;
             
             return {
               ...achievement,
-              unlocked: unlockedAchievementIds.has(achievement.id),
+              unlocked: unlocked,
               progress,
               total
             };
           })
           .sort((a: any, b: any) => {
-            // Sort by unlocked first, then by points descending
             if (a.unlocked && !b.unlocked) return -1;
             if (!a.unlocked && b.unlocked) return 1;
             return (b.points || 0) - (a.points || 0);
@@ -69,7 +114,7 @@ export default function AchievementsScreen() {
     };
 
     loadData();
-  }, [allAchievements, allUserAchievements, currentUserSightings]);
+  }, [allAchievements, allUserAchievements, currentUserSightings, creatures]);
 
   // Apply filtering based on active filter
   React.useEffect(() => {
@@ -97,7 +142,7 @@ export default function AchievementsScreen() {
     />
   );
 
-  const unlockedCount = achievementsWithStatus.filter(a => a.unlocked).length;
+  const unlockedCount = achievementsWithStatus.filter((a: any) => a.unlocked).length;
   const totalCount = achievementsWithStatus.length;
 
   return (
@@ -183,7 +228,7 @@ const styles = StyleSheet.create({
   },
   filterText: {
     color: COLORS.TEXT_SECONDARY,
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
   },
   activeFilterText: {
@@ -202,14 +247,14 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: '600',
     color: '#fff',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtitle: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
     textAlign: 'center',
     paddingHorizontal: 20,

@@ -13,6 +13,7 @@ import {
 import { router } from 'expo-router';
 import { supabase } from '@/services/supabase';
 import { ROUTES, COLORS, DIMENSIONS, APP_CONFIG } from '@/constants';
+import { TYPOGRAPHY } from '@/constants';
 import { isValidEmail } from './utils/authValidation';
 import { showAlert } from '@/utils/alertUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -229,14 +230,14 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   title: {
-    fontSize: 48,
+    fontSize: TYPOGRAPHY.SIZE_DISPLAY,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     color: '#666',
     textAlign: 'center',
     marginBottom: 48,
@@ -245,10 +246,11 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   input: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     borderWidth: 1,
     borderColor: '#333',
@@ -265,7 +267,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
   switchButton: {
@@ -274,6 +276,6 @@ const styles = StyleSheet.create({
   },
   switchText: {
     color: '#007AFF',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
   },
 });

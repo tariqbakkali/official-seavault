@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 
 const ApiKeyTest = () => {
   // Get the API key from the environment
@@ -26,13 +27,13 @@ const styles = StyleSheet.create({
     margin: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     marginBottom: 10,
     textAlign: 'center',
   },
   apiKey: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontFamily: 'monospace',
     backgroundColor: '#e0e0e0',
     padding: 10,
@@ -40,7 +41,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   status: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: 'bold',
     textAlign: 'center',
   },

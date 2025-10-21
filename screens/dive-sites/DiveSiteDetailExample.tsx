@@ -14,6 +14,7 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import { useImageSync } from '@/hooks/useImageSync';
 import { images$, addImage, deleteImage } from '@/stores/imageState';
 import { ImageMetadata } from '@/types/image.types';
+import { TYPOGRAPHY } from '@/constants';
 import { Upload, RefreshCw, AlertCircle } from 'lucide-react-native';
 
 interface DiveSiteDetailExampleProps {
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0',
   },
   title: {
-    fontSize: 24,
+    fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#1a1a1a',
     marginBottom: 12,
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statusText: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
     color: '#666',
   },
@@ -268,14 +269,14 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     color: '#1a1a1a',
     marginBottom: 12,
   },
   uploadStatus: {
     marginTop: 12,
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     textAlign: 'center',
   },
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
   errorText: {
     flex: 1,
     color: '#c62828',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
   },
   retryButton: {
     flexDirection: 'row',
@@ -304,7 +305,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
   },
   emptyState: {
@@ -312,7 +313,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyStateText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
     textAlign: 'center',
   },
@@ -321,7 +322,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e3f2fd',
   },
   syncStatusText: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#1976d2',
     textAlign: 'center',
   },

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import { GoogleMaps, AppleMaps } from 'expo-maps';
 
 const MapDebug = () => {
@@ -44,7 +45,7 @@ const styles = StyleSheet.create({
     margin: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     marginBottom: 10,
     textAlign: 'center',
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   info: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     textAlign: 'center',
     color: '#666',
   },

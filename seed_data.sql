@@ -210,10 +210,10 @@ INSERT INTO "public"."profiles" ("id", "email", "full_name", "avatar_url", "memb
 
 INSERT INTO "public"."sightings" ("id", "user_id", "creature_id", "date", "dive_notes", "image_url", "created_at", "dive_site_id", "dive_type", "time_of_day", "depth", "creature_notes") VALUES
 	('96765b8c-a24b-47d2-bb34-8b402e3c84cc', '82d6229a-2890-416d-b66e-f626d38a5fe0', '28d53df0-2600-4824-a49c-8cc02cb2b4b1', '2025-09-24 00:00:00+00', 'What''s up ', 'file:///data/user/0/host.exp.exponent/cache/ImagePicker/64d63ec9-533e-4fec-8eee-f39bf7cc421f.jpeg', '2025-09-24 15:13:11.276251+00', '0554e26e-df64-4296-99c0-1f9074c474d7', 'night', '8:11 PM', '150', NULL),
-	('f71bc894-e5d3-4c62-9fbb-405f86cacff7', '82d6229a-2890-416d-b66e-f626d38a5fe0', '3a3da92c-9860-4a20-8ded-ccf2f3d311e9', '2025-09-25 00:00:00+00', 'Hdhdnf', 'file:///data/user/0/host.exp.exponent/cache/ImagePicker/2c1920cc-b725-48c4-aa29-032ffee629f9.jpeg', '2025-09-26 10:47:57.365163+00', '01b3fb54-45b0-4e8f-b91c-40b71e88101c', 'wreck', 'evening', '20', NULL),
+	('f71bc894-e5d3-4c62-9fbb-405f86cacff7', '82d6229a-2890-416d-b66e-f626d38a5fe0', '3a3da92c-9860-4a20-8ded-ccf2f3d311e9', '2025-09-25 00:00:00+00', 'Hdhdnf', 'file:///data/user/0/host.exp.exponent/cache/ImagePicker/2c1920cc-b725-48c4-aa29-032ffee629f9.jpeg', '2025-09-26 10:47:57.365163+00', '01b3fb54-45b0-4e8f-b91c-40b71e88101c', 'Wreck', 'evening', '20', NULL),
 	('6e7afd6c-9f0a-43a7-9311-d5c87c5dbcb1', 'd1a50ea5-2d4f-4628-b0b8-1c52d91d3ff0', '3a3da92c-9860-4a20-8ded-ccf2f3d311e9', '2025-09-28 00:00:00+00', 'Bxbxcnnc
 
-', 'file:///data/user/0/host.exp.exponent/cache/ImagePicker/1d0e7b39-554e-4fef-9d2e-7e536ad0da26.jpeg', '2025-09-30 06:50:14.204514+00', '5f230094-d576-4380-98de-1dad9d51abfd', 'wreck', 'morning', '200', NULL);
+', 'file:///data/user/0/host.exp.exponent/cache/ImagePicker/1d0e7b39-554e-4fef-9d2e-7e536ad0da26.jpeg', '2025-09-30 06:50:14.204514+00', '5f230094-d576-4380-98de-1dad9d51abfd', 'Wreck', 'morning', '200', NULL);
 
 
 --

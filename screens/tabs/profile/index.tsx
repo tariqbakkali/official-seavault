@@ -20,6 +20,7 @@ import StatsSection from './components/StatsSection';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll, clearUserSync } from '@/utils/syncUtils';
 import LoadingState from '@/components/LoadingState';
+import { TYPOGRAPHY } from '@/constants';
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -37,7 +38,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   
-  const { creatures: allCreatures, categories: allCategories, currentUserSightings: allSightings, wishlists: allWishlists, profile: userProfile, achievements: allAchievements, userAchievements: allUserAchievements } = useSyncedData();
+  const { creatures: allCreatures, categories: allCategories, currentUserSightings: allSightings, wishlists: allWishlists, profile: userProfile, achievements: allAchievements, userAchievements: allUserAchievements, creatures: allCreaturesData } = useSyncedData();
 
   const loadData = React.useCallback(() => {
     try {
@@ -70,12 +71,15 @@ export default function ProfileScreen() {
       // Only calculate stats when we have the necessary data
       if (creaturesArray.length > 0 && categoriesArray.length > 0) {
         if (userData && catalog) {
-          const stats = calculateUserStats(userData, catalog, userAchievementsArray);
+          const stats = calculateUserStats(userData, catalog, userAchievementsArray, allCreaturesData ? Object.values(allCreaturesData) : []);
           setUserStats(stats);
         }
       }
       
-      // Calculate achievements with status
+      // Calculate achievements with status (this block is for the achievements list, not the stats summary)
+      // This part of the code is redundant for the profile screen's stats summary
+      // and should be removed or refactored if not used elsewhere in this component.
+      // For now, we will keep it as is, but it does not affect the stats summary.
       const unlockedAchievementIds = new Set(userAchievementsArray.map((ua: any) => ua.achievement_id));
       const uniqueCreatures = new Set(sightingsArray.map((s: any) => s.creature_id)).size;
       
@@ -96,11 +100,6 @@ export default function ProfileScreen() {
             progress,
             total
           };
-        })
-        .sort((a: any, b: any) => {
-          if (a.unlocked && !b.unlocked) return -1;
-          if (!a.unlocked && b.unlocked) return 1;
-          return (b.points || 0) - (a.points || 0);
         });
         
       setAchievementsWithStatus(achievementsWithStatus);
@@ -163,9 +162,6 @@ export default function ProfileScreen() {
   // Extract profile data safely
   const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
   
-  // Get unlocked achievements
-  const userAchievementsArray = allUserAchievements ? Object.values(allUserAchievements) : [];
-  const unlockedCount = userAchievementsArray.length;
   const totalCount = allAchievements ? Object.values(allAchievements).length : 0;
   
   const menuItems: MenuItem[] = [
@@ -238,7 +234,7 @@ export default function ProfileScreen() {
         <StatsSection 
           uniqueCreatures={userStats?.uniqueCreatures || 0}
           totalPoints={userStats?.totalPoints || 0}
-          achievementsUnlocked={unlockedCount}
+          achievementsUnlocked={userStats?.achievementsUnlocked || 0}
           totalAchievements={totalCount}
         />
 
@@ -296,13 +292,13 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   name: {
-    fontSize: 24,
+    fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 4,
   },
   email: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
   },
   menuSection: {
@@ -326,17 +322,17 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   menuItemTitle: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     color: '#fff',
     fontWeight: '600',
   },
   menuItemSubtitle: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     marginTop: 2,
   },
   chevron: {
-    fontSize: 24,
+    fontSize: TYPOGRAPHY.SIZE_XXXL,
     color: '#666',
   },
 });

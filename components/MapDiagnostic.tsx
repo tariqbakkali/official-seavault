@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Alert, Platform } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import { GoogleMaps, AppleMaps } from 'expo-maps';
@@ -143,7 +144,7 @@ const styles = StyleSheet.create({
     margin: 20,
   },
   title: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     marginBottom: 15,
     textAlign: 'center',
@@ -161,14 +162,14 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   value: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
   smallText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
   },
   errorText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#ff0000',
   },
   mapContainer: {
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
   },
   note: {
     marginTop: 15,
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
     fontStyle: 'italic',
     textAlign: 'center',
@@ -205,13 +206,13 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
   troubleshootingTitle: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#333',
   },
   troubleshootingText: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     marginBottom: 5,
     color: '#666',
   },

@@ -19,7 +19,8 @@ import { formatDate, formatTime } from '@/utils/format';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { toggleWishlistItem } from '@/stores/syncedObservables';
-import { ROUTES, APP_CONFIG, DIMENSIONS, COLORS } from '@/constants';
+import { DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import {  COLORS } from '@/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -38,12 +39,12 @@ export default function CreatureDetailScreen() {
   const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
   
   // Use updated observable-based store
-  const { creatures, wishlists, allUsersSightings, diveSites: allDiveSites, profile, userAchievements: allUserAchievements } = useSyncedData();
+  const { creatures, wishlists, currentUserSightings, diveSites: allDiveSites, profile } = useSyncedData();
   const userProfile = profile ? Object.values(profile)[0] : undefined;
 
   React.useEffect(() => {
     loadData();
-  }, [id, creatures, allUsersSightings, allDiveSites, wishlists, userProfile]);
+  }, [id, creatures, currentUserSightings, allDiveSites, wishlists, userProfile]);
 
   // Watch for changes in wishlists to update the UI
   React.useEffect(() => {
@@ -75,9 +76,10 @@ export default function CreatureDetailScreen() {
       // Fetch user data
       const userId = userProfile && typeof userProfile === 'object' && userProfile.hasOwnProperty('id') ? (userProfile as any).id : undefined;
       if (userId) {
-        // Fetch sightings for this creature using the allUsersSightings observable
-        const allSightingsArray = allUsersSightings ? Object.values(allUsersSightings) : [];
-        const sightingsArray = allSightingsArray.filter((sighting: any) => 
+        // Fetch sightings for this creature using the currentUserSightings observable
+        // This observable is already filtered for the current user
+        const userSightingsArray = currentUserSightings ? Object.values(currentUserSightings) : [];
+        const sightingsArray = userSightingsArray.filter((sighting: any) => 
           sighting && sighting.creature_id === id
         ) as Sighting[];
         setSightings(sightingsArray);
@@ -88,7 +90,7 @@ export default function CreatureDetailScreen() {
           const diveSiteIds = sightingsArray
             .map((sighting: any) => sighting.dive_site_id)
             .filter((id): id is string => id !== null && id !== undefined);
-          
+        
           if (diveSiteIds.length > 0) {
             // Fetch dive sites from the diveSites observable
             const allDiveSitesArray = allDiveSites ? Object.values(allDiveSites) : [];
@@ -104,7 +106,7 @@ export default function CreatureDetailScreen() {
     } finally {
       setLoading(false);
     }
-  }, [id, creatures, allUsersSightings, allDiveSites, wishlists, userProfile]);
+  }, [id, creatures, currentUserSightings, allDiveSites, wishlists, userProfile]);
 
   React.useEffect(() => {
     loadData();
@@ -284,9 +286,6 @@ export default function CreatureDetailScreen() {
       </View>
     );
   }
-
-  const groupedSightings = groupSightingsByDiveSite();
-  const unlockedAchievements = allUserAchievements ? Object.values(allUserAchievements).length : 0;
 
   return (
     <View style={[styles.container, { 
@@ -507,7 +506,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   name: {
-    fontSize: 28,
+    fontSize: TYPOGRAPHY.SIZE_TITLE,
     fontWeight: 'bold',
     color: '#fff',
   },
@@ -526,7 +525,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   scientificName: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     color: '#666',
     fontStyle: 'italic',
     flex: 1,
@@ -540,11 +539,11 @@ const styles = StyleSheet.create({
   },
   pointsBadgeText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: 'bold',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
   },
   tabContainer: {
@@ -564,7 +563,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#fff',
   },
   tabText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
     fontWeight: '600',
   },
@@ -580,13 +579,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 12,
   },
   sectionText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#ccc',
     lineHeight: 24,
   },
@@ -600,12 +599,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     marginBottom: 4,
   },
   detailValue: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     fontWeight: '600',
   },
@@ -633,6 +632,7 @@ const styles = StyleSheet.create({
   sightingNumberText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
   sightingDateInfo: {
     flex: 1,
@@ -645,12 +645,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sightingDate: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     fontWeight: '600',
   },
   sightingTime: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
   },
   diveSiteInfo: {
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   diveSiteName: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
   },
   detailRow: {
@@ -668,13 +668,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   detailLabelNew: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     fontWeight: '600',
     width: 100,
   },
   detailValueNew: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#ccc',
     flex: 1,
   },
@@ -694,12 +694,12 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   notesLabel: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     marginBottom: 4,
   },
   notesText: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#ccc',
     lineHeight: 20,
   },
@@ -710,12 +710,12 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     color: '#666',
     marginBottom: 8,
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#444',
   },
   actionButtonsContainer: {
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '600',
   },
 });

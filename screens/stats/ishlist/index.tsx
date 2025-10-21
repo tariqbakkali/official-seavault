@@ -14,6 +14,7 @@ import { useSyncedData } from '@/hooks/useSyncedData';
 import { Creature } from '@/types/database';
 import { ImageWithFallback } from '@/components';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { TYPOGRAPHY } from '@/constants';
 
 interface WishlistCreature {
   creature: Creature;
@@ -180,19 +181,19 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   creatureName: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 4,
   },
   scientificName: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     fontStyle: 'italic',
     marginBottom: 4,
   },
   addedDate: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
     marginBottom: 8,
   },
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   pointsText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#fff',
     fontWeight: '600',
   },
@@ -218,14 +219,14 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     color: '#fff',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     textAlign: 'center',
     lineHeight: 20,

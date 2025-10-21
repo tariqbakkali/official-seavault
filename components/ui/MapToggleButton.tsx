@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { COLORS } from '@/constants';
+import { TYPOGRAPHY } from '@/constants';
 
 interface MapToggleButtonProps {
   isSelecting: boolean;
@@ -40,7 +41,7 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     color: '#fff',
-    fontSize: 15,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
 });

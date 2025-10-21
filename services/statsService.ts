@@ -27,7 +27,8 @@ export const calculateUserStats = (
     categories: Category[];
     achievements: Achievement[]; // Updated type
   },
-  userAchievements?: UserAchievement[] // Updated type
+  userAchievements?: UserAchievement[], // Updated type
+  allCreatures?: Creature[]
 ): UserStats => {
   
   // Handle case where catalog is not yet loaded
@@ -114,8 +115,67 @@ export const calculateUserStats = (
   const uniqueCreatures = seenCreatureIds.size;
   const overallCompletion = totalCreatures > 0 ? Math.round((uniqueCreatures / totalCreatures) * 100) : 0;
   
-  // Calculate achievements unlocked
-  const achievementsUnlocked = userAchievements ? userAchievements.length : 0;
+  // Calculate achievements unlocked dynamically
+  let dynamicallyUnlockedAchievementsCount = 0;
+  if (catalog.achievements && allCreatures) {
+    const creaturesMapForDynamic = new Map<string, Creature>(
+      allCreatures.map((creature: Creature) => [creature.id, creature])
+    );
+
+    const sightedCreatureNames = new Set<string>();
+    const sightedCreatureClasses = new Set<string>();
+    seenCreatureIds.forEach(creatureId => {
+      const creature = creaturesMapForDynamic.get(creatureId);
+      if (creature) {
+        sightedCreatureNames.add(creature.name);
+        sightedCreatureClasses.add(creature.class);
+      }
+    });
+
+    catalog.achievements.forEach((achievement: Achievement) => {
+      let progress = 0;
+      let total = 0;
+
+      if (achievement.category === 'collection' || achievement.category === 'beginner') {
+        progress = uniqueCreatures; // uniqueCreatures is already calculated
+        if (achievement.code === 'first_catch') {
+          total = 1;
+        } else {
+          const match = achievement.description?.match(/Log (\d+) different species/);
+          total = match ? parseInt(match[1], 10) : 0;
+        }
+      } else if (achievement.category === 'rare') {
+        total = 1;
+        switch (achievement.code) {
+          case 'whale_watcher':
+            progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('whale')) ? 1 : 0;
+            break;
+          case 'dolphin_friend':
+            progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('dolphin')) ? 1 : 0;
+            break;
+          case 'manta_mania':
+            progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('manta ray')) ? 1 : 0;
+            break;
+          case 'shark_whisperer':
+            progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('shark')) ? 1 : 0;
+            break;
+          case 'elusive_spotter':
+            progress = sightedCreatureClasses.has('Rare') ? 1 : 0;
+            break;
+          default:
+            break;
+        }
+      }
+
+      const isAlreadyUnlocked = userAchievements ? userAchievements.some(ua => ua.achievement_id === achievement.id) : false;
+      const isCurrentlyMeetingCriteria = (total > 0 && progress >= total);
+
+      if (isAlreadyUnlocked || isCurrentlyMeetingCriteria) {
+        dynamicallyUnlockedAchievementsCount++;
+      }
+    });
+  }
+  const achievementsUnlocked = dynamicallyUnlockedAchievementsCount;
   
   // Add achievement points to total points
   if (userAchievements && catalog.achievements) {

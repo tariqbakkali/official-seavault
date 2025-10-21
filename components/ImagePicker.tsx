@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import { Camera, Image as ImageIcon } from 'lucide-react-native';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { ImageMetadata } from '@/types/image.types';
@@ -128,7 +129,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
   uploadingContainer: {
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   uploadProgressText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     color: '#1a1a1a',
   },
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#c62828',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     textAlign: 'center',
   },
 });

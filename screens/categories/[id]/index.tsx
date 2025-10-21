@@ -222,13 +222,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   creatureName: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 4,
   },
   scientificName: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     fontStyle: 'italic',
     marginBottom: 8,
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
   pointsText: {
     color: COLORS.PRIMARY,
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: '600',
   },
   emptyContainer: {
@@ -253,6 +253,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
 });

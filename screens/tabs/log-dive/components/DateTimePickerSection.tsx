@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
-import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DateTimePickerSectionProps {
   date: Date;
@@ -11,13 +10,6 @@ interface DateTimePickerSectionProps {
   onTimeOfDayChange: (timeOfDay: string) => void;
 }
 
-const timeOfDayOptions = [
-  { value: 'morning', label: 'Morning (6am - 12pm)' },
-  { value: 'afternoon', label: 'Afternoon (12pm - 6pm)' },
-  { value: 'evening', label: 'Evening (6pm - 10pm)' },
-  { value: 'night', label: 'Night (10pm - 6am)' },
-];
-
 const DateTimePickerSection: React.FC<DateTimePickerSectionProps> = ({
   date,
   timeOfDay,
@@ -25,14 +17,34 @@ const DateTimePickerSection: React.FC<DateTimePickerSectionProps> = ({
   onTimeOfDayChange,
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimeOfDayModal, setShowTimeOfDayModal] = useState(false);
-
-  const insets = useSafeAreaInsets();
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
 
   // Get today's date with time set to end of day to allow today's date
   const today = new Date();
   today.setHours(23, 59, 59, 999);
+
+  // Parse timeOfDay string to create a Date object for the time picker
+  const parseTimeOfDay = (timeString: string): Date => {
+    if (!timeString) return new Date();
+    
+    // If it's already in HH:MM:SS format
+    if (timeString.includes(':')) {
+      const [hours, minutes, seconds] = timeString.split(':').map(Number);
+      const timeDate = new Date();
+      timeDate.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+      return timeDate;
+    }
+    
+    // If it's in the old format (morning, afternoon, etc.), default to current time
+    const timeDate = new Date();
+    return timeDate;
+  };
+
+  // Format time as HH:MM:SS
+  const formatTime = (date: Date): string => {
+    return date.toTimeString().slice(0, 8);
+  };
 
   return (
     <View style={styles.dateTimeContainer}>
@@ -65,72 +77,32 @@ const DateTimePickerSection: React.FC<DateTimePickerSectionProps> = ({
       </View>
 
       <View style={styles.timeContainer}>
-        <Text style={styles.label}>Time of Day</Text>
+        <Text style={styles.label}>Time</Text>
         <TouchableOpacity 
           style={styles.datePickerButton}
-          onPress={() => setShowTimeOfDayModal(true)}
+          onPress={() => setShowTimePicker(true)}
         >
           <Text style={styles.dateText}>
-            {timeOfDay || 'Time of day'}
+            {timeOfDay || 'Select time'}
           </Text>
           <Text style={styles.datePickerIcon}>⏰</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Modal for Time of Day Selection */}
-      <Modal
-        visible={showTimeOfDayModal}
-        animationType="slide"
-        transparent={false}
-        onRequestClose={() => setShowTimeOfDayModal(false)}
-      >
-        <View style={[styles.modalContainer,{paddingTop: insets.top}]}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Time of Day</Text>
-            <TouchableOpacity 
-              style={styles.closeButton}
-              onPress={() => setShowTimeOfDayModal(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView 
-            style={styles.modalContent}
-            // Allow maps to handle gestures by not intercepting them
-            onStartShouldSetResponderCapture={() => false}
-            onMoveShouldSetResponderCapture={() => false}
-            onResponderTerminationRequest={() => false}
-          >
-            <TouchableOpacity
-              style={styles.modalItem}
-              onPress={() => {
-                onTimeOfDayChange('');
-                setShowTimeOfDayModal(false);
-              }}
-            >
-              <Text style={[styles.modalItemText, { color: !timeOfDay ? COLORS.PRIMARY : COLORS.TEXT_PRIMARY }]}>
-                Select time of day
-              </Text>
-            </TouchableOpacity>
-            
-            {timeOfDayOptions.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={styles.modalItem}
-                onPress={() => {
-                  onTimeOfDayChange(option.value);
-                  setShowTimeOfDayModal(false);
-                }}
-              >
-                <Text style={[styles.modalItemText, { color: timeOfDay === option.value ? COLORS.PRIMARY : COLORS.TEXT_PRIMARY }]}>
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      </Modal>
+      {/* Time Picker Modal */}
+      {showTimePicker && (
+        <DateTimePicker
+          value={parseTimeOfDay(timeOfDay)}
+          mode="time"
+          display="spinner"
+          onChange={(event, selectedTime) => {
+            setShowTimePicker(false);
+            if (selectedTime) {
+              onTimeOfDayChange(formatTime(selectedTime));
+            }
+          }}
+        />
+      )}
     </View>
   );
 };
@@ -171,48 +143,6 @@ const styles = StyleSheet.create({
   },
   datePickerIcon: {
     color: COLORS.PRIMARY,
-  },
-  // Modal styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
-    
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: DIMENSIONS.PADDING_HORIZONTAL,
-    paddingTop: DIMENSIONS.SPACE_XXXL,
-    paddingBottom: DIMENSIONS.SPACE_LG,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER_PRIMARY,
-  },
-  modalTitle: {
-    fontSize: TYPOGRAPHY.SIZE_XL,
-    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
-    color: COLORS.TEXT_PRIMARY,
-  },
-  closeButton: {
-    padding: DIMENSIONS.SPACE_SM,
-  },
-  closeButtonText: {
-    fontSize: TYPOGRAPHY.SIZE_MD,
-    color: COLORS.PRIMARY,
-    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
-  },
-  modalContent: {
-    flex: 1,
-  },
-  modalItem: {
-    paddingVertical: DIMENSIONS.SPACE_LG,
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER_PRIMARY,
-  },
-  modalItemText: {
-    fontSize: TYPOGRAPHY.SIZE_LG,
-    color: COLORS.TEXT_PRIMARY,
   },
 });
 

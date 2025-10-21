@@ -15,8 +15,7 @@ import { calculateUserStats } from '@/services/statsService';
 import { Category } from '@/types/database';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { COLORS } from '@/constants/colors';
-import { DIMENSIONS } from '@/constants/dimensions';
-import { TYPOGRAPHY } from '@/constants';
+import { DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
 interface CategoryStat {
   category: Category;
@@ -246,7 +245,7 @@ export default function PointsScreen() {
         <View style={styles.breakdownGrid}>
           <View style={styles.breakdownItem}>
             <View style={styles.breakdownIconContainer}>
-              <Fish size={24} color={COLORS.PRIMARY} />
+              <Fish size={TYPOGRAPHY.SIZE_XXXL} color={COLORS.PRIMARY} />
             </View>
             <View style={styles.breakdownTextContainer}>
               <Text style={styles.breakdownValue}>{userStats?.uniqueCreatures || 0}</Text>
@@ -256,7 +255,7 @@ export default function PointsScreen() {
           
           <View style={styles.breakdownItem}>
             <View style={styles.breakdownIconContainer}>
-              <Trophy size={24} color={COLORS.SECONDARY} />
+              <Trophy size={TYPOGRAPHY.SIZE_XXXL} color={COLORS.SECONDARY} />
             </View>
             <View style={styles.breakdownTextContainer}>
               <Text style={styles.breakdownValue}>{achievementPoints}</Text>
@@ -266,7 +265,7 @@ export default function PointsScreen() {
           
           <View style={styles.breakdownItem}>
             <View style={styles.breakdownIconContainer}>
-              <Heart size={24} color={COLORS.ERROR} />
+              <Heart size={TYPOGRAPHY.SIZE_XXXL} color={COLORS.ERROR} />
             </View>
             <View style={styles.breakdownTextContainer}>
               <Text style={styles.breakdownValue}>{allWishlists ? Object.keys(allWishlists).length : 0}</Text>
@@ -305,7 +304,7 @@ export default function PointsScreen() {
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Star size={60} color={COLORS.TEXT_DISABLED} />
+            <Star size={TYPOGRAPHY.SIZE_DISPLAY} color={COLORS.TEXT_DISABLED} />
             <Text style={styles.emptyTitle}>No Points Yet</Text>
             <Text style={styles.emptySubtitle}>
               Start discovering marine life to earn points and track your progress
@@ -356,7 +355,7 @@ const styles = StyleSheet.create({
     marginLeft: DIMENSIONS.SPACE_LG,
   },
   totalPoints: {
-    fontSize: 48,
+    fontSize: TYPOGRAPHY.SIZE_DISPLAY,
     fontWeight: '800',
     color: COLORS.TEXT_PRIMARY,
   },

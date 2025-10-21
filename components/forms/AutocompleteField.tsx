@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Constants from 'expo-constants';
-import { COLORS, DIMENSIONS } from '@/constants';
+import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
 interface AutocompleteSuggestion {
   place_id: string;
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 8,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     backgroundColor: '#1a1a1a',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     paddingRight: 40,
   },
@@ -281,16 +281,16 @@ const styles = StyleSheet.create({
     borderBottomColor: '#333',
   },
   suggestionText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
   },
   suggestionSubtext: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#999',
     marginTop: 2,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#ff3b30',
     fontStyle: 'italic',
     marginTop: 5,

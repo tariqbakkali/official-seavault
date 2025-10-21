@@ -3,6 +3,7 @@ import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { forceSyncAll } from '@/utils/syncUtils';
+import { TYPOGRAPHY } from '@/constants';
 
 const DiveSitesWithSync: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    fontSize: 24,
+    fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 16,
@@ -89,20 +90,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   diveSiteName: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 4,
   },
   coordinates: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
   },
   loadingText: {
     color: '#fff',
     textAlign: 'center',
     marginTop: 16,
-  },
+    fontSize: TYPOGRAPHY.SIZE_LG,
 });
 
 export default DiveSitesWithSync;

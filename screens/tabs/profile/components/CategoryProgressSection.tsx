@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { COLORS } from '@/constants';
+import { TYPOGRAPHY } from '@/constants';
 
 interface CategoryStat {
   seen: number;
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: COLORS.TEXT_PRIMARY,
     marginBottom: 16,
@@ -67,12 +68,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   categoryName: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     color: COLORS.TEXT_PRIMARY,
   },
   categoryCompletion: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
     color: COLORS.TEXT_SECONDARY,
   },
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   completionText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: COLORS.TEXT_TERTIARY,
     textAlign: 'right',
   },

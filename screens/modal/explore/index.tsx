@@ -16,6 +16,7 @@ import { Database } from '@/types/database';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import ExploreDiveSiteCard from '@/screens/modal/explore/components/ExploreDiveSiteCard';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import { TYPOGRAPHY } from '@/constants';
 
 type DiveSite = Database['public']['Tables']['dive_sites']['Row'];
 
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
   filterButton: {
     width: 44,
@@ -280,7 +281,7 @@ const styles = StyleSheet.create({
   },
   filterText: {
     color: '#ccc',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
   },
   filterTextActive: {
     color: '#fff',
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
   emptyContainer: {
     flex: 1,
@@ -309,6 +310,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
 });

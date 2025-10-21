@@ -1,5 +1,5 @@
-import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import { getProxyImageUrl, getImageUrlOptions } from '@/utils/imageProxy';
 
 export default function ProxyTest() {
@@ -48,12 +48,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     marginBottom: 10,
   },
   url: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
     marginBottom: 10,
     fontFamily: 'monospace',
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   note: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
     fontStyle: 'italic',
   },

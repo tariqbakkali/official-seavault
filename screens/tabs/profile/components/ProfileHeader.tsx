@@ -2,6 +2,7 @@ import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ImageWithFallback } from '@/components';
 import { Profile } from '@/types/database';
+import { TYPOGRAPHY } from '@/constants';
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -67,13 +68,13 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   userName: {
-    fontSize: 24,
+    fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 4,
   },
   userEmail: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
   },
   membershipContainer: {
@@ -91,12 +92,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFD700',
   },
   membershipText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#fff',
     fontWeight: '600',
   },
   premiumText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#000',
     fontWeight: '600',
   },
@@ -109,7 +110,7 @@ const styles = StyleSheet.create({
   },
   editProfileText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
   },
 });

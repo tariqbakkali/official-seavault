@@ -15,6 +15,7 @@ import { getLeaderboardData } from '@/services/leaderboardService';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
 import LeaderboardEntry from './components/LeaderboardEntry';
+import { TYPOGRAPHY } from '@/constants';
 
 interface LeaderboardEntryType {
   user_id: string;
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
   },
   listContainer: {
     paddingHorizontal: 20,

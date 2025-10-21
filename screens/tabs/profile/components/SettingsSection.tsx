@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 
 interface SettingsSectionProps {
   onDownloadCatalog: () => void;
@@ -55,7 +56,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 16,
@@ -67,7 +68,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   settingText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     fontWeight: '500',
   },

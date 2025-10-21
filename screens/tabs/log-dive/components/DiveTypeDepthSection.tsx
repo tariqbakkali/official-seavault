@@ -17,7 +17,7 @@ const DiveTypeDepthSection: React.FC<DiveTypeDepthSectionProps> = ({
   onDepthChange,
 }) => {
   const [showDiveTypeDropdown, setShowDiveTypeDropdown] = useState(false);
-  const diveTypes = ['recreational', 'technical', 'night', 'drift', 'wreck', 'cave'];
+  const diveTypes = ['Recreational', 'Technical', 'Night', 'Drift', 'Wreck', 'Cave'];
   const insets  =  useSafeAreaInsets();
   
   return (
@@ -33,7 +33,7 @@ const DiveTypeDepthSection: React.FC<DiveTypeDepthSectionProps> = ({
               <Text style={styles.pickerText}>
                 {diveType || 'Select dive type'}
               </Text>
-              <Text style={{ color: COLORS.TEXT_TERTIARY, fontSize: 18 }}>▼</Text>
+              <Text style={{ color: COLORS.TEXT_TERTIARY, fontSize: TYPOGRAPHY.SIZE_XL }}>▼</Text>
             </View>
           </TouchableOpacity>
         </View>

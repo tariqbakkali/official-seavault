@@ -9,6 +9,7 @@ import { hasValidCoordinates } from '@/utils/diveSiteUtils';
 import AutocompleteField from '@/components/forms/AutocompleteField';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { COLORS, DIMENSIONS } from '@/constants';
+import { TYPOGRAPHY } from '@/constants';
 import { DiveSite } from '@/types/database';
 import { CoordinateSelectionSection } from './components';
 
@@ -346,13 +347,13 @@ const styles = StyleSheet.create({
   },
   coordinatesTitle: {
     color: COLORS.TEXT_PRIMARY,
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     marginBottom: 8,
   },
   coordinateText: {
     color: COLORS.TEXT_SECONDARY,
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     marginBottom: 4,
   },
   instructions: {
@@ -365,7 +366,7 @@ const styles = StyleSheet.create({
   },
   instructionsText: {
     color: COLORS.TEXT_SECONDARY,
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     marginBottom: 4,
   },
 });

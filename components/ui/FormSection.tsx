@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, DIMENSIONS } from '@/constants';
+import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
 interface FormSectionProps {
   title: string;
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 12,

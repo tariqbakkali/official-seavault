@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  ScrollView,
   Dimensions
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
@@ -15,38 +15,51 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const timeOfDayOptions = [
-  { value: 'morning', label: 'Morning (6am - 12pm)' },
-  { value: 'afternoon', label: 'Afternoon (12pm - 6pm)' },
-  { value: 'evening', label: 'Evening (6pm - 10pm)' },
-  { value: 'night', label: 'Night (10pm - 6am)' },
-];
-
 const TimeOfDayPickerModal = () => {
   const router = useRouter();
   const { currentTimeOfDay } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   
-  const [selectedTimeOfDay, setSelectedTimeOfDay] = React.useState<string>(
-    (currentTimeOfDay as string) || ''
-  );
+  // Parse the passed time or use current time
+  const initialTime = currentTimeOfDay 
+    ? parseTimeString(Array.isArray(currentTimeOfDay) ? currentTimeOfDay[0] : currentTimeOfDay)
+    : new Date();
+    
+  const [selectedTime, setSelectedTime] = useState<Date>(initialTime);
 
-  const handleTimeOfDaySelect = (timeOfDay: string) => {
-    setSelectedTimeOfDay(timeOfDay);
+  // Parse time string in HH:MM:SS format
+  function parseTimeString(timeString: string): Date {
+    if (!timeString) return new Date();
+    
+    const [hours, minutes, seconds] = timeString.split(':').map(Number);
+    const timeDate = new Date();
+    timeDate.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+    return timeDate;
+  }
+
+  // Format time as HH:MM:SS
+  const formatTime = (date: Date): string => {
+    return date.toTimeString().slice(0, 8);
+  };
+
+  const handleTimeChange = (event: any, time?: Date) => {
+    if (time) {
+      setSelectedTime(time);
+    }
   };
 
   const handleConfirm = () => {
-    // Navigate back with the selected time of day
+    // Navigate back with the selected time in HH:MM:SS format
     router.push({
       pathname: ROUTES.TABS.LOG_DIVE,
       params: {
-        selectedTimeOfDay: selectedTimeOfDay
+        selectedTimeOfDay: formatTime(selectedTime)
       }
     });
   };
 
   const handleClear = () => {
-    setSelectedTimeOfDay('');
+    setSelectedTime(new Date());
   };
 
   const handleCancel = () => {
@@ -61,59 +74,43 @@ const TimeOfDayPickerModal = () => {
       paddingRight: insets.right
     }]}>
       <ScreenHeader 
-        title="Select Time of Day" 
+        title="Select Time" 
         onBackPress={handleCancel}
         showBackButton={true}
       />
-      <ScrollView 
-        style={styles.content}
-        // Allow maps to handle gestures by not intercepting them
-        onStartShouldSetResponderCapture={() => false}
-        onMoveShouldSetResponderCapture={() => false}
-        onResponderTerminationRequest={() => false}
-      >
-        <TouchableOpacity
-          style={styles.optionItem}
-          onPress={handleClear}
-        >
-          <Text style={[
-            styles.optionText, 
-            { color: !selectedTimeOfDay ? COLORS.PRIMARY : COLORS.TEXT_PRIMARY }
-          ]}>
-            Clear Selection
-          </Text>
-        </TouchableOpacity>
-        
-        {timeOfDayOptions.map((option) => (
-          <TouchableOpacity
-            key={option.value}
-            style={styles.optionItem}
-            onPress={() => handleTimeOfDaySelect(option.value)}
-          >
-            <Text style={[
-              styles.optionText, 
-              { color: selectedTimeOfDay === option.value ? COLORS.PRIMARY : COLORS.TEXT_PRIMARY }
-            ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
       
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={[styles.button, styles.cancelButton]}
-          onPress={handleCancel}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
+      <View style={styles.content}>
+        <DateTimePicker
+          value={selectedTime}
+          mode="time"
+          display="spinner"
+          onChange={handleTimeChange}
+          textColor={COLORS.TEXT_PRIMARY}
+          style={styles.dateTimePicker}
+        />
         
-        <TouchableOpacity 
-          style={[styles.button, styles.confirmButton]}
-          onPress={handleConfirm}
-        >
-          <Text style={styles.confirmButtonText}>Confirm</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={[styles.button, styles.cancelButton]}
+            onPress={handleClear}
+          >
+            <Text style={styles.cancelButtonText}>Clear</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.button, styles.cancelButton]}
+            onPress={handleCancel}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.button, styles.confirmButton]}
+            onPress={handleConfirm}
+          >
+            <Text style={styles.confirmButtonText}>Confirm</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -127,23 +124,19 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
+    padding: DIMENSIONS.PADDING_HORIZONTAL,
+    justifyContent: 'center',
   },
-  optionItem: {
-    paddingVertical: DIMENSIONS.SPACE_LG,
-    paddingHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER_PRIMARY,
-  },
-  optionText: {
-    fontSize: TYPOGRAPHY.SIZE_LG,
+  dateTimePicker: {
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    // Explicitly setting text colors to ensure visibility
     color: COLORS.TEXT_PRIMARY,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: DIMENSIONS.PADDING_HORIZONTAL,
-    paddingBottom: DIMENSIONS.SPACE_XL,
+    marginTop: DIMENSIONS.SPACE_XL,
   },
   button: {
     flex: 1,

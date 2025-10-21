@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import { Image } from 'expo-image';
 import * as FileSystem from 'expo-file-system';
 import { useImageSync } from '@/hooks/useImageSync';
@@ -224,7 +225,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#666',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     textAlign: 'center',
   },
   statusOverlay: {
@@ -238,7 +239,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: TYPOGRAPHY.SIZE_XS,
     fontWeight: '600',
   },
 });

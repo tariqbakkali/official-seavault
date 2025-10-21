@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 
 interface ErrorDisplayProps {
   message: string;
@@ -30,13 +31,13 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#FF3B30',
     textAlign: 'center',
     marginBottom: 10,
   },
   retryText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#007AFF',
     textDecorationLine: 'underline',
   },

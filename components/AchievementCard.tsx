@@ -17,6 +17,7 @@ import {
 } from 'lucide-react-native';
 import { Achievement } from '@/types/database';
 import { COLORS } from '@/constants';
+import { TYPOGRAPHY } from '@/constants';
 
 interface AchievementCardProps {
   achievement: Achievement;
@@ -235,7 +236,7 @@ const homeStyles = StyleSheet.create({
   },
   name: {
     color: COLORS.TEXT_PRIMARY,
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     marginBottom: 4,
   },
@@ -258,7 +259,7 @@ const homeStyles = StyleSheet.create({
   },
   progressText: {
     color: COLORS.TEXT_SECONDARY,
-    fontSize: 10,
+    fontSize: TYPOGRAPHY.SIZE_XS,
     fontWeight: '600',
   },
   completedContainer: {
@@ -266,7 +267,7 @@ const homeStyles = StyleSheet.create({
   },
   completedText: {
     color: COLORS.SUCCESS,
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: '600',
   },
   pointsContainer: {
@@ -274,7 +275,7 @@ const homeStyles = StyleSheet.create({
     paddingVertical: 4,
   },
   points: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: '700',
   },
   lockedText: {
@@ -327,14 +328,14 @@ const styles = StyleSheet.create({
   },
   name: {
     color: COLORS.TEXT_PRIMARY,
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '700',
     flex: 1,
     marginRight: 8,
   },
   description: {
     color: COLORS.TEXT_SECONDARY,
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     marginBottom: 12,
     lineHeight: 20,
   },
@@ -343,7 +344,7 @@ const styles = StyleSheet.create({
   },
   completedText: {
     color: COLORS.SUCCESS,
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
   },
   progressBarContainer: {
@@ -365,7 +366,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     color: COLORS.TEXT_SECONDARY,
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: '600',
   },
   bottomRow: {
@@ -379,7 +380,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
@@ -389,7 +390,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   points: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: '700',
   },
   unlockedBadge: {
@@ -400,7 +401,7 @@ const styles = StyleSheet.create({
   },
   unlockedText: {
     color: COLORS.SUCCESS,
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: '700',
   },
   lockedText: {
@@ -426,7 +427,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   lockIcon: {
-    fontSize: 20,
+    fontSize: TYPOGRAPHY.SIZE_XXL,
   },
 });
 

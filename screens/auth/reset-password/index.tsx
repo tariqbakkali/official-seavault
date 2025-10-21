@@ -16,6 +16,7 @@ import { supabase } from '@/services/supabase';
 import { showAlert } from '@/utils/alertUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, DIMENSIONS, APP_CONFIG } from '@/constants';
+import { TYPOGRAPHY } from '@/constants';
 import { PasswordStrengthIndicator } from '@/screens/auth/reset-password/components/PasswordStrengthIndicator';
 
 export default function ResetPasswordScreen() {
@@ -326,20 +327,20 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   title: {
-    fontSize: 48,
+    fontSize: TYPOGRAPHY.SIZE_DISPLAY,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     color: '#666',
     textAlign: 'center',
     marginBottom: 16,
   },
   message: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     textAlign: 'center',
     marginBottom: 24,
@@ -349,14 +350,14 @@ const styles = StyleSheet.create({
   },
   label: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '500',
   },
   input: {
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
     padding: 16,
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     borderWidth: 1,
     borderColor: '#333',
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
 });

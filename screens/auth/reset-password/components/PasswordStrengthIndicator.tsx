@@ -1,3 +1,4 @@
+import { TYPOGRAPHY } from '@/constants';
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
@@ -54,7 +55,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
   },
   passwordStrengthText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: '500',
     textAlign: 'center',
   },

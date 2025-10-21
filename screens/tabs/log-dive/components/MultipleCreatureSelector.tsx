@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Dimensions, TextInput, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
-import { Database } from '@/types/database';
+import {  DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
+import { COLORS } from '@/constants';
 
 interface CreatureSighting {
   creatureId: string | null;
@@ -144,7 +144,7 @@ const MultipleCreatureSelector: React.FC<MultipleCreatureSelectorProps> = ({
               <Text style={styles.picker}>
                 {selectedCategory?.name || 'Select category'}
               </Text>
-              <Text style={{ color: COLORS.TEXT_TERTIARY, fontSize: 18 }}>▼</Text>
+              <Text style={{ color: COLORS.TEXT_TERTIARY, fontSize: TYPOGRAPHY.SIZE_XL }}>▼</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -190,7 +190,7 @@ const MultipleCreatureSelector: React.FC<MultipleCreatureSelectorProps> = ({
                     <Text style={styles.picker}>
                       {creature?.name || 'Select creature'}
                     </Text>
-                    <Text style={{ color: COLORS.TEXT_TERTIARY, fontSize: 18 }}>▼</Text>
+                    <Text style={{ color: COLORS.TEXT_TERTIARY, fontSize: TYPOGRAPHY.SIZE_XL }}>▼</Text>
                   </View>
                 </TouchableOpacity>
               </View>

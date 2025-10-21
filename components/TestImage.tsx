@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import { Image } from 'expo-image';
 import { getImageUrlOptions } from '@/utils/imageProxy';
 
@@ -104,31 +105,31 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     marginBottom: 10,
   },
   urlText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
     marginBottom: 5,
     fontFamily: 'monospace',
   },
   currentUrlText: {
-    fontSize: 10,
+    fontSize: TYPOGRAPHY.SIZE_XS,
     color: '#333',
     marginBottom: 5,
     fontFamily: 'monospace',
     fontStyle: 'italic',
   },
   progressText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#333',
     marginBottom: 5,
     fontStyle: 'italic',
   },
   statusText: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#007AFF',
     marginBottom: 5,
   },
@@ -143,7 +144,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   note: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#007AFF',
     marginTop: 5,
     textAlign: 'center',

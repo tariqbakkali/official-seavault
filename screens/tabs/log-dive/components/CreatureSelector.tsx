@@ -65,7 +65,7 @@ const CreatureSelector: React.FC<CreatureSelectorProps> = ({
               <Text style={styles.picker}>
                 {selectedCategory?.name || 'Select category'}
               </Text>
-              <Text style={{ color: COLORS.TEXT_TERTIARY, fontSize: 18 }}>▼</Text>
+              <Text style={{ color: COLORS.TEXT_TERTIARY, fontSize: TYPOGRAPHY.SIZE_XL }}>▼</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -87,7 +87,7 @@ const CreatureSelector: React.FC<CreatureSelectorProps> = ({
                 <Text style={styles.picker}>
                   {selectedCreature?.name || 'Select creature'}
                 </Text>
-                <Text style={{ color: COLORS.TEXT_TERTIARY, fontSize: 18 }}>▼</Text>
+                <Text style={{ color: COLORS.TEXT_TERTIARY, fontSize: TYPOGRAPHY.SIZE_XL }}>▼</Text>
               </View>
             </TouchableOpacity>
           </View>

@@ -2,6 +2,7 @@ import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Trophy } from 'lucide-react-native';
 import { ImageWithFallback } from '@/components';
+import { TYPOGRAPHY } from '@/constants';
 
 interface LeaderboardEntryData {
   name: string;
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rankText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: 'bold',
     color: '#FF9500',
   },
@@ -97,7 +98,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   leaderboardName: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     color: '#fff',
   },
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   leaderboardSubtext: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
   },
   pointsBadge: {
@@ -118,12 +119,12 @@ const styles = StyleSheet.create({
     minWidth: 64,
   },
   pointsText: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: 'bold',
     color: '#fff',
   },
   ptsText: {
-    fontSize: 10,
+    fontSize: TYPOGRAPHY.SIZE_XS,
     color: '#fff',
     opacity: 0.8,
   },

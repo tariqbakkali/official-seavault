@@ -1,5 +1,6 @@
 import { Stack, router, usePathname } from 'expo-router';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NotFoundScreen() {
@@ -46,20 +47,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   title: {
-    fontSize: 24,
+    fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 16,
   },
   text: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
     textAlign: 'center',
     marginBottom: 32,
     lineHeight: 24,
   },
   pathText: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#999',
     marginBottom: 16,
   },
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
   secondaryButton: {
@@ -84,7 +85,7 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: '#007AFF',
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
 });

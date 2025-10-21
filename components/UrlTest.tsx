@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 
 export default function UrlTest() {
   // Test with a known working Wikimedia URL
@@ -76,12 +77,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     marginBottom: 10,
   },
   url: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
     marginBottom: 10,
     fontFamily: 'monospace',
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   note: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
     fontStyle: 'italic',
   },

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
+import { TYPOGRAPHY } from '@/constants';
 import { Image } from 'expo-image';
 
 interface WikimediaImageTestProps {
@@ -83,12 +84,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     marginBottom: 10,
   },
   url: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
     marginBottom: 10,
     fontFamily: 'monospace',
@@ -100,18 +101,18 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   resultText: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#333',
     marginBottom: 2,
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: 'bold',
     marginTop: 10,
     marginBottom: 5,
   },
   statusText: {
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#007AFF',
     marginBottom: 5,
   },
