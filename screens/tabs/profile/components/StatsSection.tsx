@@ -25,7 +25,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
     {
       id: 'points',
       value: totalPoints,
-      label: 'Total Points',
+      label: 'Points',
       icon: <Star size={24} color={COLORS.SECONDARY} />,
       route: ROUTES.STATS.POINTS,
       color: COLORS.SECONDARY
@@ -33,7 +33,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
     {
       id: 'species',
       value: uniqueCreatures,
-      label: 'Species Found',
+      label: 'Species',
       icon: <Fish size={24} color={COLORS.PRIMARY} />,
       route: ROUTES.STATS.DISCOVERED,
       color: COLORS.PRIMARY
@@ -41,7 +41,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
     {
       id: 'achievements',
       value: achievementsUnlocked,
-      label: 'Achievements',
+      label: 'Trophies',
       icon: <Trophy size={24} color={COLORS.SUCCESS} />,
       route: ROUTES.STATS.ACHIEVEMENTS,
       color: COLORS.SUCCESS
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: TYPOGRAPHY.SIZE_SM,
+    fontSize: TYPOGRAPHY.SIZE_MD,
     color: COLORS.TEXT_SECONDARY,
     textAlign: 'center',
   },

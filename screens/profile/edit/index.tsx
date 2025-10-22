@@ -118,10 +118,10 @@ export default function EditProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity onPress={() => Linking.openURL('https://seavault.app/privacy')}>
+          <TouchableOpacity onPress={() => Linking.openURL('https://seavault.co.uk/privacy')}>
             <Text style={styles.linkText}>Privacy Policy</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => Linking.openURL('https://seavault.app/terms')}>
+          <TouchableOpacity onPress={() => Linking.openURL('https://seavault.co.uk/terms')}>
             <Text style={styles.linkText}>Terms of Service</Text>
           </TouchableOpacity>
         </View>

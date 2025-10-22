@@ -67,7 +67,7 @@ const StatCard: React.FC<StatCardProps> = ({ type, value, onPress }) => {
       case 'points':
         return 'Points';
       case 'achievements':
-        return 'Achievements';
+        return 'Trophies';
       default:
         return '';
     }

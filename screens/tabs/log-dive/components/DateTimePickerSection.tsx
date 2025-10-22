@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import SelectionModal from '@/components/ui/SelectionModal';
 
 interface DateTimePickerSectionProps {
   date: Date;
@@ -10,6 +11,14 @@ interface DateTimePickerSectionProps {
   onTimeOfDayChange: (timeOfDay: string) => void;
 }
 
+// Define time of day options with display labels and selection labels
+const timeOfDayOptions = [
+  { value: 'morning', label: 'Morning (6am - 12pm)', displayLabel: 'Morning' },
+  { value: 'afternoon', label: 'Afternoon (12pm - 6pm)', displayLabel: 'Afternoon' },
+  { value: 'evening', label: 'Evening (6pm - 10pm)', displayLabel: 'Evening' },
+  { value: 'night', label: 'Night (10pm - 6am)', displayLabel: 'Night' },
+];
+
 const DateTimePickerSection: React.FC<DateTimePickerSectionProps> = ({
   date,
   timeOfDay,
@@ -17,33 +26,22 @@ const DateTimePickerSection: React.FC<DateTimePickerSectionProps> = ({
   onTimeOfDayChange,
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
-
+  const [showTimeOfDayModal, setShowTimeOfDayModal] = useState(false);
 
   // Get today's date with time set to end of day to allow today's date
   const today = new Date();
   today.setHours(23, 59, 59, 999);
 
-  // Parse timeOfDay string to create a Date object for the time picker
-  const parseTimeOfDay = (timeString: string): Date => {
-    if (!timeString) return new Date();
-    
-    // If it's already in HH:MM:SS format
-    if (timeString.includes(':')) {
-      const [hours, minutes, seconds] = timeString.split(':').map(Number);
-      const timeDate = new Date();
-      timeDate.setHours(hours || 0, minutes || 0, seconds || 0, 0);
-      return timeDate;
-    }
-    
-    // If it's in the old format (morning, afternoon, etc.), default to current time
-    const timeDate = new Date();
-    return timeDate;
+  // Function to get the display label for the selected time of day
+  const getTimeOfDayDisplayLabel = (value: string) => {
+    const option = timeOfDayOptions.find(opt => opt.value === value);
+    return option ? option.displayLabel : value;
   };
 
-  // Format time as HH:MM:SS
-  const formatTime = (date: Date): string => {
-    return date.toTimeString().slice(0, 8);
+  // Function to get the full label for the modal
+  const getTimeOfDayFullLabel = (value: string) => {
+    const option = timeOfDayOptions.find(opt => opt.value === value);
+    return option ? option.label : value;
   };
 
   return (
@@ -77,32 +75,27 @@ const DateTimePickerSection: React.FC<DateTimePickerSectionProps> = ({
       </View>
 
       <View style={styles.timeContainer}>
-        <Text style={styles.label}>Time</Text>
+        <Text style={styles.label}>Time of Day</Text>
         <TouchableOpacity 
           style={styles.datePickerButton}
-          onPress={() => setShowTimePicker(true)}
+          onPress={() => setShowTimeOfDayModal(true)}
         >
           <Text style={styles.dateText}>
-            {timeOfDay || 'Select time'}
+            {timeOfDay ? getTimeOfDayDisplayLabel(timeOfDay) : 'Select time'}
           </Text>
           <Text style={styles.datePickerIcon}>⏰</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Time Picker Modal */}
-      {showTimePicker && (
-        <DateTimePicker
-          value={parseTimeOfDay(timeOfDay)}
-          mode="time"
-          display="spinner"
-          onChange={(event, selectedTime) => {
-            setShowTimePicker(false);
-            if (selectedTime) {
-              onTimeOfDayChange(formatTime(selectedTime));
-            }
-          }}
-        />
-      )}
+      <SelectionModal
+        visible={showTimeOfDayModal}
+        title="Select Time of Day"
+        options={timeOfDayOptions.map(opt => ({ value: opt.value, label: opt.label }))}
+        selectedValue={timeOfDay}
+        onClose={() => setShowTimeOfDayModal(false)}
+        onSelection={onTimeOfDayChange}
+        showClearOption={true}
+      />
     </View>
   );
 };
