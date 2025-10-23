@@ -113,6 +113,7 @@ export default function DiveSitePickerScreen() {
         {
           paddingBottom: insets.bottom,
           paddingLeft: insets.left,
+          // paddingTop: insets.top,
           paddingRight: insets.right,
         },
       ]}

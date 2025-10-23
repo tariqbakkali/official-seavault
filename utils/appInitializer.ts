@@ -2,6 +2,7 @@ import { initializeSync, initializeUserSync, clearUserSync } from './syncUtils';
 import { supabase } from '../services/supabase';
 import { setCurrentUserID } from '../stores/syncedObservables';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { checkPendingImageUploads } from '../services/imageSyncService'; // Import checkPendingImageUploads
 
 /**
  * Application initializer for local-first functionality
@@ -15,6 +16,9 @@ export const initializeApp = async () => {
     
     // Initialize catalog data sync
     await initializeSync();
+
+    // Check for any pending image uploads on app start
+    checkPendingImageUploads();
     
   } catch (error) {
     console.error('Error initializing local-first app:', error);

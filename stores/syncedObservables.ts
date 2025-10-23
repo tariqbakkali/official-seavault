@@ -1,5 +1,5 @@
 import { observable } from '@legendapp/state';
-import { supabase } from '../services/supabase';
+import { supabase, uploadImage } from '../services/supabase'; // Import uploadImage
 import { Database } from '../types/database';
 import { v4 as uuidv4 } from 'uuid';
 import { customSynced } from '@/services/legendStateConfig';
@@ -107,10 +107,10 @@ export const currentUserSightings$ = observable(customSynced({
   persist: { name: 'sightings', retrySync: true },
   changesSince: 'last-sync',
   update: async (input: any) => {
-    // Custom Supabase update function for sightings
+    // Custom Supabase upsert function for sightings
     const { data, error } = await supabase
       .from('sightings')
-      .insert(input)
+      .upsert(input)
       .select()
       .single();
     
@@ -245,14 +245,39 @@ export const createSighting = async (sightingData: Omit<Sighting, 'id' | 'create
     throw new Error('User must be logged in to create sightings');
   }
   
-  
   const id = uuidv4();
-  
+  let imageUrl = sightingData.image_url;
+  let imageUploadStatus: Sighting['image_upload_status'] = null;
+
+  // Check if imageUrl is a local file URI and attempt to upload
+  if (imageUrl && imageUrl.startsWith('file://')) {
+    imageUploadStatus = 'pending';
+    try {
+      const publicUrl = await uploadImage(imageUrl, 'sightings', `sighting_images/${userId}`);
+      if (publicUrl) {
+        imageUrl = publicUrl;
+        imageUploadStatus = 'uploaded';
+      } else {
+        // If upload fails, keep local URI and status as pending
+        console.warn('Image upload failed, keeping local URI for retry:', imageUrl);
+        imageUploadStatus = 'failed'; // Mark as failed for immediate feedback, will be retried by sync mechanism
+      }
+    } catch (error) {
+      console.error('Error uploading image during sighting creation:', error);
+      // Keep local URI and status as pending if upload fails
+      imageUploadStatus = 'failed'; // Mark as failed for immediate feedback, will be retried by sync mechanism
+    }
+  } else if (imageUrl) {
+    imageUploadStatus = 'uploaded'; // Already a cloud URL or not a local file
+  }
+
   const newSighting = {
     ...sightingData,
     id,
     user_id: userId,
     created_at: new Date().toISOString(),
+    image_url: imageUrl,
+    image_upload_status: imageUploadStatus,
   } as Sighting;
 
   // Update both currentUserSightings$ and allUsersSightings$ observables

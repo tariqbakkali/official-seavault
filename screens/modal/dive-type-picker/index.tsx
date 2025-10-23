@@ -14,7 +14,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const diveTypes = ['Recreational', 'Technical', 'Night', 'Drift', 'Wreck', 'Cave'];
+const diveTypes = ['Shore', 'Boat','Night', 'Drift', 'Wreck', 'Cave', 'Deep'];
 
 const DiveTypePickerModal = () => {
   const router = useRouter();
@@ -46,7 +46,7 @@ const DiveTypePickerModal = () => {
 
   return (
     <View style={[styles.container, { 
-      paddingTop: insets.top + 10, 
+      // paddingTop: insets.top + 10, 
       paddingBottom: insets.bottom,
       paddingLeft: insets.left,
       paddingRight: insets.right

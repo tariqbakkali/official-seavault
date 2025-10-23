@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Dimensions, TextInput, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { documentDirectory, moveAsync } from 'expo-file-system/legacy'; // Import FileSystem
+import { v4 as uuidv4 } from 'uuid'; // Import uuidv4
 import {  DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
 import { COLORS } from '@/constants';
@@ -89,7 +91,19 @@ const MultipleCreatureSelector: React.FC<MultipleCreatureSelectorProps> = ({
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        updateCreatureSighting(index, creatureSightings[index].creatureId, creatureSightings[index].notes, asset.uri);
+        const originalUri = asset.uri;
+        
+        // Generate a unique file name
+        const fileName = `sighting-${uuidv4()}.${originalUri.split('.').pop()}`;
+        const newUri = documentDirectory + fileName;
+
+        // Move the file to a persistent location
+        await moveAsync({
+          from: originalUri,
+          to: newUri,
+        });
+
+        updateCreatureSighting(index, creatureSightings[index].creatureId, creatureSightings[index].notes, newUri);
       } else if (result.canceled) {
         // User cancelled the picker
       }
@@ -563,7 +577,6 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     backgroundColor: COLORS.BACKGROUND,
-    paddingTop: DIMENSIONS.SPACE_LG,
   },
   modalHeader: {
     flexDirection: 'row',

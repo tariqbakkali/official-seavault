@@ -19,12 +19,13 @@ const DiveTypeDepthSection: React.FC<DiveTypeDepthSectionProps> = ({
 }) => {
   const [showDiveTypeModal, setShowDiveTypeModal] = useState(false);
   const diveTypes = [
-    { value: 'Recreational', label: 'Recreational' },
-    { value: 'Technical', label: 'Technical' },
+    { value: 'Shore', label: 'Shore' },
+    { value: 'Boat', label: 'Boat' },
     { value: 'Night', label: 'Night' },
     { value: 'Drift', label: 'Drift' },
     { value: 'Wreck', label: 'Wreck' },
-    { value: 'Cave', label: 'Cave' }
+    { value: 'Cave', label: 'Cave' },
+    { value: 'Deep', label: 'Deep' },
   ];
   
   return (

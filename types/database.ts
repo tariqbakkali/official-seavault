@@ -76,6 +76,7 @@ export interface Database {
           depth: string | null;
           creature_notes: string | null;
           updated_at: string;
+          image_upload_status?: 'pending' | 'uploaded' | 'failed' | null;
         };
         Insert: Omit<Database['public']['Tables']['sightings']['Row'], 'created_at'>;
         Update: Partial<Database['public']['Tables']['sightings']['Insert']>;

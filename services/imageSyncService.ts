@@ -1,376 +1,104 @@
-import { supabase } from './supabase';
-import { ImageMetadata, ImageSyncQueueItem } from '../types/image.types';
-import { uploadImageToSupabase, downloadImageFromSupabase, isDeviceOnline } from './imageService';
-import { debugLogger } from '../utils/debugLogger';
+import { observable, observe } from '@legendapp/state';
+import { currentUserID$, currentUserSightings$ } from '../stores/syncedObservables';
+import { supabase, uploadImage } from './supabase';
 import NetInfo from '@react-native-community/netinfo';
-import { AppState } from 'react-native';
-import * as FileSystem from 'expo-file-system';
-import { documentDirectory } from 'expo-file-system/legacy';
-import { v4 as uuidv4 } from 'uuid';
+import * as FileSystem from 'expo-file-system/legacy'; // Import FileSystem from legacy
+import { Sighting } from '../types/database';
 
-/**
- * Image Sync Service
- * Handles the synchronization of images between local storage and Supabase Storage
- */
+// Observable to track network state
+export const isOnline$ = observable(false);
 
-// In-memory queue for pending uploads
-let uploadQueue: ImageSyncQueueItem[] = [];
-let isSyncing = false;
+// Initialize network state observer
+NetInfo.addEventListener(state => {
+  isOnline$.set(!!(state.isConnected && state.isInternetReachable));
+});
 
-/**
- * Add an image to the upload queue
- */
-export const addToUploadQueue = (imageId: string): void => {
-  // Check if image is already in queue
-  const existingItem = uploadQueue.find(item => item.imageId === imageId);
-  if (existingItem) {
-    // Image already in upload queue
-    return;
+// Function to process a single pending image upload
+const processPendingImageUpload = async (sighting: Sighting) => {
+  if (!sighting.image_url || !sighting.image_url.startsWith('file://') || sighting.image_upload_status === 'uploaded') {
+    return; // Not a local image or already uploaded
   }
-  
-  // Add to queue
-  uploadQueue.push({
-    imageId,
-    status: 'pending',
-    attemptCount: 0,
-  });
-  
-  // Image added to upload queue
-  
-  // Start syncing if not already syncing
-  if (!isSyncing) {
-    startSyncProcess();
-  }
-};
 
-/**
- * Remove an image from the upload queue
- */
-export const removeFromUploadQueue = (imageId: string): void => {
-  uploadQueue = uploadQueue.filter(item => item.imageId !== imageId);
-  // Image removed from upload queue
-};
+  console.log(`Attempting to upload image for sighting ${sighting.id}: ${sighting.image_url}`);
 
-/**
- * Start the sync process
- */
-export const startSyncProcess = async (): Promise<void> => {
-  if (isSyncing) {
-    return;
-  }
-  
-  isSyncing = true;
-  // Starting image sync process
-  
   try {
-    // Process the queue
-    await processUploadQueue();
-  } catch (error) {
-    debugLogger.logError('Error in sync process:', error);
-  } finally {
-    isSyncing = false;
-    // Image sync process completed
-  }
-};
-
-/**
- * Process the upload queue
- */
-export const processUploadQueue = async (): Promise<void> => {
-  // Filter pending items
-  const pendingItems = uploadQueue.filter(item => item.status === 'pending');
-  
-  if (pendingItems.length === 0) {
-    // No pending items in upload queue
-    return;
-  }
-  
-  // Processing upload queue
-  
-  // Check network connectivity
-  const isOnline = await isDeviceOnline();
-  if (!isOnline) {
-    // Device is offline, skipping upload queue processing
-    return;
-  }
-  
-  // Process each item
-  for (const queueItem of pendingItems) {
-    try {
-      // Update status
-      queueItem.status = 'processing';
-      queueItem.attemptCount += 1;
-      queueItem.lastAttempt = new Date().toISOString();
-      
-      // Processing image upload
-      
-      // Get image metadata from Legend State (this would be implemented later)
-      // For now, we'll simulate the process
-      const success = await simulateImageUpload(queueItem.imageId);
-      
-      if (success) {
-        queueItem.status = 'completed';
-        // Successfully uploaded image
-      } else {
-        queueItem.status = 'failed';
-        // Failed to upload image
-        
-        // Retry logic - exponential backoff
-        if (queueItem.attemptCount < 3) {
-          // Schedule retry with exponential backoff (1s, 2s, 4s, etc.)
-          const delay = Math.pow(2, queueItem.attemptCount - 1) * 1000;
-          setTimeout(() => {
-            queueItem.status = 'pending';
-            startSyncProcess();
-          }, delay);
-        }
-      }
-    } catch (error) {
-      queueItem.status = 'failed';
-      queueItem.error = error instanceof Error ? error.message : String(error);
-      debugLogger.logError('Error processing upload queue item:', error);
+    const userId = currentUserID$.get();
+    if (!userId) {
+      console.error('Cannot upload image: User not logged in.');
+      return;
     }
-  }
-};
 
-/**
- * Simulate image upload (to be replaced with actual implementation)
- */
-const simulateImageUpload = async (imageId: string): Promise<boolean> => {
-  // This is a placeholder - in real implementation, we would:
-  // 1. Get image metadata from Legend State
-  // 2. Upload the image to Supabase Storage
-  // 3. Update the database record with the remote URL
-  // 4. Update the sync status
-  
-  // Simulating upload for image
-  
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Simulate 90% success rate
-  return Math.random() > 0.1;
-};
+    // Check if the file actually exists before attempting upload
+    const fileInfo = await FileSystem.getInfoAsync(sighting.image_url);
+    if (!fileInfo.exists) {
+      console.warn(`Local image file does not exist for sighting ${sighting.id}: ${sighting.image_url}`);
+      // Mark as failed since the file is missing
+      (currentUserSightings$ as any)[sighting.id].image_upload_status.set('failed');
+      return;
+    }
 
-/**
- * Download an image if not available locally
- */
-export const ensureImageDownloaded = async (
-  imageMetadata: ImageMetadata
-): Promise<string | null> => {
-  try {
-    // If we already have a local URI, return it immediately
-    if (imageMetadata.localUri) {
-      // Verify the local file actually exists
-      if (imageMetadata.localUri.startsWith('file://')) {
-        const fileInfo = await FileSystem.getInfoAsync(imageMetadata.localUri);
-        if (fileInfo.exists) {
-          // Using existing local image
-          return imageMetadata.localUri;
-        }
-      } else {
-        // If it's already a local URI, just return it
-        return imageMetadata.localUri;
-      }
-    }
-    
-    // Check if we're online before trying to download
-    const isOnline = await isDeviceOnline();
-    if (!isOnline) {
-      // Device is offline, cannot download image
-      return null;
-    }
-    
-    // If we have a remote URL, check if we already have it locally
-    if (imageMetadata.remoteUrl) {
-      // Try to construct the local path where it would be stored
+    // Update status to pending before upload attempt
+    (currentUserSightings$ as any)[sighting.id].image_upload_status.set('pending');
+
+    const publicUrl = await uploadImage(sighting.image_url, 'sightings', `sighting_images/${userId}`);
+
+    if (publicUrl) {
+      console.log(`Image uploaded successfully for sighting ${sighting.id}. Public URL: ${publicUrl}`);
+      // Update the observable with the new URL and status
+      (currentUserSightings$ as any)[sighting.id].image_url.set(publicUrl);
+      (currentUserSightings$ as any)[sighting.id].image_upload_status.set('uploaded');
+
+      // Delete the local file after successful upload
       try {
-        const url = new URL(imageMetadata.remoteUrl);
-        const fileName = url.pathname.split('/').pop() || `${uuidv4()}.jpg`;
-        const localPath = `${documentDirectory}images/${imageMetadata.diveSiteId}/${fileName}`;
-        
-        // Check if the local file already exists
-        const fileInfo = await FileSystem.getInfoAsync(localPath);
-        if (fileInfo.exists) {
-          // Using cached local image
-          return localPath;
-        }
-        
-        // If not, try to download it
-        const localUri = await downloadImageFromSupabase(
-          imageMetadata.remoteUrl,
-          imageMetadata.diveSiteId
-        );
-        
-        if (localUri) {
-          // Image downloaded successfully
-          return localUri;
-        }
-      } catch (error) {
-        // Could not download image
-        // Return null to indicate download failed
-        return null;
+        await FileSystem.deleteAsync(sighting.image_url);
+        console.log(`Deleted local image file: ${sighting.image_url}`);
+      } catch (deleteError) {
+        console.error(`Error deleting local image file ${sighting.image_url}:`, deleteError);
       }
+    } else {
+      console.warn(`Image upload failed for sighting ${sighting.id}. Retrying later.`);
+      (currentUserSightings$ as any)[sighting.id].image_upload_status.set('failed');
     }
-    
-    // No local or remote image available
-    return null;
   } catch (error) {
-    debugLogger.logError('Error ensuring image download:', error);
-    // Even if there's an error, if we have a local URI, try to return it
-    if (imageMetadata.localUri) {
-      return imageMetadata.localUri;
+    console.error(`Error processing image upload for sighting ${sighting.id}:`, error);
+    (currentUserSightings$ as any)[sighting.id].image_upload_status.set('failed');
+  }
+};
+
+// Observer to watch for online status and trigger pending uploads
+observe(() => {
+  if (isOnline$.get()) {
+    console.log('App is online. Checking for pending image uploads...');
+    const sightings = currentUserSightings$.get();
+    if (sightings) {
+      Object.values(sightings).forEach(sighting => {
+        // Type assertion to access properties
+        const s = sighting as any;
+        // Only process if this is a local image that hasn't been uploaded
+        if (s.image_url && s.image_url.startsWith('file://') && s.image_upload_status !== 'uploaded') {
+          // Add a small delay before processing to avoid overwhelming the system
+          setTimeout(() => {
+            processPendingImageUpload(s as Sighting);
+          }, 100);
+        }
+      });
     }
-    return null;
   }
-};
+});
 
-/**
- * Batch upload multiple images
- */
-export const batchUploadImages = async (
-  imageIds: string[]
-): Promise<{ success: string[]; failed: string[] }> => {
-  const results = {
-    success: [] as string[],
-    failed: [] as string[],
-  };
-  
-  // Starting batch upload for images
-  
-  // Process images in parallel (with concurrency limit)
-  const CONCURRENCY_LIMIT = 3;
-  const chunks = [];
-  
-  for (let i = 0; i < imageIds.length; i += CONCURRENCY_LIMIT) {
-    chunks.push(imageIds.slice(i, i + CONCURRENCY_LIMIT));
-  }
-  
-  for (const chunk of chunks) {
-    const promises = chunk.map(imageId => 
-      uploadSingleImage(imageId)
-        .then(success => ({ imageId, success }))
-        .catch(error => {
-          debugLogger.logError(`Error uploading image ${imageId}:`, error);
-          return { imageId, success: false };
-        })
-    );
-    
-    const chunkResults = await Promise.all(promises);
-    
-    chunkResults.forEach(({ imageId, success }) => {
-      if (success) {
-        results.success.push(imageId);
-      } else {
-        results.failed.push(imageId);
-      }
-    });
-  }
-  
-  // Batch upload completed
-  return results;
-};
-
-/**
- * Upload a single image
- */
-const uploadSingleImage = async (imageId: string): Promise<boolean> => {
-  try {
-    // Uploading image
-    
-    // Check network connectivity
-    const isOnline = await isDeviceOnline();
-    if (!isOnline) {
-      // Device is offline, cannot upload image
-      return false;
+// Export a function to manually trigger a check for pending uploads (e.g., on app start)
+export const checkPendingImageUploads = () => {
+  if (isOnline$.get()) {
+    console.log('Manually checking for pending image uploads...');
+    const sightings = currentUserSightings$.get();
+    if (sightings) {
+      Object.values(sightings).forEach(sighting => {
+        // Type assertion to access properties
+        const s = sighting as any;
+        if (s.image_url && s.image_url.startsWith('file://') && s.image_upload_status !== 'uploaded') {
+          processPendingImageUpload(s as Sighting);
+        }
+      });
     }
-    
-    // Get image metadata from Legend State (this would be implemented later)
-    // For now, we'll simulate the process
-    const success = await simulateImageUpload(imageId);
-    
-    // Image upload result
-    return success;
-  } catch (error) {
-    debugLogger.logError(`Error uploading image ${imageId}:`, error);
-    return false;
   }
-};
-
-/**
- * Initialize the sync service
- */
-export const initializeImageSyncService = (): void => {
-  // Initializing image sync service
-  
-  // Listen for network connectivity changes
-  NetInfo.addEventListener(state => {
-    if (state.isConnected && state.isInternetReachable) {
-      // Network connectivity restored, starting sync process
-      startSyncProcess();
-    }
-  });
-  
-  // Listen for app state changes (foreground/background)
-  AppState.addEventListener('change', (nextAppState) => {
-    if (nextAppState === 'active') {
-      // App came to foreground, checking for pending uploads
-      startSyncProcess();
-    }
-  });
-  
-  // Start initial sync
-  setTimeout(() => {
-    startSyncProcess();
-  }, 5000); // Wait 5 seconds after initialization
-};
-
-/**
- * Get the current upload queue status
- */
-export const getUploadQueueStatus = (): {
-  total: number;
-  pending: number;
-  processing: number;
-  completed: number;
-  failed: number;
-} => {
-  return {
-    total: uploadQueue.length,
-    pending: uploadQueue.filter(item => item.status === 'pending').length,
-    processing: uploadQueue.filter(item => item.status === 'processing').length,
-    completed: uploadQueue.filter(item => item.status === 'completed').length,
-    failed: uploadQueue.filter(item => item.status === 'failed').length,
-  };
-};
-
-/**
- * Clear the upload queue
- */
-export const clearUploadQueue = (): void => {
-  uploadQueue = [];
-  // Upload queue cleared
-};
-
-/**
- * Retry failed uploads
- */
-export const retryFailedUploads = async (): Promise<void> => {
-  const failedItems = uploadQueue.filter(item => item.status === 'failed');
-  
-  if (failedItems.length === 0) {
-    // No failed items to retry
-    return;
-  }
-  
-  // Retrying failed uploads
-  
-  // Reset status for failed items
-  failedItems.forEach(item => {
-    item.status = 'pending';
-    item.error = undefined;
-  });
-  
-  // Start sync process
-  await startSyncProcess();
 };
