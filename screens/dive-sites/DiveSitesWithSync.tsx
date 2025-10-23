@@ -104,6 +104,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
     fontSize: TYPOGRAPHY.SIZE_LG,
+  },
 });
 
 export default DiveSitesWithSync;

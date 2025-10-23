@@ -29,7 +29,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // ✅ Upload image utility
 export const uploadImage = async (
   uri: string,
-  bucket: string,
+  bucket: "avatars" | "sightings" | "keypictures",
   folder: string,
   isPublic: boolean = true
 ): Promise<string | null> => {

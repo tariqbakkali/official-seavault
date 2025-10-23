@@ -6,9 +6,8 @@ import {
   TouchableOpacity, 
   ScrollView,
   Modal,
-  SafeAreaView
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
 interface SelectionOption {

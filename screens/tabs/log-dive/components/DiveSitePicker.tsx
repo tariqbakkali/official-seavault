@@ -11,6 +11,8 @@ interface DiveSitePickerProps {
   selectedDiveSiteId: string | null;
   onDeselectDiveSite: () => void;
   onDiveSiteSelect: (siteId: string) => void;
+  onMapGestureBegin?: () => void;
+  onMapGestureEnd?: () => void;
 }
 
 const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
@@ -18,6 +20,8 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
   selectedDiveSiteId,
   onDeselectDiveSite,
   onDiveSiteSelect,
+  onMapGestureBegin,
+  onMapGestureEnd,
 }) => {
   // Helper function to calculate initial region focused on area with most dive sites
   const calculateInitialRegionForDenseArea = (sites: any[]) => {
@@ -257,6 +261,8 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
                   onPress={(event: any) => {
                     // Map onPress handler - no longer needed as coordinate selection is in AddDiveSiteScreen
                   }}
+                  onMapGestureBegin={onMapGestureBegin}
+                  onMapGestureEnd={onMapGestureEnd}
                 />
               );
             })()

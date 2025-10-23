@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.BORDER_PRIMARY,
     borderRadius: DIMENSIONS.RADIUS_MD,
     backgroundColor: COLORS.SURFACE,
-    padding: DIMENSIONS.SPACE_LG,
+    padding: DIMENSIONS.SPACE_MD,
   },
   textInput: {
     flex: 1,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.BORDER_PRIMARY,
     borderRadius: DIMENSIONS.RADIUS_MD,
     backgroundColor: COLORS.SURFACE,
-    padding: 14,
+    padding: DIMENSIONS.SPACE_MD,
     justifyContent: 'center',    
     paddingHorizontal: DIMENSIONS.SPACE_MD,
     marginBottom: DIMENSIONS.SPACE_LG,

@@ -451,14 +451,15 @@ const styles = StyleSheet.create({
     lineHeight: DIMENSIONS.BUTTON_HEIGHT_MD,
   },
   addButton: {
-    backgroundColor: COLORS.PRIMARY,
+    borderWidth: 1,
+    borderColor: COLORS.PRIMARY,
     borderRadius: DIMENSIONS.RADIUS_MD,
     padding: DIMENSIONS.SPACE_MD,
     alignItems: 'center',
     marginBottom: DIMENSIONS.SPACE_LG,
   },
   addButtonText: {
-    color: COLORS.TEXT_PRIMARY,
+    color: COLORS.PRIMARY,
     fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
   },

@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.BORDER_PRIMARY,
     borderRadius: DIMENSIONS.RADIUS_MD,
-    padding: DIMENSIONS.SPACE_LG,
+    padding: DIMENSIONS.SPACE_MD,
     backgroundColor: COLORS.SURFACE,
     flexDirection: 'row',
     alignItems: 'center',

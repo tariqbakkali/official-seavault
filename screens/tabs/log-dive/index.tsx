@@ -4,11 +4,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
-import DiveSitePicker from './components/DiveSitePicker/index';
-import DateTimePickerSection from './components/DateTimePickerSection';
-import DiveTypeDepthSection from './components/DiveTypeDepthSection';
-import DiveNotesSection from './components/DiveNotesSection';
-import ImagePickerSection from './components/ImagePickerSection';
+const DiveSitePicker = React.lazy(() => import('./components/DiveSitePicker'));
+const DateTimePickerSection = React.lazy(() => import('./components/DateTimePickerSection'));
+const DiveTypeDepthSection = React.lazy(() => import('./components/DiveTypeDepthSection'));
+const DiveNotesSection = React.lazy(() => import('./components/DiveNotesSection'));
 import MultipleCreatureSelector from './components/MultipleCreatureSelector';
 import { useLogDive } from './hooks/useLogDive';
 
@@ -38,13 +37,11 @@ const LogDiveScreen = () => {
       }
     };
   }, []);
-  
+
   const {
     // State
     formData,
     setFormData,
-    selectedImage,
-    setSelectedImage,
     selectedCategories,
     setSelectedCategories,
     isLoading,
@@ -152,18 +149,6 @@ const LogDiveScreen = () => {
             onDiveNotesChange={(diveNotes) => setFormData({ ...formData, diveNotes })}
           />
 
-          <ImagePickerSection
-            selectedImage={selectedImage}
-            onImageSelected={(image) => {
-              setSelectedImage(image);
-              setFormData({ ...formData, imageUrl: image.uri });
-            }}
-            onImageRemoved={() => {
-              setSelectedImage(null);
-              setFormData({ ...formData, imageUrl: '' });
-            }}
-          />
-
           <MultipleCreatureSelector
             catalog={catalog}
             selectedCategories={selectedCategories}
@@ -228,3 +213,5 @@ const styles = StyleSheet.create({
 });
 
 export default LogDiveScreen;
+
+

@@ -7,11 +7,7 @@ import { ROUTES } from '@/constants/routes';
 import { Database } from '@/types/database';
 
 // Types
-interface SelectedImage {
-  uri: string;
-  type: string;
-  fileName: string;
-}
+// Removed SelectedImage interface as it's no longer needed
 
 // New interface for creature sighting data
 interface CreatureSighting {
@@ -27,7 +23,7 @@ interface FormData {
   diveType: string;
   depth: string;
   diveNotes: string;
-  imageUrl: string;
+  // Removed imageUrl from FormData as we're using creature-specific images
   // Changed from single creatureId to array of creature sightings
   creatureSightings: CreatureSighting[];
 }
@@ -42,11 +38,11 @@ export const useLogDive = () => {
     diveType: '',
     depth: '',
     diveNotes: '',
-    imageUrl: '',
+    // Removed imageUrl from initial state
     creatureSightings: [],
   });
 
-  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
+  // Removed selectedImage state as it's no longer needed
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const { creatures: allCreatures, categories: allCategories, diveSites: allDiveSites, createSighting, isLoading } = useSyncedData();
@@ -129,8 +125,8 @@ export const useLogDive = () => {
           dive_notes: formData.diveNotes || null,
           depth: formData.depth || null,
           creature_id: sighting.creatureId || null,
-          // Use creature-specific image if available, otherwise use the main dive image
-          image_url: sighting.imageUrl || formData.imageUrl || null,
+          // Use only creature-specific image, removed main dive image
+          image_url: sighting.imageUrl || null,
           time_of_day: timeOfDay || null,
           creature_notes: sighting.notes || null,
         };
@@ -166,12 +162,11 @@ export const useLogDive = () => {
         diveType: '',
         depth: '',
         diveNotes: '',
-        imageUrl: '',
+        // Removed imageUrl reset
         creatureSightings: [],
       });
       
-      // Reset image selection
-      setSelectedImage(null);
+      // Removed setSelectedImage reset
       setSelectedCategories([]); // Clear category selections
     } catch (error) {
       console.error('Error submitting dive log:', error);
@@ -183,8 +178,7 @@ export const useLogDive = () => {
     // State
     formData,
     setFormData,
-    selectedImage,
-    setSelectedImage,
+    // Removed selectedImage and setSelectedImage
     selectedCategories,
     setSelectedCategories,
     isLoading,
