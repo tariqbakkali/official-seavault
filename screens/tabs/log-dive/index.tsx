@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
-const DiveSitePicker = React.lazy(() => import('./components/DiveSitePicker'));
-const DateTimePickerSection = React.lazy(() => import('./components/DateTimePickerSection'));
-const DiveTypeDepthSection = React.lazy(() => import('./components/DiveTypeDepthSection'));
-const DiveNotesSection = React.lazy(() => import('./components/DiveNotesSection'));
+import DiveSitePicker from './components/DiveSitePicker';
+import DateTimePickerSection from './components/DateTimePickerSection';
+import DiveTypeDepthSection from './components/DiveTypeDepthSection';
+import DiveNotesSection from './components/DiveNotesSection';
 import MultipleCreatureSelector from './components/MultipleCreatureSelector';
 import { useLogDive } from './hooks/useLogDive';
 
@@ -19,24 +19,6 @@ const LogDiveScreen = () => {
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // State to control header visibility
-  const [showHeader, setShowHeader] = useState(true);
-  
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    // Set timeout to hide header after 3 seconds
-    const headerTimeout = setTimeout(() => {
-      setShowHeader(false);
-    }, 3000); // 3 seconds
-    
-    return () => {
-      clearTimeout(headerTimeout);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const {
     // State
@@ -113,11 +95,7 @@ const LogDiveScreen = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {showHeader && (
-          <View style={styles.header}>
-            <Text style={styles.headerText}>Record your dive detail and Creature spotted</Text>
-          </View>
-        )}
+
 
         <View style={styles.content}>
           <DiveSitePicker

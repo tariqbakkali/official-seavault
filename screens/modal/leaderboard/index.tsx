@@ -125,7 +125,7 @@ export default function LeaderboardModal() {
 
   return (
     <View style={[styles.container, { 
-      paddingTop: insets.top, 
+      // paddingTop: insets.top, 
       paddingBottom: insets.bottom,
       paddingLeft: insets.left,
       paddingRight: insets.right

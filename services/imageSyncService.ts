@@ -40,7 +40,9 @@ const processPendingImageUpload = async (sighting: Sighting) => {
     // Update status to pending before upload attempt
     (currentUserSightings$ as any)[sighting.id].image_upload_status.set('pending');
 
-    const publicUrl = await uploadImage(sighting.image_url, 'sightings', `sighting_images/${userId}`);
+    const originalLocalUri = sighting.image_url; // Store the original local URI
+
+    const publicUrl = await uploadImage(originalLocalUri, 'sightings', `sighting_images/${userId}`);
 
     if (publicUrl) {
       console.log(`Image uploaded successfully for sighting ${sighting.id}. Public URL: ${publicUrl}`);
@@ -50,10 +52,10 @@ const processPendingImageUpload = async (sighting: Sighting) => {
 
       // Delete the local file after successful upload
       try {
-        await FileSystem.deleteAsync(sighting.image_url);
-        console.log(`Deleted local image file: ${sighting.image_url}`);
+        await FileSystem.deleteAsync(originalLocalUri);
+        console.log(`Deleted local image file: ${originalLocalUri}`);
       } catch (deleteError) {
-        console.error(`Error deleting local image file ${sighting.image_url}:`, deleteError);
+        console.error(`Error deleting local image file ${originalLocalUri}:`, deleteError);
       }
     } else {
       console.warn(`Image upload failed for sighting ${sighting.id}. Retrying later.`);

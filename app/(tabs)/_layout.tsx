@@ -44,6 +44,7 @@ export default function TabLayout() {
         name={TAB_CONFIG.LOG_DIVE.name}
         options={{
           title: TAB_CONFIG.LOG_DIVE.title,
+          lazy: false,
           tabBarIcon: ({ color, size }) => <Plus size={size} color={color} />,
         }}
       />

@@ -7,7 +7,7 @@ import {
   ScrollView,
   Modal,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
 interface SelectionOption {
@@ -48,7 +48,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
       transparent={false}
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={[styles.content, { 
           paddingTop: insets.top,
           paddingBottom: insets.bottom,
@@ -105,7 +105,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
             ))}
           </ScrollView>
         </View>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 };
