@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { GoogleMaps, AppleMaps } from 'expo-maps';
-import CustomClusteredMapView from '@/components/CustomClusteredMapView';
+import CustomClusteredMapView, { CustomClusteredMapViewRef } from '@/components/CustomClusteredMapView';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { Database } from '@/types/database';
 
@@ -23,35 +23,47 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
   onMapGestureBegin,
   onMapGestureEnd,
 }) => {
-  // Helper function to calculate initial region focused on area with most dive sites
+  const mapRef = useRef<CustomClusteredMapViewRef>(null);
+
+  // Helper function to calculate initial region based on all dive sites
   const calculateInitialRegionForDenseArea = (sites: any[]) => {
-    // Europe region to show a broader view
-    const europeRegion = {
-      latitude: 54,
-      longitude: 15,
-      latitudeDelta: 40,
-      longitudeDelta: 40,
-    };
-    
     if (sites.length === 0) {
-      return europeRegion;
+      // Default to a global view if no sites are available
+      return {
+        latitude: 0,
+        longitude: 0,
+        latitudeDelta: 100,
+        longitudeDelta: 100,
+      };
     }
 
-    // Check if any sites are in the Netherlands area
-    const netherlandsSites = sites.filter(site => {
+    let minLat = 90;
+    let maxLat = -90;
+    let minLng = 180;
+    let maxLng = -180;
+
+    sites.forEach(site => {
       const lat = site.geometry.coordinates[1];
       const lng = site.geometry.coordinates[0];
-      // Rough bounds for Netherlands: lat 50-54, lng 3-8
-      return lat >= 50 && lat <= 54 && lng >= 3 && lng <= 8;
+      minLat = Math.min(minLat, lat);
+      maxLat = Math.max(maxLat, lat);
+      minLng = Math.min(minLng, lng);
+      maxLng = Math.max(maxLng, lng);
     });
 
-    // If we have sites in Netherlands, still show Europe view to provide context
-    if (netherlandsSites.length > 0) {
-      return europeRegion;
-    }
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
 
-    // If no sites in Netherlands, still default to Europe view for better context
-    return europeRegion;
+    // Add some padding to the delta
+    const latitudeDelta = (maxLat - minLat) * 1.5;
+    const longitudeDelta = (maxLng - minLng) * 1.5;
+
+    return {
+      latitude: centerLat,
+      longitude: centerLng,
+      latitudeDelta: latitudeDelta > 0 ? latitudeDelta : 0.1, // Ensure non-zero delta
+      longitudeDelta: longitudeDelta > 0 ? longitudeDelta : 0.1, // Ensure non-zero delta
+    };
   };
 
   const handleOpenDiveSitePicker = () => {
@@ -218,6 +230,7 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
 
               return (
                 <CustomClusteredMapView
+                  ref={mapRef}
                   style={styles.map}
                   data={validSites}
                   initialRegion={initialRegion}
@@ -245,13 +258,36 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
                         }
                         // If there are many sites, zoom in
                         else {
-                          // Zoom in by reducing the delta values
-                          const currentRegion = {
-                            latitude: children[0].geometry.coordinates[1],
-                            longitude: children[0].geometry.coordinates[0],
-                            latitudeDelta: initialRegion.latitudeDelta * 0.5,
-                            longitudeDelta: initialRegion.longitudeDelta * 0.5,
+                          // Calculate bounding box for the children
+                          let minLat = 90;
+                          let maxLat = -90;
+                          let minLng = 180;
+                          let maxLng = -180;
+
+                          children.forEach(child => {
+                            const lat = child.geometry.coordinates[1];
+                            const lng = child.geometry.coordinates[0];
+                            minLat = Math.min(minLat, lat);
+                            maxLat = Math.max(maxLat, lat);
+                            minLng = Math.min(minLng, lng);
+                            maxLng = Math.max(maxLng, lng);
+                          });
+
+                          const centerLat = (minLat + maxLat) / 2;
+                          const centerLng = (minLng + maxLng) / 2;
+
+                          const latitudeDelta = (maxLat - minLat) * 1.5;
+                          const longitudeDelta = (maxLng - minLng) * 1.5;
+
+                          const newCameraPosition = {
+                            coordinates: {
+                              latitude: centerLat,
+                              longitude: centerLng,
+                            },
+                            // Adjust zoom level based on the delta, or set a default if delta is too small
+                            zoom: Math.max(1, Math.min(15, Math.round(Math.log(360 / (longitudeDelta > 0 ? longitudeDelta : 0.1)) / Math.LN2))),
                           };
+                          mapRef.current?.setCamera(newCameraPosition);
                         }
                       }
                     } catch (error) {

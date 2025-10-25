@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { View, Text, Platform } from 'react-native';
 import { GoogleMaps, AppleMaps } from 'expo-maps';
 import Supercluster from 'supercluster';
@@ -19,7 +19,11 @@ interface ClusteredMapViewProps {
   isMarkerDraggable?: boolean; // Add draggable marker support
 }
 
-const CustomClusteredMapView = ({
+export interface CustomClusteredMapViewRef {
+  setCamera: (cameraPosition: any) => void;
+}
+
+const CustomClusteredMapView = forwardRef<CustomClusteredMapViewRef, ClusteredMapViewProps>(({
   style,
   data,
   initialRegion,
@@ -33,7 +37,7 @@ const CustomClusteredMapView = ({
   onMapGestureBegin,
   onMapGestureEnd,
   isMarkerDraggable = false, // Default to false for backward compatibility
-}: ClusteredMapViewProps) => {
+}: ClusteredMapViewProps, ref: React.ForwardedRef<CustomClusteredMapViewRef>) => {
   // For web and all platforms, use expo-maps directly with basic implementation
   
   const [clusters, setClusters] = useState<any[]>([]);
@@ -42,9 +46,19 @@ const CustomClusteredMapView = ({
   const [mapKey, setMapKey] = useState(0);
   const [isDragging, setIsDragging] = useState(false); // Track dragging state
   const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Add timeout ref
+  const mapRef = useRef<any>(null); // Ref for the actual MapView component
 
   // Platform-specific map view component
   const MapView = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
+
+  // Expose setCamera function via ref
+  useImperativeHandle(ref, () => ({
+    setCamera: (cameraPosition: any) => {
+      if (mapRef.current && mapRef.current.setCamera) {
+        mapRef.current.setCamera(cameraPosition);
+      }
+    },
+  }));
 
   // Force re-render when selectedCoordinate changes
   useEffect(() => {
@@ -465,6 +479,6 @@ const CustomClusteredMapView = ({
       />
     </View>
   );
-};
+});
 
 export default CustomClusteredMapView;
