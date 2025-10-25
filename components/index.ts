@@ -8,6 +8,7 @@ export * from './DefaultImagePlaceholder';
 export * from './ErrorDisplay';
 export * from './ImagePicker';
 export { default as CustomClusteredMapView } from './CustomClusteredMapView';
+export { default as SimpleMapView } from './SimpleMapView';
 export * from './DiveSiteMarker';
 export * from './DiveSiteMarkerExpo';
 export { default as AchievementCard } from './AchievementCard';

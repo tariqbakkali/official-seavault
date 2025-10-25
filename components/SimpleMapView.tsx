@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { View, Platform } from 'react-native';
 import { GoogleMaps, AppleMaps } from 'expo-maps';
-import Supercluster from 'supercluster';
 
-interface ClusteredMapViewProps {
+interface SimpleMapViewProps {
   style?: any;
   data: any[];
   initialRegion: { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number };
   renderMarker: (data: any) => any; // Return marker data object instead of React component
-  renderCluster?: (cluster: any, onPress: () => void) => any; // Return marker data object instead of React component
-  clusteringEnabled?: boolean;
-  onClusterPress?: (clusterId: string, children: any[]) => void;
   onPress?: (event: any) => void;
   onMarkerDragEnd?: (event: any) => void;
   selectedCoordinate?: { latitude: number; longitude: number } | null;
@@ -19,30 +15,26 @@ interface ClusteredMapViewProps {
   isMarkerDraggable?: boolean; // Add draggable marker support
 }
 
-export interface CustomClusteredMapViewRef {
+export interface SimpleMapViewRef {
   setCamera: (cameraPosition: any) => void;
 }
 
-const CustomClusteredMapView = forwardRef<CustomClusteredMapViewRef, ClusteredMapViewProps>(({
+const SimpleMapView = forwardRef<SimpleMapViewRef, SimpleMapViewProps>(({
   style,
   data,
   initialRegion,
   renderMarker,
-  renderCluster,
-  clusteringEnabled = false, // Changed default to false
-  onClusterPress,
   onPress,
   onMarkerDragEnd,
   selectedCoordinate,
   onMapGestureBegin,
   onMapGestureEnd,
   isMarkerDraggable = false, // Default to false for backward compatibility
-}: ClusteredMapViewProps, ref: React.ForwardedRef<CustomClusteredMapViewRef>) => {
+}: SimpleMapViewProps, ref) => {
   // For web and all platforms, use expo-maps directly with basic implementation
   
   const [markers, setMarkers] = useState<any[]>([]);
   const [region, setRegion] = useState(initialRegion);
-  const superclusterRef = useRef<Supercluster | null>(null);
   const [mapKey, setMapKey] = useState(0);
   const [isDragging, setIsDragging] = useState(false); // Track dragging state
   const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Add timeout ref
@@ -79,7 +71,7 @@ const CustomClusteredMapView = forwardRef<CustomClusteredMapViewRef, ClusteredMa
     };
   }, []);
 
-  // Process markers - simplified to not use clustering by default
+  // Process markers from data
   useEffect(() => {
     if (data && data.length > 0) {
       // Make sure all data items have the required structure
@@ -144,39 +136,26 @@ const CustomClusteredMapView = forwardRef<CustomClusteredMapViewRef, ClusteredMa
     const longitude = coordinates[0];
     const latitude = coordinates[1];
     
-    // Check if clustering is enabled and it's a cluster
-    if (marker.properties && marker.properties.cluster && clusteringEnabled && superclusterRef.current) {
-      // For clusters, we'll use a special marker to indicate it's a cluster
-      const pointCount = marker.properties.point_count || 0;
+    // Render individual marker using the renderMarker function
+    const markerData = renderMarker(marker);
+    if (markerData) {
       return {
-        id: `cluster-${marker.properties.cluster_id || index}`,
-        coordinates: { latitude, longitude },
-        title: `${pointCount} dive sites`,
-        // Different color for clusters
-        color: '#FF9500', // Orange color for clusters
-      };
-    } else {
-      // Render individual marker using the renderMarker function
-      const markerData = renderMarker(marker);
-      if (markerData) {
-        return {
-          id: markerData.id || marker.properties?.id || marker.id || `marker-${index}`,
-          coordinates: { 
-            latitude: markerData.coordinates?.latitude || latitude, 
-            longitude: markerData.coordinates?.longitude || longitude 
-          },
-          title: markerData.title || marker.properties?.name || marker.name || 'Dive Site',
-          color: markerData.color || '#007AFF', // Blue color for individual sites
-        };
-      }
-      // Fallback marker data
-      return {
-        id: marker.properties?.id || marker.id || `marker-${index}`,
-        coordinates: { latitude, longitude },
-        title: marker.properties?.name || marker.name || 'Dive Site',
-        color: '#007AFF', // Blue color for individual sites
+        id: markerData.id || marker.properties?.id || marker.id || `marker-${index}`,
+        coordinates: { 
+          latitude: markerData.coordinates?.latitude || latitude, 
+          longitude: markerData.coordinates?.longitude || longitude 
+        },
+        title: markerData.title || marker.properties?.name || marker.name || 'Dive Site',
+        color: markerData.color || '#007AFF', // Blue color for individual sites
       };
     }
+    // Fallback marker data
+    return {
+      id: marker.properties?.id || marker.id || `marker-${index}`,
+      coordinates: { latitude, longitude },
+      title: marker.properties?.name || marker.name || 'Dive Site',
+      color: '#007AFF', // Blue color for individual sites
+    };
   }).filter(marker => marker !== null);
 
   // Add selected coordinate marker if present
@@ -354,14 +333,7 @@ const CustomClusteredMapView = forwardRef<CustomClusteredMapViewRef, ClusteredMa
           // Find the marker that was clicked
           const clickedMarker = validMarkers.find(marker => marker.id === event.id);
           if (clickedMarker) {
-            // Check if it's a cluster marker
-            if (clickedMarker.id.startsWith('cluster-') && clusteringEnabled) {
-              // Handle cluster press if clustering is enabled
-              if (onClusterPress) {
-                // In the simplified version, we'll just call the cluster press handler
-                onClusterPress(clickedMarker.id, []);
-              }
-            } else if (clickedMarker.id === "selected-marker" && isMarkerDraggable) {
+            if (clickedMarker.id === "selected-marker" && isMarkerDraggable) {
               // Handle click on draggable marker
               // For now, we'll just call the onPress handler if provided
               if (onPress) {
@@ -393,4 +365,4 @@ const CustomClusteredMapView = forwardRef<CustomClusteredMapViewRef, ClusteredMa
   );
 });
 
-export default CustomClusteredMapView;
+export default SimpleMapView;

@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSyncedData } from '@/hooks/useSyncedData'; // Import useSyncedData hook
 
 export default function LoginScreen() {
-  const [email, setEmail] = React.useState('testing12@gmail.com');
+  const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('111111');
   const [loading, setLoading] = React.useState(false);
   const [isSignUp, setIsSignUp] = React.useState(false);
