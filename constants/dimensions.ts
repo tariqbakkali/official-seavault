@@ -1,4 +1,4 @@
-import { adjust } from '@/utils/responsive';
+import { adjust, normalizeFont } from '@/utils/responsive';
 import { Dimensions } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -85,23 +85,23 @@ export const GRID = {
  */
 export const TYPOGRAPHY = {
   // Font sizes
-  SIZE_XS: adjust(10),
-  SIZE_SM: adjust(12),
-  SIZE_MD: adjust(14),
-  SIZE_LG: adjust(16),
-  SIZE_XL: adjust(18),
-  SIZE_XXL: adjust(20),
-  SIZE_XXXL: adjust(24),
-  SIZE_TITLE: adjust(28),
-  SIZE_HERO: adjust(32),
-  SIZE_DISPLAY: adjust(48),
+  SIZE_XS: normalizeFont(10),
+  SIZE_SM: normalizeFont(12),
+  SIZE_MD: normalizeFont(14),
+  SIZE_LG: normalizeFont(16),
+  SIZE_XL: normalizeFont(18),
+  SIZE_XXL: normalizeFont(20),
+  SIZE_XXXL: normalizeFont(24),
+  SIZE_TITLE: normalizeFont(28),
+  SIZE_HERO: normalizeFont(32),
+  SIZE_DISPLAY: normalizeFont(48),
   
   // Line heights
-  LINE_HEIGHT_SM: adjust(16),
-  LINE_HEIGHT_MD: adjust(20),
-  LINE_HEIGHT_LG: adjust(24),
-  LINE_HEIGHT_XL: adjust(28),
-  LINE_HEIGHT_XXL: adjust(32),
+  LINE_HEIGHT_SM: normalizeFont(16),
+  LINE_HEIGHT_MD: normalizeFont(20),
+  LINE_HEIGHT_LG: normalizeFont(24),
+  LINE_HEIGHT_XL: normalizeFont(28),
+  LINE_HEIGHT_XXL: normalizeFont(32),
   
   // Font weights
   WEIGHT_REGULAR: '400' as const,

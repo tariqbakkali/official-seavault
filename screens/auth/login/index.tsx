@@ -21,7 +21,7 @@ import { useSyncedData } from '@/hooks/useSyncedData'; // Import useSyncedData h
 
 export default function LoginScreen() {
   const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('111111');
+  const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [isSignUp, setIsSignUp] = React.useState(false);
   const insets = useSafeAreaInsets();
