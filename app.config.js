@@ -33,7 +33,6 @@ export default ({ config }) => {
       package: 'com.seavault.app',
       edgeToEdgeEnabled: true,
       permissions: [
-        'android.permission.RECORD_AUDIO',
         'android.permission.ACCESS_FINE_LOCATION',
         'android.permission.ACCESS_COARSE_LOCATION',
       ],
