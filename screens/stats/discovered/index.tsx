@@ -191,16 +191,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   listContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
     // Reduce top padding to account for safe area insets and ScreenHeader padding
     paddingTop: 5,
-    paddingBottom: 100,
+    paddingBottom: DIMENSIONS.SPACE_XXXL,
   },
   creatureCard: {
     width: cardWidth,
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    marginBottom: 16,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    marginBottom: DIMENSIONS.SPACE_LG,
     overflow: 'hidden',
     flexDirection: 'row',
     minHeight: 100, // Ensure minimum height
@@ -219,19 +219,19 @@ const styles = StyleSheet.create({
   },
   creatureInfo: {
     flex: 1,
-    padding: 16,
+    padding: DIMENSIONS.PADDING_LG,
   },
   creatureName: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   scientificName: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     fontStyle: 'italic',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   sightingInfo: {
     flex: 1,
@@ -240,8 +240,8 @@ const styles = StyleSheet.create({
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
+    gap: DIMENSIONS.SPACE_XS,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   firstSightingDate: {
     fontSize: TYPOGRAPHY.SIZE_MD,
@@ -255,10 +255,10 @@ const styles = StyleSheet.create({
   pointsBadge: {
     alignSelf: 'flex-start',
     backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginTop: 8,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_SM,
+    paddingVertical: DIMENSIONS.PADDING_XS,
+    marginTop: DIMENSIONS.SPACE_SM,
   },
   pointsText: {
     fontSize: TYPOGRAPHY.SIZE_SM,
@@ -269,13 +269,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
   },
   emptyText: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     color: '#fff',
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   emptySubtext: {
     fontSize: TYPOGRAPHY.SIZE_MD,

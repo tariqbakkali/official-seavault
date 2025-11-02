@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { supabase } from '@/services/supabase';
 import { ROUTES, COLORS, DIMENSIONS, APP_CONFIG } from '@/constants';
 import { TYPOGRAPHY } from '@/constants';
+import { getPasswordResetRedirectUrl } from '@/utils/authUtils';
 import { isValidEmail } from './utils/authValidation';
 import { showAlert } from '@/utils/alertUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,20 +28,50 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { createProfileForCurrentUser, fetchUserData } = useSyncedData(); // Get the createProfileForCurrentUser function
 
+  // Function to handle password reset
+  const handlePasswordReset = async () => {
+    if (!email) {
+      showAlert('Error', 'Please enter your email address');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      showAlert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Send password reset email with redirect URL from constants
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: getPasswordResetRedirectUrl()
+      });
+
+      if (error) throw error;
+
+      showAlert(
+        'Password Reset Email Sent',
+        'Please check your email for instructions to reset your password.'
+      );
+    } catch (error: any) {
+      console.error('[LoginScreen] Password reset error:', error);
+      showAlert(
+        'Error',
+        error.message || 'Failed to send password reset email. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAuth = async () => {
-    console.log('[LoginScreen] Starting authentication process', {
-      isSignUp,
-      email,
-    });
 
     if (!email || !password) {
-      console.log('[LoginScreen] Validation failed: Missing email or password');
       showAlert('Error', 'Please fill in all fields');
       return;
     }
 
     if (!isValidEmail(email)) {
-      console.log('[LoginScreen] Validation failed: Invalid email format');
       showAlert('Error', 'Please enter a valid email address');
       return;
     }
@@ -48,7 +79,6 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       if (isSignUp) {
-        console.log('[LoginScreen] Processing signup');
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -60,15 +90,8 @@ export default function LoginScreen() {
         }
 
         if (data) {
-          console.log('[LoginScreen] Signup successful', {
-            hasUser: !!data.user,
-            hasSession: !!data.session,
-            userId: data.user?.id,
-          });
-
           // Check if email confirmation is required
           if (data.user && !data.user.email_confirmed_at) {
-            console.log('[LoginScreen] Email confirmation required');
             showAlert(
               'Confirm Your Email',
               'Please check your email and click the confirmation link to complete your registration.',
@@ -77,22 +100,15 @@ export default function LoginScreen() {
             // Switch to sign in mode so user can sign in after confirming email
             setIsSignUp(false);
           } else {
-            // User is already signed in, ensure profile is created
-            console.log(
-              '[LoginScreen] Creating profile for new user after signup'
-            );
             // Wait a bit for initial sync to complete
             await new Promise((resolve) => setTimeout(resolve, 200));
             await createProfileForCurrentUser({});
-            console.log('[LoginScreen] Profile created for new user');
             showAlert('Success', 'Account created successfully!');
           }
         } else {
-          console.log('[LoginScreen] Signup failed: No data returned');
           showAlert('Error', 'Failed to create account. Please try again.');
         }
       } else {
-        console.log('[LoginScreen] Processing signin');
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -110,16 +126,12 @@ export default function LoginScreen() {
             userId: data.user?.id,
           });
 
-          console.log('[LoginScreen] User signed in, waiting for initial sync');
           // Wait a bit for initial sync to complete
           await new Promise((resolve) => setTimeout(resolve, 200));
-          console.log('[LoginScreen] Creating profile if needed');
           // After successful login, ensure profile exists
           await createProfileForCurrentUser({});
-          console.log('[LoginScreen] Profile creation/check completed');
           // Also fetch user data to populate the profile observable
           await fetchUserData();
-          console.log('[LoginScreen] User data fetched');
         } else {
           console.log('[LoginScreen] Signin failed: No data returned');
           showAlert('Error', 'Invalid email or password. Please try again.');
@@ -208,6 +220,15 @@ export default function LoginScreen() {
                   : 'Need an account? Sign Up'}
               </Text>
             </TouchableOpacity>
+
+            {/* Add Forgot Password link */}
+            <TouchableOpacity
+              style={styles.forgotPasswordButton}
+              onPress={handlePasswordReset}
+              disabled={loading}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -226,30 +247,30 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingHorizontal: DIMENSIONS.PADDING_XXL,
+    paddingVertical: DIMENSIONS.PADDING_XXL,
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_DISPLAY,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   subtitle: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 48,
+    marginBottom: DIMENSIONS.SPACE_48,
   },
   form: {
-    gap: 16,
+    gap: DIMENSIONS.SPACE_LG,
   },
   input: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_MD,
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
+    borderRadius: DIMENSIONS.RADIUS_MD,
     fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     borderWidth: 1,
@@ -257,10 +278,10 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#007AFF',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.PADDING_LG,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: DIMENSIONS.SPACE_SM,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -272,10 +293,20 @@ const styles = StyleSheet.create({
   },
   switchButton: {
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: DIMENSIONS.SPACE_LG,
   },
   switchText: {
     color: '#007AFF',
     fontSize: TYPOGRAPHY.SIZE_MD,
+  },
+  // Add styles for Forgot Password link
+  forgotPasswordButton: {
+    alignItems: 'center',
+    marginTop: DIMENSIONS.SPACE_SM,
+  },
+  forgotPasswordText: {
+    color: '#007AFF',
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    textDecorationLine: 'underline',
   },
 });

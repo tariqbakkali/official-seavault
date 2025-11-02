@@ -87,7 +87,7 @@ const LogDiveScreen = () => {
           style={{
             color: COLORS.TEXT_PRIMARY,
             textAlign: 'center',
-            marginTop: 20,
+            marginTop: DIMENSIONS.MARGIN_LG,
           }}
         >
           Loading dive sites...

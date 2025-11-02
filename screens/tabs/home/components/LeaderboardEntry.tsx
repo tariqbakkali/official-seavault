@@ -2,7 +2,7 @@ import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Trophy } from 'lucide-react-native';
 import { ImageWithFallback } from '@/components';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 interface LeaderboardEntryData {
   name: string;
@@ -61,8 +61,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    padding: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.MARGIN_MD,
   },
   currentUserEntry: {
     backgroundColor: '#003366',
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   leaderboardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: DIMENSIONS.GAP_MD,
   },
   rankBadge: {
     width: 32,
@@ -112,8 +112,8 @@ const styles = StyleSheet.create({
   },
   pointsBadge: {
     backgroundColor: '#FF9500',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
+    paddingVertical: DIMENSIONS.PADDING_SM,
     borderRadius: 12,
     alignItems: 'center',
     minWidth: 64,

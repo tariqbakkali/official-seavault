@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: COLORS.TEXT_PRIMARY,
-    padding: 0,
+    padding: DIMENSIONS.PADDING_XS,
   },
   depthIcon: {
     marginLeft: DIMENSIONS.SPACE_SM,

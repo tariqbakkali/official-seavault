@@ -23,6 +23,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "apk": "eas build --platform android --profile preview",
+    "aab": "eas build --platform android --profile production --auto-submit",
     "ipa": "eas build --platform ios --profile production --auto-submit"
   },
   "dependencies": {

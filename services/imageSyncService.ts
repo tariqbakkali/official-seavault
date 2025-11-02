@@ -4,6 +4,7 @@ import { supabase, uploadImage } from './supabase';
 import NetInfo from '@react-native-community/netinfo';
 import * as FileSystem from 'expo-file-system/legacy'; // Import FileSystem from legacy
 import { Sighting } from '../types/database';
+import { ImageMetadata } from '../types/image.types';
 
 // Observable to track network state
 export const isOnline$ = observable(false);
@@ -12,6 +13,45 @@ export const isOnline$ = observable(false);
 NetInfo.addEventListener(state => {
   isOnline$.set(!!(state.isConnected && state.isInternetReachable));
 });
+
+/**
+ * Ensure an image is downloaded and stored locally for offline access
+ */
+export const ensureImageDownloaded = async (imageMetadata: ImageMetadata): Promise<string | null> => {
+  try {
+    // If we already have a local URI, return it
+    if (imageMetadata.localUri) {
+      // Verify the file exists
+      const fileInfo = await FileSystem.getInfoAsync(imageMetadata.localUri);
+      if (fileInfo.exists) {
+        return imageMetadata.localUri;
+      }
+    }
+    
+    // If we don't have a remote URL, we can't download anything
+    if (!imageMetadata.remoteUrl) {
+      return null;
+    }
+    
+    // Generate a local path for the image
+    const fileName = imageMetadata.fileName || `${imageMetadata.id || 'image'}.jpg`;
+    const localPath = `${FileSystem.documentDirectory}downloaded-images/${fileName}`;
+    
+    // Ensure the directory exists
+    const dirInfo = await FileSystem.getInfoAsync(`${FileSystem.documentDirectory}downloaded-images`);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(`${FileSystem.documentDirectory}downloaded-images`, { intermediates: true });
+    }
+    
+    // Download the image
+    const { uri } = await FileSystem.downloadAsync(imageMetadata.remoteUrl, localPath);
+    
+    return uri;
+  } catch (error) {
+    console.error('Error ensuring image downloaded:', error);
+    return null;
+  }
+};
 
 // Function to process a single pending image upload
 const processPendingImageUpload = async (sighting: Sighting) => {
@@ -45,7 +85,6 @@ const processPendingImageUpload = async (sighting: Sighting) => {
     const publicUrl = await uploadImage(originalLocalUri, 'sightings', `sighting_images/${userId}`);
 
     if (publicUrl) {
-      console.log(`Image uploaded successfully for sighting ${sighting.id}. Public URL: ${publicUrl}`);
       // Update the observable with the new URL and status
       (currentUserSightings$ as any)[sighting.id].image_url.set(publicUrl);
       (currentUserSightings$ as any)[sighting.id].image_upload_status.set('uploaded');
@@ -53,7 +92,6 @@ const processPendingImageUpload = async (sighting: Sighting) => {
       // Delete the local file after successful upload
       try {
         await FileSystem.deleteAsync(originalLocalUri);
-        console.log(`Deleted local image file: ${originalLocalUri}`);
       } catch (deleteError) {
         console.error(`Error deleting local image file ${originalLocalUri}:`, deleteError);
       }
@@ -70,7 +108,6 @@ const processPendingImageUpload = async (sighting: Sighting) => {
 // Observer to watch for online status and trigger pending uploads
 observe(() => {
   if (isOnline$.get()) {
-    console.log('App is online. Checking for pending image uploads...');
     const sightings = currentUserSightings$.get();
     if (sightings) {
       Object.values(sightings).forEach(sighting => {
@@ -91,7 +128,6 @@ observe(() => {
 // Export a function to manually trigger a check for pending uploads (e.g., on app start)
 export const checkPendingImageUploads = () => {
   if (isOnline$.get()) {
-    console.log('Manually checking for pending image uploads...');
     const sightings = currentUserSightings$.get();
     if (sightings) {
       Object.values(sightings).forEach(sighting => {

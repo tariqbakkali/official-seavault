@@ -3,9 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native
 import { useRouter } from 'expo-router';
 import { Trophy } from 'lucide-react-native';
 import { AchievementCard } from '@/components';
-import { COLORS } from '@/constants';
-import { ROUTES } from '@/constants';
-import { TYPOGRAPHY } from '@/constants';
+import { COLORS, ROUTES, TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 interface AchievementsPreviewProps {
   achievements: any[];
@@ -73,19 +71,19 @@ const AchievementsPreview: React.FC<AchievementsPreviewProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 20,
-    marginBottom: 32,
+    marginHorizontal: DIMENSIONS.MARGIN_LG,
+    marginBottom: DIMENSIONS.MARGIN_XL,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.MARGIN_LG,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: DIMENSIONS.GAP_MD,
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.SIZE_XXL,
@@ -100,7 +98,7 @@ const styles = StyleSheet.create({
   emptyContainer: {
     backgroundColor: COLORS.SURFACE,
     borderRadius: 16,
-    padding: 20,
+    padding: DIMENSIONS.PADDING_LG,
     alignItems: 'center',
   },
   emptyText: {
@@ -110,9 +108,9 @@ const styles = StyleSheet.create({
   viewAllButton: {
     backgroundColor: COLORS.SURFACE,
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: DIMENSIONS.PADDING_MD,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: DIMENSIONS.MARGIN_MD,
   },
   viewAllText: {
     color: COLORS.PRIMARY,

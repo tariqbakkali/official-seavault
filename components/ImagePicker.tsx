@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { Camera, Image as ImageIcon } from 'lucide-react-native';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { ImageMetadata } from '@/types/image.types';
@@ -107,7 +107,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: 12,
+    gap: DIMENSIONS.SPACE_LG,
   },
   optionButton: {
     flex: 1,
@@ -115,11 +115,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.PADDING_LG,
     borderWidth: 1,
     borderColor: '#333',
-    gap: 8,
+    gap: DIMENSIONS.SPACE_SM,
   },
   libraryButton: {
     backgroundColor: '#333',
@@ -138,9 +138,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#f0f0f0',
-    borderRadius: 12,
-    padding: 16,
-    gap: 12,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.PADDING_LG,
+    gap: DIMENSIONS.SPACE_LG,
   },
   uploadProgressText: {
     fontSize: TYPOGRAPHY.SIZE_LG,
@@ -148,10 +148,10 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
   },
   errorContainer: {
-    marginTop: 12,
-    padding: 12,
+    marginTop: DIMENSIONS.SPACE_LG,
+    padding: DIMENSIONS.PADDING_SM,
     backgroundColor: '#ffebee',
-    borderRadius: 8,
+    borderRadius: DIMENSIONS.RADIUS_SM,
   },
   errorText: {
     color: '#c62828',

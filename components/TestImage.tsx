@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { Image } from 'expo-image';
 import { getImageUrlOptions } from '@/utils/imageProxy';
 
@@ -99,55 +99,55 @@ export default function TestImage({ uri }: TestImageProps) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: DIMENSIONS.PADDING_MD,
     backgroundColor: '#f0f0f0',
-    margin: 10,
-    borderRadius: 8,
+    margin: DIMENSIONS.SPACE_XS,
+    borderRadius: DIMENSIONS.RADIUS_SM,
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   urlText: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
-    marginBottom: 5,
-    fontFamily: 'monospace',
+    marginBottom: DIMENSIONS.SPACE_XS,
+    fontFamily: 'monospace'
   },
   currentUrlText: {
     fontSize: TYPOGRAPHY.SIZE_XS,
     color: '#333',
-    marginBottom: 5,
+    marginBottom: DIMENSIONS.SPACE_XS,
     fontFamily: 'monospace',
-    fontStyle: 'italic',
+    fontStyle: 'italic'
   },
   progressText: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#333',
-    marginBottom: 5,
-    fontStyle: 'italic',
+    marginBottom: DIMENSIONS.SPACE_XS,
+    fontStyle: 'italic'
   },
   statusText: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#007AFF',
-    marginBottom: 5,
+    marginBottom: DIMENSIONS.SPACE_XS
   },
   image: {
-    width: 200,
-    height: 200,
+    width: DIMENSIONS.THUMBNAIL_SIZE,
+    height: DIMENSIONS.THUMBNAIL_SIZE,
     resizeMode: 'cover',
-    backgroundColor: '#ddd',
+    backgroundColor: '#ddd'
   },
   errorText: {
     color: 'red',
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   note: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#007AFF',
-    marginTop: 5,
+    marginTop: DIMENSIONS.SPACE_XS,
     textAlign: 'center',
-    textDecorationLine: 'underline',
-  },
+    textDecorationLine: 'underline'
+  }
 });

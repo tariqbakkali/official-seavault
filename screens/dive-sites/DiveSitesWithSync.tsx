@@ -3,7 +3,7 @@ import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { forceSyncAll } from '@/utils/syncUtils';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 const DiveSitesWithSync: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
@@ -75,25 +75,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    padding: 16,
+    padding: DIMENSIONS.PADDING_LG,
   },
   header: {
     fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   diveSiteItem: {
     backgroundColor: '#1a1a1a',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
+    padding: DIMENSIONS.PADDING_LG,
+    borderRadius: DIMENSIONS.RADIUS_SM,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   diveSiteName: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   coordinates: {
     fontSize: TYPOGRAPHY.SIZE_MD,
@@ -102,9 +102,10 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#fff',
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: DIMENSIONS.SPACE_LG,
     fontSize: TYPOGRAPHY.SIZE_LG,
   },
+
 });
 
 export default DiveSitesWithSync;

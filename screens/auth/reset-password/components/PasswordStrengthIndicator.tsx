@@ -1,4 +1,4 @@
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
@@ -42,16 +42,16 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
 
 const styles = StyleSheet.create({
   passwordStrengthContainer: {
-    gap: 8,
+    gap: DIMENSIONS.SPACE_SM,
   },
   passwordStrengthBars: {
     flexDirection: 'row',
-    gap: 4,
+    gap: DIMENSIONS.SPACE_XS,
   },
   passwordStrengthBar: {
     flex: 1,
     height: 4,
-    borderRadius: 2,
+    borderRadius: DIMENSIONS.RADIUS_XS,
     backgroundColor: '#333',
   },
   passwordStrengthText: {

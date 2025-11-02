@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 interface SettingsSectionProps {
   onDownloadCatalog: () => void;
@@ -52,20 +52,20 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onDownloadCatalog, on
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: 20,
-    marginBottom: 32,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.MARGIN_XL,
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.MARGIN_LG,
   },
   settingItem: {
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    padding: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.MARGIN_MD,
   },
   settingText: {
     fontSize: TYPOGRAPHY.SIZE_LG,
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: DIMENSIONS.GAP_MD,
   },
 });
 

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { getProxyImageUrl, getImageUrlOptions } from '@/utils/imageProxy';
 
 export default function ProxyTest() {
@@ -42,28 +42,28 @@ Proxied: ${urlOptions.proxied}`
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: DIMENSIONS.PADDING_MD,
     backgroundColor: '#d0e0f0',
-    margin: 10,
-    borderRadius: 8,
+    margin: DIMENSIONS.SPACE_XS,
+    borderRadius: DIMENSIONS.RADIUS_SM,
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   url: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_XS,
     fontFamily: 'monospace',
   },
   button: {
     backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 5,
+    padding: DIMENSIONS.SPACE_XS,
+    borderRadius: DIMENSIONS.RADIUS_XS,
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   buttonText: {
     color: 'white',

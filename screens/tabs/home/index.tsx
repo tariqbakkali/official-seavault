@@ -15,7 +15,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
 import { ImageWithFallback } from '@/components';
-import { ROUTES, APP_CONFIG } from '@/constants';
+import { ROUTES, APP_CONFIG, DIMENSIONS } from '@/constants';
 import { TYPOGRAPHY } from '@/constants';
 import { getLeaderboardData } from '@/services/leaderboardService';
 import { forceSyncAll } from '@/utils/syncUtils';
@@ -125,7 +125,9 @@ export default function HomeScreen() {
         achievementsArray
       );
 
-      const currentUserId = userProfile ? Object.values(userProfile)[0]?.id : undefined;
+      const currentUserId = userProfile
+        ? Object.values(userProfile)[0]?.id
+        : undefined;
 
       // Sort the leaderboard by points in descending order, then by created_at in ascending order
       const sortedLeaderboard = [...generatedLeaderboard].sort((a, b) => {
@@ -133,7 +135,9 @@ export default function HomeScreen() {
           return b.points - a.points;
         }
         // If points are equal, sort by created_at (oldest first)
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        return (
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
       });
 
       let top5Leaderboard: LeaderboardEntry[] = [];
@@ -141,7 +145,9 @@ export default function HomeScreen() {
       let isCurrentUserInTop5 = false;
 
       if (currentUserId) {
-        currentUserEntry = sortedLeaderboard.find(entry => entry.user_id === currentUserId);
+        currentUserEntry = sortedLeaderboard.find(
+          (entry) => entry.user_id === currentUserId
+        );
       }
 
       // Take the top 5 explorers
@@ -149,7 +155,9 @@ export default function HomeScreen() {
 
       // Check if current user is in the top 5
       if (currentUserEntry) {
-        isCurrentUserInTop5 = top5Leaderboard.some(entry => entry.user_id === currentUserId);
+        isCurrentUserInTop5 = top5Leaderboard.some(
+          (entry) => entry.user_id === currentUserId
+        );
       }
 
       if (currentUserEntry && !isCurrentUserInTop5) {
@@ -181,7 +189,9 @@ export default function HomeScreen() {
       // Calculate current user's actual rank from the full sorted leaderboard
       let currentUserActualRank: number | undefined;
       if (currentUserEntry) {
-        const actualRankIndex = sortedLeaderboard.findIndex(entry => entry.user_id === currentUserId);
+        const actualRankIndex = sortedLeaderboard.findIndex(
+          (entry) => entry.user_id === currentUserId
+        );
         if (actualRankIndex !== -1) {
           currentUserActualRank = actualRankIndex + 1;
         }
@@ -191,7 +201,11 @@ export default function HomeScreen() {
       let addedCurrentUser = false;
 
       // Add top explorers (up to 4) to the final leaderboard, excluding current user for now
-      for (let i = 0; i < sortedLeaderboard.length && finalLeaderboard.length < 4; i++) {
+      for (
+        let i = 0;
+        i < sortedLeaderboard.length && finalLeaderboard.length < 4;
+        i++
+      ) {
         const entry = sortedLeaderboard[i];
         if (entry.user_id !== currentUserId) {
           finalLeaderboard.push(entry);
@@ -202,27 +216,43 @@ export default function HomeScreen() {
         // If current user's actual rank is 5 or greater, place them at the 5th position
         if (currentUserActualRank && currentUserActualRank >= 5) {
           // Ensure there are 4 items before adding current user at 5th spot
-          while (finalLeaderboard.length < 4 && sortedLeaderboard.length > finalLeaderboard.length) {
+          while (
+            finalLeaderboard.length < 4 &&
+            sortedLeaderboard.length > finalLeaderboard.length
+          ) {
             const nextEntry = sortedLeaderboard[finalLeaderboard.length];
             if (nextEntry.user_id !== currentUserId) {
               finalLeaderboard.push(nextEntry);
             }
           }
           // Add current user as the 5th item
-          finalLeaderboard.push({ ...currentUserEntry, isCurrentUser: true, actualRank: currentUserActualRank });
+          finalLeaderboard.push({
+            ...currentUserEntry,
+            isCurrentUser: true,
+            actualRank: currentUserActualRank,
+          });
           addedCurrentUser = true;
-        } else { // Current user's actual rank is less than 5
+        } else {
+          // Current user's actual rank is less than 5
           // Insert current user at their actual rank position
           const insertionIndex = (currentUserActualRank || 1) - 1; // actualRank is 1-based
-          finalLeaderboard.splice(insertionIndex, 0, { ...currentUserEntry, isCurrentUser: true, actualRank: currentUserActualRank });
+          finalLeaderboard.splice(insertionIndex, 0, {
+            ...currentUserEntry,
+            isCurrentUser: true,
+            actualRank: currentUserActualRank,
+          });
           addedCurrentUser = true;
         }
       }
 
       // Fill remaining slots up to 5, if any, with other explorers
-      for (let i = 0; i < sortedLeaderboard.length && finalLeaderboard.length < 5; i++) {
+      for (
+        let i = 0;
+        i < sortedLeaderboard.length && finalLeaderboard.length < 5;
+        i++
+      ) {
         const entry = sortedLeaderboard[i];
-        if (!finalLeaderboard.some(item => item.user_id === entry.user_id)) {
+        if (!finalLeaderboard.some((item) => item.user_id === entry.user_id)) {
           finalLeaderboard.push(entry);
         }
       }
@@ -311,7 +341,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeAreaContainer}>
+    <View style={[styles.safeAreaContainer, { paddingTop: insets.top }]}>
       <ScrollView
         style={styles.scrollView}
         // Add this to test map gestures
@@ -377,7 +407,9 @@ export default function HomeScreen() {
                   <Text
                     style={[styles.rankText, index < 3 && styles.rankTextTop]}
                   >
-                    {entry.actualRank !== undefined ? entry.actualRank : index + 1}
+                    {entry.actualRank !== undefined
+                      ? entry.actualRank
+                      : index + 1}
                   </Text>
                 </View>
                 <View style={styles.avatar}>
@@ -406,7 +438,7 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -428,9 +460,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingTop: DIMENSIONS.PADDING_LG,
+    paddingBottom: DIMENSIONS.PADDING_XL,
   },
   welcomeText: {
     fontSize: TYPOGRAPHY.SIZE_LG,
@@ -450,7 +482,7 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_HERO,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.MARGIN_SM,
   },
   subtitle: {
     fontSize: TYPOGRAPHY.SIZE_LG,
@@ -459,8 +491,8 @@ const styles = StyleSheet.create({
   logDiveButton: {
     backgroundColor: '#007AFF',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_MD,
     alignSelf: 'flex-start',
   },
   logDiveText: {
@@ -470,12 +502,12 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 24,
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
+    marginBottom: DIMENSIONS.PADDING_LG,
   },
   statCardWrapper: {
     flex: 1,
-    marginHorizontal: 4,
+    marginHorizontal: DIMENSIONS.MARGIN_XS,
   },
   firstCard: {
     marginLeft: 0,
@@ -484,13 +516,13 @@ const styles = StyleSheet.create({
     marginRight: 0,
   },
   statIcon: {
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.MARGIN_SM,
   },
   statValue: {
     fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
-    marginVertical: 4,
+    marginVertical: DIMENSIONS.MARGIN_XS,
   },
   statLabel: {
     fontSize: TYPOGRAPHY.SIZE_XS,
@@ -498,10 +530,10 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: '#1a1a1a',
-    borderRadius: 20,
-    marginHorizontal: 20,
-    marginBottom: 24,
-    padding: 16,
+    borderRadius: DIMENSIONS.RADIUS_LG,
+    marginHorizontal: DIMENSIONS.PADDING_MD,
+    marginBottom: DIMENSIONS.PADDING_LG,
+    padding: DIMENSIONS.PADDING_SM,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -515,12 +547,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.MARGIN_LG,
   },
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: DIMENSIONS.GAP_SM,
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.SIZE_XXL,
@@ -536,7 +568,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: DIMENSIONS.PADDING_MD,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
     borderRadius: 12,
@@ -544,14 +576,14 @@ const styles = StyleSheet.create({
   currentUserEntry: {
     backgroundColor: 'rgba(0, 122, 255, 0.15)',
     borderRadius: 12,
-    paddingLeft: 4,
-    paddingRight: 4,
+    paddingLeft: DIMENSIONS.PADDING_XS,
+    paddingRight: DIMENSIONS.PADDING_XS,
     marginHorizontal: -4,
   },
   leaderboardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: DIMENSIONS.GAP_MD,
     flex: 1,
   },
   rankContainer: {
@@ -600,13 +632,13 @@ const styles = StyleSheet.create({
   leaderboardSubtext: {
     fontSize: TYPOGRAPHY.SIZE_XS,
     color: '#888',
-    marginTop: 2,
+    marginTop: DIMENSIONS.MARGIN_XS / 2,
   },
   pointsBadge: {
     backgroundColor: '#FF9500',
     borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
+    paddingVertical: DIMENSIONS.PADDING_SM,
     minWidth: 60,
     alignItems: 'center',
   },

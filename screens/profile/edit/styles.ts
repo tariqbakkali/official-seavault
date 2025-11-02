@@ -1,5 +1,5 @@
 import { StyleSheet, Dimensions } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -12,9 +12,9 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingTop: DIMENSIONS.PADDING_LG,
+    paddingBottom: DIMENSIONS.PADDING_LG,
   },
   backButton: {
     width: 40,
@@ -48,41 +48,41 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
+    gap: DIMENSIONS.SPACE_LG,
   },
   loadingText: {
     color: '#666',
     fontSize: TYPOGRAPHY.SIZE_LG,
   },
   section: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_LG,
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   sectionSubtitle: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   dangerSection: {
     borderTopWidth: 1,
     borderTopColor: '#1a1a1a',
-    marginTop: 20,
+    marginTop: DIMENSIONS.SPACE_LG,
   },
   dangerSectionTitle: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '600',
     color: '#FF3B30',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   avatarContainer: {
     alignItems: 'center',
-    gap: 12,
+    gap: DIMENSIONS.SPACE_LG,
   },
   avatarWrapper: {
     position: 'relative',
@@ -119,18 +119,18 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
   inputGroup: {
-    gap: 16,
+    gap: DIMENSIONS.SPACE_LG,
   },
   inputWrapper: {
-    gap: 8,
+    gap: DIMENSIONS.SPACE_SM,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_XS,
     borderWidth: 1,
     borderColor: 'transparent',
   },
@@ -139,7 +139,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#2a1a1a',
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: DIMENSIONS.SPACE_LG,
   },
   input: {
     flex: 1,
@@ -148,17 +148,17 @@ export const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_LG,
   },
   eyeIcon: {
-    padding: 8,
-    marginLeft: 8,
+    padding: DIMENSIONS.PADDING_XS,
+    marginLeft: DIMENSIONS.SPACE_SM,
   },
   validIcon: {
-    marginLeft: 8,
+    marginLeft: DIMENSIONS.SPACE_SM,
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 4,
+    gap: DIMENSIONS.SPACE_XS,
+    paddingHorizontal: DIMENSIONS.PADDING_XS,
   },
   errorText: {
     color: '#FF3B30',
@@ -166,17 +166,17 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   passwordStrengthContainer: {
-    marginTop: 8,
-    gap: 8,
+    marginTop: DIMENSIONS.SPACE_SM,
+    gap: DIMENSIONS.SPACE_SM,
   },
   passwordStrengthBars: {
     flexDirection: 'row',
-    gap: 4,
+    gap: DIMENSIONS.SPACE_XS,
   },
   passwordStrengthBar: {
     flex: 1,
     height: 4,
-    borderRadius: 2,
+    borderRadius: DIMENSIONS.RADIUS_XS,
     backgroundColor: '#333',
   },
   passwordStrengthText: {
@@ -188,9 +188,9 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.PADDING_LG,
+    gap: DIMENSIONS.SPACE_SM,
     minHeight: 52,
   },
   primaryButton: {
@@ -221,14 +221,14 @@ export const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#007AFF',
     textAlign: 'center',
-    marginVertical: 12,
+    marginVertical: DIMENSIONS.SPACE_LG,
     textDecorationLine: 'underline',
   },
   successOverlay: {
     position: 'absolute',
     top: 100,
-    left: 20,
-    right: 20,
+    left: DIMENSIONS.PADDING_LG,
+    right: DIMENSIONS.PADDING_LG,
     alignItems: 'center',
     zIndex: 1000,
   },
@@ -236,10 +236,10 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_SM,
     borderRadius: 25,
-    gap: 8,
+    gap: DIMENSIONS.SPACE_SM,
     borderWidth: 1,
     borderColor: '#34C759',
   },

@@ -16,7 +16,7 @@ import { Database } from '@/types/database';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import ExploreDiveSiteCard from '@/screens/modal/explore/components/ExploreDiveSiteCard';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 type DiveSite = Database['public']['Tables']['dive_sites']['Row'];
 
@@ -37,17 +37,14 @@ export default function ExploreModal() {
   const insets = useSafeAreaInsets();
   
   // Use the new useSyncedData hook instead of useDataStore
-  const { diveSites: diveSitesData, userId: currentUserId } = useSyncedData();
+  const { diveSites: diveSitesData } = useSyncedData();
 
   const topExploreItems = React.useMemo(() => {
     if (!diveSites) return [];
 
-    const userDiveSites = diveSites.filter(site => site.user_id === currentUserId);
-    const otherDiveSites = diveSites.filter(site => site.user_id !== currentUserId);
-
-    const combined = [...userDiveSites, ...otherDiveSites];
-    return combined.slice(0, 5);
-  }, [diveSites, currentUserId]);
+    // Since dive sites don't have user ownership, just return the first 5 items
+    return diveSites.slice(0, 5);
+  }, [diveSites]);
 
   const loadData = async () => {
     try {
@@ -95,12 +92,11 @@ export default function ExploreModal() {
   };
 
   const renderDiveSite = ({ item }: { item: DiveSite }) => {
-    const isCurrentUserItem = item.user_id === currentUserId;
     return (
       <ExploreDiveSiteCard
         diveSite={item}
         onPress={() => handleDiveSitePress(item.id)}
-        isCurrentUserItem={isCurrentUserItem}
+        isCurrentUserItem={false} // Dive sites don't have user ownership
       />
     );
   };
@@ -220,20 +216,20 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    gap: 12,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.SPACE_LG,
+    gap: DIMENSIONS.SPACE_LG,
   },
   searchInputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_SM,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: DIMENSIONS.SPACE_SM,
   },
   searchInput: {
     flex: 1,
@@ -244,37 +240,37 @@ const styles = StyleSheet.create({
   filterButton: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: DIMENSIONS.RADIUS_MD,
     backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
   },
   filtersContainer: {
     backgroundColor: '#1a1a1a',
-    marginHorizontal: 20,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    marginHorizontal: DIMENSIONS.PADDING_LG,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    marginBottom: 12,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   filterLabel: {
     color: '#fff',
     fontWeight: '600',
-    marginRight: 12,
+    marginRight: DIMENSIONS.SPACE_LG,
     width: 80,
   },
   filterOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: DIMENSIONS.PADDING_SM,
+    paddingVertical: DIMENSIONS.PADDING_XS,
+    borderRadius: DIMENSIONS.RADIUS_LG,
     backgroundColor: '#333',
-    marginRight: 8,
-    marginBottom: 8,
+    marginRight: DIMENSIONS.SPACE_SM,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   filterOptionActive: {
     backgroundColor: '#007AFF',
@@ -290,8 +286,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingBottom: DIMENSIONS.PADDING_LG,
   },
   loadingContainer: {
     flex: 1,
@@ -306,7 +302,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: DIMENSIONS.PADDING_XXXL,
   },
   emptyText: {
     color: '#666',

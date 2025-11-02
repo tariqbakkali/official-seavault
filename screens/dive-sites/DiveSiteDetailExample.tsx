@@ -14,7 +14,7 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import { useImageSync } from '@/hooks/useImageSync';
 import { images$, addImage, deleteImage } from '@/stores/imageState';
 import { ImageMetadata } from '@/types/image.types';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { Upload, RefreshCw, AlertCircle } from 'lucide-react-native';
 
 interface DiveSiteDetailExampleProps {
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    padding: 16,
+    padding: DIMENSIONS.PADDING_LG,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
@@ -242,17 +242,17 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#1a1a1a',
-    marginBottom: 12,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: DIMENSIONS.SPACE_LG,
   },
   statusItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: DIMENSIONS.SPACE_XS,
   },
   statusText: {
     fontSize: TYPOGRAPHY.SIZE_MD,
@@ -266,25 +266,25 @@ const styles = StyleSheet.create({
     color: '#f44336',
   },
   section: {
-    padding: 16,
+    padding: DIMENSIONS.PADDING_LG,
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     color: '#1a1a1a',
-    marginBottom: 12,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   uploadStatus: {
-    marginTop: 12,
+    marginTop: DIMENSIONS.SPACE_LG,
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     textAlign: 'center',
   },
   errorContainer: {
-    marginTop: 12,
-    padding: 12,
+    marginTop: DIMENSIONS.SPACE_LG,
+    padding: DIMENSIONS.PADDING_SM,
     backgroundColor: '#ffebee',
-    borderRadius: 8,
+    borderRadius: DIMENSIONS.RADIUS_SM,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -298,10 +298,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 4,
+    borderRadius: DIMENSIONS.RADIUS_XS,
+    paddingHorizontal: DIMENSIONS.PADDING_SM,
+    paddingVertical: DIMENSIONS.PADDING_XS,
+    gap: DIMENSIONS.SPACE_XS,
   },
   retryButtonText: {
     color: '#fff',
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   emptyState: {
-    padding: 32,
+    padding: DIMENSIONS.PADDING_XL,
     alignItems: 'center',
   },
   emptyStateText: {
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   syncStatusContainer: {
-    padding: 16,
+    padding: DIMENSIONS.PADDING_LG,
     backgroundColor: '#e3f2fd',
   },
   syncStatusText: {

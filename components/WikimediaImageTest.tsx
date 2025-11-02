@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { Image } from 'expo-image';
 
 interface WikimediaImageTestProps {
@@ -78,52 +78,52 @@ export default function WikimediaImageTest({ uri }: WikimediaImageTestProps) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: DIMENSIONS.PADDING_MD,
     backgroundColor: '#e0e0e0',
-    margin: 10,
-    borderRadius: 8,
+    margin: DIMENSIONS.SPACE_XS,
+    borderRadius: DIMENSIONS.RADIUS_SM,
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   url: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
-    marginBottom: 10,
-    fontFamily: 'monospace',
+    marginBottom: DIMENSIONS.SPACE_XS,
+    fontFamily: 'monospace'
   },
   testResults: {
-    marginBottom: 10,
-    padding: 10,
+    marginBottom: DIMENSIONS.SPACE_XS,
+    padding: DIMENSIONS.SPACE_XS,
     backgroundColor: '#f5f5f5',
-    borderRadius: 4,
+    borderRadius: DIMENSIONS.RADIUS_XS
   },
   resultText: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#333',
-    marginBottom: 2,
+    marginBottom: DIMENSIONS.SPACE_XS
   },
   loadingText: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: 'bold',
-    marginTop: 10,
-    marginBottom: 5,
+    marginTop: DIMENSIONS.SPACE_XS,
+    marginBottom: DIMENSIONS.SPACE_XS
   },
   statusText: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#007AFF',
-    marginBottom: 5,
+    marginBottom: DIMENSIONS.SPACE_XS
   },
   image: {
-    width: 200,
-    height: 200,
+    width: DIMENSIONS.THUMBNAIL_SIZE,
+    height: DIMENSIONS.THUMBNAIL_SIZE,
     resizeMode: 'cover',
-    backgroundColor: '#ddd',
+    backgroundColor: '#ddd'
   },
   errorText: {
     color: 'red',
-    fontWeight: 'bold',
-  },
+    fontWeight: 'bold'
+  }
 });

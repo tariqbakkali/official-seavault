@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { COLORS } from '@/constants';
+import { COLORS, DIMENSIONS } from '@/constants';
 import { TYPOGRAPHY } from '@/constants';
 
 interface MapToggleButtonProps {
@@ -34,9 +34,9 @@ const MapToggleButton: React.FC<MapToggleButtonProps> = ({
 
 const styles = StyleSheet.create({
   toggleButton: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    padding: DIMENSIONS.PADDING_SM,
+    borderRadius: DIMENSIONS.RADIUS_SM,
+    marginBottom: DIMENSIONS.SPACE_LG,
     alignItems: 'center',
   },
   toggleText: {

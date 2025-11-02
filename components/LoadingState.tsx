@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 interface LoadingStateProps {
   message?: string;
@@ -29,10 +29,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: DIMENSIONS.PADDING_LG,
   },
   message: {
-    marginTop: 10,
+    marginTop: DIMENSIONS.SPACE_SM,
     fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
   },

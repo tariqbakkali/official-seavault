@@ -1,10 +1,8 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ROUTES } from '@/constants';
+import { ROUTES, COLORS, TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { Trophy, Fish, Star } from 'lucide-react-native';
-import { COLORS } from '@/constants';
-import { TYPOGRAPHY } from '@/constants';
 
 interface StatsSectionProps {
   uniqueCreatures?: number;
@@ -72,24 +70,24 @@ const StatsSection: React.FC<StatsSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 20,
-    marginBottom: 32,
+    marginHorizontal: DIMENSIONS.MARGIN_LG,
+    marginBottom: DIMENSIONS.MARGIN_XL,
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: COLORS.TEXT_PRIMARY,
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.MARGIN_LG,
   },
   statsContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: DIMENSIONS.GAP_MD,
   },
   statItem: {
     flex: 1,
     backgroundColor: COLORS.SURFACE,
     borderRadius: 16,
-    padding: 20,
+    padding: DIMENSIONS.PADDING_LG,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -107,12 +105,12 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: DIMENSIONS.MARGIN_MD,
   },
   statValue: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.MARGIN_XS,
   },
   statLabel: {
     fontSize: TYPOGRAPHY.SIZE_MD,

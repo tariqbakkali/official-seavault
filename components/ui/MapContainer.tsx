@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import CustomClusteredMapView from '@/components/CustomClusteredMapView';
 
 interface MapContainerProps {
@@ -61,7 +61,6 @@ const MapContainer: React.FC<MapContainerProps> = ({
     }, 100); // Small delay to ensure proper cleanup
   };
 
-  console.log('[DEBUG] MapContainer: Received props', { data, initialRegion, selectedCoordinate, clusteringEnabled });
   return (
     <View style={[styles.container, style]}>
       <View 
@@ -110,14 +109,14 @@ const MapContainer: React.FC<MapContainerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 8,
+    borderRadius: DIMENSIONS.RADIUS_SM,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#333',
   },
   mapWrapper: {
     height: 300,
-    borderRadius: 8,
+    borderRadius: DIMENSIONS.RADIUS_SM,
     overflow: 'hidden',
   },
   map: {
@@ -127,8 +126,8 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#999',
     fontStyle: 'italic',
-    marginTop: 5,
-    padding: 8,
+    marginTop: DIMENSIONS.SPACE_XS,
+    padding: DIMENSIONS.PADDING_XS,
     backgroundColor: '#1a1a1a',
   },
 });

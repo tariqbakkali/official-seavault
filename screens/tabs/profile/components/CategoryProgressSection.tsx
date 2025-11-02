@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS } from '@/constants';
-import { TYPOGRAPHY } from '@/constants';
+import { COLORS, TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 interface CategoryStat {
   seen: number;
@@ -47,20 +46,20 @@ const CategoryProgressSection: React.FC<CategoryProgressSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 20,
-    marginBottom: 32,
+    marginHorizontal: DIMENSIONS.MARGIN_LG,
+    marginBottom: DIMENSIONS.MARGIN_XL,
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: COLORS.TEXT_PRIMARY,
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.MARGIN_LG,
   },
   categoryProgress: {
     backgroundColor: COLORS.SURFACE,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    padding: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.MARGIN_MD,
   },
   categoryProgressHeader: {
     flexDirection: 'row',
@@ -82,7 +81,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.SURFACE_SECONDARY,
     borderRadius: 4,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.MARGIN_SM,
   },
   progressFill: {
     height: '100%',

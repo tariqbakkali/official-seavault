@@ -7,6 +7,7 @@ export const ROUTES = {
   AUTH: {
     ROOT: '/(auth)' as const,
     LOGIN: '/(auth)/login' as const,
+    RESET_PASSWORD: '/(auth)/reset-password' as const,
   },
   
   // Main tab routes
@@ -52,6 +53,9 @@ export const ROUTES = {
   
   // Other routes
   NOT_FOUND: '/+not-found' as const,
+  
+  // Redirect URLs
+  RESET_PASSWORD_REDIRECT: '/(auth)/reset-password' as const,
 } as const;
 
 /**
@@ -111,4 +115,5 @@ export type RouteParams = {
   '/modal/leaderboard': undefined;
   '/modal/explore': undefined;
   '/dive-sites/add': undefined;
+  '/(auth)/reset-password': undefined;
 };

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 interface FormFieldProps {
   label: string;
@@ -55,13 +55,13 @@ const FormField: React.FC<FormFieldProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   label: {
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   required: {
     color: '#ff3b30',
@@ -69,8 +69,8 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#333',
-    borderRadius: 8,
-    padding: 15,
+    borderRadius: DIMENSIONS.RADIUS_SM,
+    padding: DIMENSIONS.PADDING_MD,
     backgroundColor: '#1a1a1a',
     fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#ff3b30',
     fontStyle: 'italic',
-    marginTop: 5,
+    marginTop: DIMENSIONS.SPACE_XS,
   },
 });
 

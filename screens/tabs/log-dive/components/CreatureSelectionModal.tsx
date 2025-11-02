@@ -13,7 +13,7 @@ import { Search, Camera, X, Check } from 'lucide-react-native';
 import { Creature } from '@/types/database';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
 import * as ImagePicker from 'expo-image-picker';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 const { width, height } = Dimensions.get('window');
 const creatureCardWidth = (width - 60) / 3;
@@ -286,14 +286,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    paddingTop: 50,
+    paddingTop: DIMENSIONS.PADDING_XXXL * 2,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.MARGIN_LG,
   },
   closeButton: {
     width: 40,
@@ -316,30 +316,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    paddingHorizontal: 16,
+    marginHorizontal: DIMENSIONS.MARGIN_LG,
+    marginBottom: DIMENSIONS.MARGIN_LG,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
   },
   searchIcon: {
-    marginRight: 12,
+    marginRight: DIMENSIONS.MARGIN_MD,
   },
   searchInput: {
     flex: 1,
     fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
-    paddingVertical: 16,
+    paddingVertical: DIMENSIONS.PADDING_LG,
   },
   categoriesContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.MARGIN_LG,
   },
   categoryButton: {
     backgroundColor: '#1a1a1a',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_SM,
     borderRadius: 20,
-    marginRight: 12,
+    marginRight: DIMENSIONS.MARGIN_MD,
   },
   activeCategoryButton: {
     backgroundColor: '#007AFF',
@@ -353,8 +353,8 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   creaturesList: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingBottom: DIMENSIONS.PADDING_XXXL * 2,
   },
   row: {
     justifyContent: 'space-between',
@@ -362,15 +362,15 @@ const styles = StyleSheet.create({
   },
   creatureContainer: {
     width: creatureCardWidth,
-    marginRight: 10,
+    marginRight: DIMENSIONS.MARGIN_MD,
   },
   creatureCard: {
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
     overflow: 'hidden',
     alignItems: 'center',
-    padding: 8,
-    marginBottom: 8,
+    padding: DIMENSIONS.PADDING_SM,
+    marginBottom: DIMENSIONS.MARGIN_SM,
   },
   selectedCreatureCard: {
     borderWidth: 2,
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: '100%',
     height: 80,
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.MARGIN_SM,
   },
   creatureImage: {
     width: '100%',
@@ -412,21 +412,21 @@ const styles = StyleSheet.create({
   expandedContent: {
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    padding: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.MARGIN_LG,
   },
   notesSection: {
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.MARGIN_LG,
   },
   notesLabel: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.MARGIN_SM,
   },
   notesInput: {
     backgroundColor: '#2a2a2a',
     borderRadius: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
     paddingVertical: 12,
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#fff',
@@ -435,15 +435,16 @@ const styles = StyleSheet.create({
   expandedActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: DIMENSIONS.GAP_LG,
   },
   photoButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_SM,
     borderRadius: 20,
-    gap: 8,
+    gap: DIMENSIONS.GAP_SM,
   },
   photoButtonText: {
     color: '#007AFF',
@@ -452,8 +453,8 @@ const styles = StyleSheet.create({
   },
   saveNotesButton: {
     backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_SM,
     borderRadius: 20,
   },
   saveNotesText: {
@@ -470,8 +471,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#000',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_LG,
     borderTopWidth: 1,
     borderTopColor: '#333',
   },

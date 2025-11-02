@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   listContainer: {
-    paddingBottom: 100,
+    paddingBottom: DIMENSIONS.SPACE_XXXL,
   },
   categoryCard: {
     backgroundColor: COLORS.SURFACE,

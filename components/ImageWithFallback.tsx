@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { View, StyleSheet, ImageStyle, ViewStyle, ImageSourcePropType, Platform } from 'react-native';
 import { Image } from 'expo-image';
+import { DIMENSIONS } from '@/constants';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import LoadingShimmer from './LoadingShimmer';
 import DefaultImagePlaceholder from './DefaultImagePlaceholder';
@@ -244,20 +245,29 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#FF3B30',
   },
+  errorBadge: {
+    position: 'absolute',
+    top: DIMENSIONS.SPACE_XS,
+    right: DIMENSIONS.SPACE_XS,
+    width: DIMENSIONS.SPACE_MD,
+    height: DIMENSIONS.SPACE_MD,
+    borderRadius: DIMENSIONS.RADIUS_XS,
+    backgroundColor: '#FF3B30',
+  },
   offlineBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: DIMENSIONS.SPACE_XS,
+    right: DIMENSIONS.SPACE_XS,
+    width: DIMENSIONS.SPACE_MD,
+    height: DIMENSIONS.SPACE_MD,
+    borderRadius: DIMENSIONS.RADIUS_XS,
     backgroundColor: '#FF3B30',
     zIndex: 1,
   },
   offlineDot: {
     width: '100%',
     height: '100%',
-    borderRadius: 4,
+    borderRadius: DIMENSIONS.RADIUS_XS,
     backgroundColor: '#FF3B30',
-  },
+  }
 });

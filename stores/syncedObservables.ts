@@ -80,7 +80,7 @@ export const diveSites$ = observable(customSynced({
   update: async (input: any) => {
     const { data, error } = await supabase
       .from('dive_sites')
-      .insert(input)
+      .upsert(input)
       .select()
       .single();
       if (error) {
@@ -88,7 +88,7 @@ export const diveSites$ = observable(customSynced({
       } 
   return { data, error: null };
   },
-  realtime: true, // Enable realtime for dive sites
+  realtime: false, // Disable realtime for dive sites to reduce constant updates
 }));
 
 // Synced observables for user-specific data

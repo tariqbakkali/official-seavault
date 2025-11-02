@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { GoogleMaps, AppleMaps } from 'expo-maps';
 
 const MapDebug = () => {
@@ -39,24 +39,24 @@ const MapDebug = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: DIMENSIONS.PADDING_MD,
     backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    margin: 20,
+    borderRadius: DIMENSIONS.RADIUS_SM,
+    margin: DIMENSIONS.PADDING_MD,
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_LG,
     textAlign: 'center',
   },
   mapContainer: {
     height: 300,
-    borderRadius: 10,
+    borderRadius: DIMENSIONS.RADIUS_SM,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#ccc',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   map: {
     flex: 1,

@@ -1,6 +1,6 @@
 import { Stack, router, usePathname } from 'expo-router';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NotFoundScreen() {
@@ -43,33 +43,33 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: DIMENSIONS.PADDING_XL,
     backgroundColor: '#000',
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   text: {
     fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: DIMENSIONS.SPACE_XXXL,
     lineHeight: 24,
   },
   pathText: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#999',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   button: {
     backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    marginBottom: 16,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingVertical: DIMENSIONS.PADDING_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_XL,
+    marginBottom: DIMENSIONS.SPACE_LG,
     minWidth: 200,
     alignItems: 'center',
   },

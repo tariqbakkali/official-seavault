@@ -14,7 +14,7 @@ import { useSyncedData } from '@/hooks/useSyncedData';
 import { Creature } from '@/types/database';
 import { ImageWithFallback } from '@/components';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 interface WishlistCreature {
   creature: Creature;
@@ -151,24 +151,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   listContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
     // Reduce top padding to account for safe area insets and ScreenHeader padding
     paddingTop: 5,
-    paddingBottom: 100,
+    paddingBottom: DIMENSIONS.SPACE_XXXL,
   },
   creatureCard: {
     flexDirection: 'row',
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    marginBottom: 16,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    marginBottom: DIMENSIONS.SPACE_LG,
     overflow: 'hidden',
     alignItems: 'center',
-    padding: 16,
+    padding: DIMENSIONS.PADDING_LG,
   },
   imageContainer: {
     width: 60,
     height: 60,
-    borderRadius: 8,
+    borderRadius: DIMENSIONS.RADIUS_SM,
     overflow: 'hidden',
   },
   creatureImage: {
@@ -178,30 +178,30 @@ const styles = StyleSheet.create({
   },
   creatureInfo: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: DIMENSIONS.SPACE_LG,
   },
   creatureName: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   scientificName: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     fontStyle: 'italic',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   addedDate: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   pointsBadge: {
     backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_SM,
+    paddingVertical: DIMENSIONS.PADDING_XS,
   },
   pointsText: {
     fontSize: TYPOGRAPHY.SIZE_SM,
@@ -209,21 +209,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   removeButton: {
-    padding: 8,
-    marginLeft: 8,
+    padding: DIMENSIONS.PADDING_XS,
+    marginLeft: DIMENSIONS.SPACE_SM,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: DIMENSIONS.PADDING_XL,
   },
   emptyTitle: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     color: '#fff',
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: DIMENSIONS.SPACE_LG,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   emptySubtitle: {
     fontSize: TYPOGRAPHY.SIZE_MD,

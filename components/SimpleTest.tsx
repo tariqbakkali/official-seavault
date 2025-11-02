@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { Image } from 'expo-image';
 
 export default function SimpleTest() {
@@ -30,31 +30,31 @@ export default function SimpleTest() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: DIMENSIONS.PADDING_MD,
     backgroundColor: '#f0f0f0',
-    margin: 10,
-    borderRadius: 8,
+    margin: DIMENSIONS.SPACE_XS,
+    borderRadius: DIMENSIONS.RADIUS_SM,
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   url: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_XS,
     fontFamily: 'monospace',
   },
   note: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_XS,
     fontStyle: 'italic',
   },
   image: {
-    width: 200,
-    height: 200,
+    width: DIMENSIONS.THUMBNAIL_SIZE,
+    height: DIMENSIONS.THUMBNAIL_SIZE,
     resizeMode: 'cover',
     backgroundColor: '#ddd',
   },

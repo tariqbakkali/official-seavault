@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
 interface DefaultImagePlaceholderProps {
   style?: ViewStyle;
@@ -37,30 +37,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: DIMENSIONS.ICON_XL,
+    height: DIMENSIONS.ICON_XL,
+    borderRadius: DIMENSIONS.RADIUS_LG,
     backgroundColor: COLORS.BACKGROUND,
     justifyContent: 'center',
     alignItems: 'center',
   },
   icon: {
-    width: 20,
-    height: 20,
+    width: DIMENSIONS.ICON_MD,
+    height: DIMENSIONS.ICON_MD,
     position: 'relative',
   },
   iconLine1: {
     position: 'absolute',
-    width: 20,
-    height: 2,
+    width: DIMENSIONS.ICON_MD,
+    height: DIMENSIONS.SPACE_XS,
     backgroundColor: COLORS.TEXT_SECONDARY,
-    top: 8,
+    top: DIMENSIONS.SPACE_SM,
   },
   iconLine2: {
     position: 'absolute',
-    width: 20,
-    height: 2,
+    width: DIMENSIONS.ICON_MD,
+    height: DIMENSIONS.SPACE_XS,
     backgroundColor: COLORS.TEXT_SECONDARY,
-    bottom: 8,
+    bottom: DIMENSIONS.SPACE_SM,
   },
 });

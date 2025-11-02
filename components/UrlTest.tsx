@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 export default function UrlTest() {
   // Test with a known working Wikimedia URL
@@ -71,36 +71,36 @@ export default function UrlTest() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: DIMENSIONS.PADDING_MD,
     backgroundColor: '#f0f0f0',
-    margin: 10,
-    borderRadius: 8,
+    margin: DIMENSIONS.SPACE_XS,
+    borderRadius: DIMENSIONS.RADIUS_SM,
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   url: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
-    marginBottom: 10,
-    fontFamily: 'monospace',
+    marginBottom: DIMENSIONS.SPACE_XS,
+    fontFamily: 'monospace'
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_XS
   },
   button: {
     backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 5,
+    padding: DIMENSIONS.SPACE_XS,
+    borderRadius: DIMENSIONS.RADIUS_XS,
     alignItems: 'center',
-    flex: 0.48,
+    flex: 0.48
   },
   secondaryButton: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#34C759'
   },
   buttonText: {
     color: 'white',
@@ -109,6 +109,6 @@ const styles = StyleSheet.create({
   note: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
-    fontStyle: 'italic',
+    fontStyle: 'italic'
   },
 });

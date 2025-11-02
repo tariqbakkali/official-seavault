@@ -60,9 +60,8 @@ const styles = StyleSheet.create({
   },
   discoveredBadge: {
     position: 'absolute',
-    top: DIMENSIONS.SPACE_SM,
-    right: DIMENSIONS.SPACE_SM,
-    backgroundColor: COLORS.SUCCESS,
+    top: DIMENSIONS.SPACE_XS,
+    right: DIMENSIONS.SPACE_XS,
     width: 24,
     height: 24,
     borderRadius: 12,

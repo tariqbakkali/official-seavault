@@ -12,10 +12,8 @@ import { OptimizedImage } from './OptimizedImage';
 import { ImageMetadata } from '@/types/image.types';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useImageSync } from '@/hooks/useImageSync';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { Trash2, Upload, RefreshCw, AlertCircle } from 'lucide-react-native';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface ImageGalleryProps {
   images: ImageMetadata[];
@@ -205,26 +203,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   listContainer: {
-    padding: 8,
+    padding: DIMENSIONS.PADDING_XS,
   },
   imageContainer: {
     position: 'relative',
-    width: (SCREEN_WIDTH - 32) / 3,
-    height: (SCREEN_WIDTH - 32) / 3,
-    margin: 4,
+    width: (DIMENSIONS.SCREEN_WIDTH - 32) / 3,
+    height: (DIMENSIONS.SCREEN_WIDTH - 32) / 3,
+    margin: DIMENSIONS.SPACE_XS,
   },
   thumbnail: {
     width: '100%',
     height: '100%',
-    borderRadius: 8,
+    borderRadius: DIMENSIONS.RADIUS_SM,
   },
   statusBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: DIMENSIONS.SPACE_XS,
+    right: DIMENSIONS.SPACE_XS,
+    width: DIMENSIONS.ICON_LG,
+    height: DIMENSIONS.ICON_LG,
+    borderRadius: DIMENSIONS.RADIUS_FULL,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -244,22 +242,22 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     position: 'absolute',
-    top: 4,
-    left: 4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: DIMENSIONS.SPACE_XS,
+    left: DIMENSIONS.SPACE_XS,
+    width: DIMENSIONS.ICON_LG,
+    height: DIMENSIONS.ICON_LG,
+    borderRadius: DIMENSIONS.RADIUS_FULL,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   deleteButton: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    bottom: DIMENSIONS.SPACE_XS,
+    right: DIMENSIONS.SPACE_XS,
+    width: DIMENSIONS.ICON_LG,
+    height: DIMENSIONS.ICON_LG,
+    borderRadius: DIMENSIONS.RADIUS_FULL,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -268,10 +266,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffebee',
-    borderRadius: 8,
-    padding: 12,
-    margin: 8,
-    gap: 8,
+    borderRadius: DIMENSIONS.RADIUS_SM,
+    padding: DIMENSIONS.PADDING_SM,
+    margin: DIMENSIONS.SPACE_XS,
+    gap: DIMENSIONS.SPACE_XS,
   },
   failedSummaryText: {
     flex: 1,
@@ -283,10 +281,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 4,
+    borderRadius: DIMENSIONS.RADIUS_XS,
+    paddingHorizontal: DIMENSIONS.PADDING_SM,
+    paddingVertical: DIMENSIONS.PADDING_XS,
+    gap: DIMENSIONS.SPACE_XS,
   },
   retryAllButtonText: {
     color: '#fff',
@@ -301,8 +299,8 @@ const styles = StyleSheet.create({
   },
   modalCloseButton: {
     position: 'absolute',
-    top: 60,
-    right: 20,
+    top: DIMENSIONS.HEADER_HEIGHT,
+    right: DIMENSIONS.PADDING_MD,
     zIndex: 1,
   },
   modalCloseText: {
@@ -311,24 +309,24 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   modalImageContainer: {
-    width: SCREEN_WIDTH * 0.9,
-    height: SCREEN_HEIGHT * 0.7,
+    width: DIMENSIONS.SCREEN_WIDTH * 0.9,
+    height: DIMENSIONS.SCREEN_HEIGHT * 0.7,
   },
   fullImage: {
     width: '100%',
     height: '85%',
-    borderRadius: 8,
+    borderRadius: DIMENSIONS.RADIUS_SM,
   },
   modalImageInfo: {
-    marginTop: 12,
+    marginTop: DIMENSIONS.SPACE_LG,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: DIMENSIONS.RADIUS_SM,
+    padding: DIMENSIONS.PADDING_SM,
   },
   imageInfoText: {
     color: '#fff',
     fontSize: TYPOGRAPHY.SIZE_MD,
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
 });
 

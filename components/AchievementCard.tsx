@@ -16,8 +16,7 @@ import {
   // Removed Whale as it's not available in lucide-react-native
 } from 'lucide-react-native';
 import { Achievement } from '@/types/database';
-import { COLORS } from '@/constants';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS, COLORS } from '@/constants';
 
 interface AchievementCardProps {
   achievement: Achievement;
@@ -212,9 +211,9 @@ const homeStyles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: COLORS.SURFACE,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.PADDING_MD,
+    marginBottom: DIMENSIONS.SPACE_SM,
     alignItems: 'center',
     borderLeftWidth: 3,
     borderLeftColor: COLORS.SECONDARY,
@@ -224,12 +223,12 @@ const homeStyles = StyleSheet.create({
     borderLeftColor: COLORS.TEXT_DISABLED,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: DIMENSIONS.PADDING_40,
+    height: DIMENSIONS.PADDING_40,
+    borderRadius: DIMENSIONS.RADIUS_XL,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: DIMENSIONS.SPACE_XL
   },
   content: {
     flex: 1,
@@ -238,24 +237,24 @@ const homeStyles = StyleSheet.create({
     color: COLORS.TEXT_PRIMARY,
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   progressBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   progressBarBackground: {
     flex: 1,
     height: 4,
     backgroundColor: COLORS.SURFACE_SECONDARY,
-    borderRadius: 2,
+    borderRadius: DIMENSIONS.RADIUS_XS,
     overflow: 'hidden',
-    marginRight: 8,
+    marginRight: DIMENSIONS.SPACE_SM,
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: DIMENSIONS.RADIUS_XS,
   },
   progressText: {
     color: COLORS.TEXT_SECONDARY,
@@ -263,7 +262,7 @@ const homeStyles = StyleSheet.create({
     fontWeight: '600',
   },
   completedContainer: {
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   completedText: {
     color: COLORS.SUCCESS,
@@ -271,8 +270,8 @@ const homeStyles = StyleSheet.create({
     fontWeight: '600',
   },
   pointsContainer: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: DIMENSIONS.PADDING_SM,
+    paddingVertical: DIMENSIONS.PADDING_XS,
   },
   points: {
     fontSize: TYPOGRAPHY.SIZE_SM,
@@ -287,9 +286,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: COLORS.SURFACE,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: DIMENSIONS.RADIUS_LG,
+    padding: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.SPACE_LG,
     position: 'relative',
     overflow: 'hidden',
     shadowColor: '#000',
@@ -308,13 +307,13 @@ const styles = StyleSheet.create({
     borderLeftColor: COLORS.TEXT_DISABLED,
   },
   iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: DIMENSIONS.ICON_XL,
+    height: DIMENSIONS.ICON_XL,
+    borderRadius: DIMENSIONS.RADIUS_XL,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
-    borderWidth: 2,
+    marginRight: DIMENSIONS.SPACE_XL,
+    borderWidth: DIMENSIONS.SPACE_XS,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   content: {
@@ -324,23 +323,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   name: {
     color: COLORS.TEXT_PRIMARY,
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: '700',
     flex: 1,
-    marginRight: 8,
+    marginRight: DIMENSIONS.SPACE_SM,
   },
   description: {
     color: COLORS.TEXT_SECONDARY,
     fontSize: TYPOGRAPHY.SIZE_MD,
-    marginBottom: 12,
+    marginBottom: DIMENSIONS.SPACE_LG,
     lineHeight: 20,
   },
   completedContainer: {
-    marginBottom: 12,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   completedText: {
     color: COLORS.SUCCESS,
@@ -350,19 +349,19 @@ const styles = StyleSheet.create({
   progressBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   progressBarBackground: {
     flex: 1,
     height: 6,
     backgroundColor: COLORS.SURFACE_SECONDARY,
-    borderRadius: 3,
+    borderRadius: DIMENSIONS.RADIUS_XS,
     overflow: 'hidden',
-    marginRight: 8,
+    marginRight: DIMENSIONS.SPACE_SM,
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: DIMENSIONS.RADIUS_XS,
   },
   progressText: {
     color: COLORS.TEXT_SECONDARY,
@@ -375,9 +374,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryBadge: {
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
+    paddingVertical: DIMENSIONS.PADDING_XS,
   },
   categoryText: {
     fontSize: TYPOGRAPHY.SIZE_SM,
@@ -385,9 +384,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   pointsContainer: {
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
+    paddingVertical: DIMENSIONS.PADDING_XS,
   },
   points: {
     fontSize: TYPOGRAPHY.SIZE_SM,
@@ -395,9 +394,9 @@ const styles = StyleSheet.create({
   },
   unlockedBadge: {
     backgroundColor: 'rgba(52, 199, 89, 0.2)',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
+    paddingVertical: DIMENSIONS.PADDING_XS,
   },
   unlockedText: {
     color: COLORS.SUCCESS,
@@ -416,15 +415,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: DIMENSIONS.RADIUS_LG,
   },
   lockIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: DIMENSIONS.ICON_XL,
+    height: DIMENSIONS.ICON_XL,
+    borderRadius: DIMENSIONS.RADIUS_LG,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center', 
+    alignItems: 'center'
   },
   lockIcon: {
     fontSize: TYPOGRAPHY.SIZE_XXL,

@@ -4,3 +4,4 @@ export * from './device';
 export * from './helpers';
 export * from './queryParser';
 export * from './diveSiteUtils';
+export * from './authUtils';

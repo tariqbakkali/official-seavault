@@ -493,17 +493,17 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   infoContainer: {
-    padding: 20,
+    padding: DIMENSIONS.PADDING_LG,
     backgroundColor: '#1a1a1a',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    marginBottom: 20,
+    borderBottomLeftRadius: DIMENSIONS.RADIUS_LG,
+    borderBottomRightRadius: DIMENSIONS.RADIUS_LG,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   nameRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   name: {
     fontSize: TYPOGRAPHY.SIZE_TITLE,
@@ -511,8 +511,8 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   heartButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: DIMENSIONS.PADDING_XS,
+    borderRadius: DIMENSIONS.RADIUS_LG,
     backgroundColor: '#333',
   },
   heartButtonActive: {
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   scientificName: {
     fontSize: TYPOGRAPHY.SIZE_XL,
@@ -532,10 +532,10 @@ const styles = StyleSheet.create({
   },
   pointsBadge: {
     backgroundColor: '#007AFF',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginLeft: 10,
+    borderRadius: DIMENSIONS.RADIUS_SM,
+    paddingHorizontal: DIMENSIONS.PADDING_XS,
+    paddingVertical: DIMENSIONS.PADDING_XS,
+    marginLeft: DIMENSIONS.SPACE_SM,
   },
   pointsBadgeText: {
     color: '#fff',
@@ -548,14 +548,14 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    marginHorizontal: 20,
-    marginBottom: 20,
+    marginHorizontal: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.SPACE_LG,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
   tab: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: DIMENSIONS.PADDING_LG,
     alignItems: 'center',
   },
   activeTab: {
@@ -572,17 +572,17 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     flex: 1,
-    paddingHorizontal: 20,
-    marginBottom: 100,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.SPACE_XXXL,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: DIMENSIONS.SPACE_XL,
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 12,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   sectionText: {
     fontSize: TYPOGRAPHY.SIZE_LG,
@@ -596,12 +596,12 @@ const styles = StyleSheet.create({
   },
   detailItem: {
     width: '48%',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   detailLabel: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   detailValue: {
     fontSize: TYPOGRAPHY.SIZE_LG,
@@ -609,25 +609,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   sightingsList: {
-    paddingBottom: 20,
+    paddingBottom: DIMENSIONS.PADDING_LG,
   },
   sightingCard: {
     backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: DIMENSIONS.RADIUS_LG,
+    padding: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   sightingHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   sightingNumber: {
     backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_SM,
+    paddingVertical: DIMENSIONS.PADDING_XS,
   },
   sightingNumberText: {
     color: '#fff',
@@ -641,8 +641,8 @@ const styles = StyleSheet.create({
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
+    gap: DIMENSIONS.SPACE_XS,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   sightingDate: {
     fontSize: TYPOGRAPHY.SIZE_LG,
@@ -656,8 +656,8 @@ const styles = StyleSheet.create({
   diveSiteInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
+    gap: DIMENSIONS.SPACE_XS,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   diveSiteName: {
     fontSize: TYPOGRAPHY.SIZE_MD,
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
   },
   detailRow: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.MARGIN_SM,
   },
   detailLabelNew: {
     fontSize: TYPOGRAPHY.SIZE_MD,
@@ -679,8 +679,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   imageSection: {
-    marginTop: 12,
-    borderRadius: 8,
+    marginTop: DIMENSIONS.MARGIN_MD,
+    borderRadius: DIMENSIONS.RADIUS_SM,
     overflow: 'hidden',
   },
   sightingImage: {
@@ -691,12 +691,12 @@ const styles = StyleSheet.create({
   notesSection: {
     borderTopWidth: 1,
     borderTopColor: '#333',
-    paddingTop: 12,
+    paddingTop: DIMENSIONS.PADDING_MD,
   },
   notesLabel: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.MARGIN_XS,
   },
   notesText: {
     fontSize: TYPOGRAPHY.SIZE_MD,
@@ -707,12 +707,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: DIMENSIONS.PADDING_XXXL,
   },
   emptyText: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     color: '#666',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.MARGIN_SM,
   },
   emptySubtext: {
     fontSize: TYPOGRAPHY.SIZE_MD,
@@ -723,9 +723,9 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     bottom: 0,
-    paddingTop: 10,
+    paddingTop: DIMENSIONS.PADDING_MD,
     flexDirection: 'row',
-    gap: 10,
+    gap: DIMENSIONS.GAP_MD,
     backgroundColor: '#000', 
     shadowColor: '#000',
     shadowOffset: {
@@ -738,8 +738,8 @@ const styles = StyleSheet.create({
   },
   wishlistButton: {
     backgroundColor: '#333',
-    padding: 16,
-    borderRadius: 16,
+    padding: DIMENSIONS.PADDING_LG,
+    borderRadius: DIMENSIONS.RADIUS_LG,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -751,11 +751,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#007AFF',
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: DIMENSIONS.PADDING_LG,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: DIMENSIONS.GAP_SM,
   },
   actionButtonText: {
     color: '#fff',

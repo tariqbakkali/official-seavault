@@ -9,7 +9,7 @@ import {
 import { MapPin } from 'lucide-react-native';
 import { Database } from '@/types/database';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
-import { COLORS, TYPOGRAPHY } from '@/constants';
+import { COLORS, TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 type DiveSite = Database['public']['Tables']['dive_sites']['Row'];
 
@@ -67,8 +67,8 @@ const styles = StyleSheet.create({
   card: {
     width: cardWidth,
     backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    marginBottom: 20,
+    borderRadius: DIMENSIONS.RADIUS_LG,
+    marginBottom: DIMENSIONS.SPACE_LG,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#333',
@@ -86,18 +86,18 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   content: {
-    padding: 12,
+    padding: DIMENSIONS.PADDING_SM,
   },
   name: {
     color: '#fff',
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: DIMENSIONS.SPACE_XS,
   },
   location: {
     color: '#666',

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { Trophy } from 'lucide-react-native';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
 
@@ -89,9 +89,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: DIMENSIONS.RADIUS_LG,
+    padding: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   currentUserEntry: {
     backgroundColor: '#003366',
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   leaderboardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: DIMENSIONS.SPACE_LG,
   },
   rankBadge: {
     width: 32,

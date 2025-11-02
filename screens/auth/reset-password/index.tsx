@@ -315,38 +315,38 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_LG,
   },
   centeredContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-    gap: 16,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_LG,
+    gap: DIMENSIONS.SPACE_LG,
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_DISPLAY,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   subtitle: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   message: {
     fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: DIMENSIONS.SPACE_XL,
   },
   form: {
-    gap: 16,
+    gap: DIMENSIONS.SPACE_LG,
   },
   label: {
     color: '#fff',
@@ -355,8 +355,8 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.PADDING_LG,
     fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
     borderWidth: 1,
@@ -364,10 +364,10 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#007AFF',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.PADDING_LG,
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: DIMENSIONS.SPACE_XL,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -377,4 +377,5 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
+
 });

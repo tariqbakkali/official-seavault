@@ -198,13 +198,13 @@ const styles = StyleSheet.create({
     marginLeft: DIMENSIONS.SPACE_SM,
   },
   listContainer: {
-    padding: 20,
+    padding: DIMENSIONS.PADDING_LG,
   },
   creatureCard: {
     flexDirection: 'row',
     backgroundColor: '#1a1a1a',
-    borderRadius: 16,
-    marginBottom: 16,
+    borderRadius: DIMENSIONS.RADIUS_LG,
+    marginBottom: DIMENSIONS.SPACE_LG,
     overflow: 'hidden',
   },
   creatureImageContainer: {
@@ -218,26 +218,26 @@ const styles = StyleSheet.create({
   },
   creatureInfo: {
     flex: 1,
-    padding: 16,
+    padding: DIMENSIONS.PADDING_LG,
     justifyContent: 'center',
   },
   creatureName: {
     fontSize: TYPOGRAPHY.SIZE_XL,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   scientificName: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
     fontStyle: 'italic',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   pointsBadge: {
     backgroundColor: 'rgba(0, 122, 255, 0.2)',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: DIMENSIONS.RADIUS_SM,
+    paddingHorizontal: DIMENSIONS.PADDING_XS,
+    paddingVertical: DIMENSIONS.PADDING_XS,
     alignSelf: 'flex-start',
   },
   pointsText: {

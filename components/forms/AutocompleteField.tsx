@@ -36,7 +36,6 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
   onSuggestionSelect,
   debounceDelay = 300,
 }) => {
-  console.log('[DEBUG] AutocompleteField: Component rendered with value', value);
   const [suggestions, setSuggestions] = useState<AutocompleteSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -45,9 +44,7 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
 
   // Fetch suggestions from Google Places API
   const fetchSuggestions = async (input: string) => {
-    console.log('[DEBUG] AutocompleteField: fetchSuggestions called with input', input);
     if (!input.trim()) {
-      console.log('[DEBUG] AutocompleteField: Input is empty, clearing suggestions');
       setSuggestions([]);
       setShowSuggestions(false);
       return;
@@ -59,7 +56,6 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
       const apiKey = Constants.expoConfig?.extra?.GOOGLE_MAPS_API_KEY;
       
       if (!apiKey) {
-        console.warn('[DEBUG] AutocompleteField: Google Maps API key not found');
         setSuggestions([]);
         setShowSuggestions(false);
         return;
@@ -68,22 +64,17 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
       // Construct the API URL for Places Autocomplete (worldwide search)
       const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${apiKey}&types=geocode`;
       
-      console.log('[DEBUG] AutocompleteField: Fetching suggestions from', url);
       const response = await fetch(url);
       const data = await response.json();
-      console.log('[DEBUG] AutocompleteField: Suggestions response', data);
       
       if (data.predictions) {
-        console.log('[DEBUG] AutocompleteField: Setting suggestions', data.predictions);
         setSuggestions(data.predictions);
         setShowSuggestions(true);
       } else {
-        console.log('[DEBUG] AutocompleteField: No predictions found, clearing suggestions');
         setSuggestions([]);
         setShowSuggestions(false);
       }
     } catch (err) {
-      console.error('[DEBUG] AutocompleteField: Error fetching autocomplete suggestions', err);
       setSuggestions([]);
       setShowSuggestions(false);
     } finally {
@@ -93,9 +84,7 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
 
   // Handle text input with debouncing
   const handleTextChange = (text: string) => {
-    console.log('[DEBUG] AutocompleteField: handleTextChange called with', text);
     onChangeText(text);
-    console.log('[DEBUG] AutocompleteField: Parent onChangeText called with', text);
     
     // Clear previous timeout
     if (debounceTimeout.current) {
@@ -104,25 +93,18 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
     
     // Set new timeout
     debounceTimeout.current = setTimeout(() => {
-      console.log('[DEBUG] AutocompleteField: Debounced fetchSuggestions for', text);
       fetchSuggestions(text);
     }, debounceDelay);
   };
 
   // Handle suggestion selection
   const handleSuggestionSelect = (suggestion: AutocompleteSuggestion) => {
-    console.log('[DEBUG] AutocompleteField: Suggestion selected', suggestion);
-    console.log('[DEBUG] AutocompleteField: Setting text to', suggestion.description);
     onChangeText(suggestion.description);
     setShowSuggestions(false);
-    console.log('[DEBUG] AutocompleteField: Text set to', suggestion.description);
-    console.log('[DEBUG] AutocompleteField: Suggestions hidden');
     // Call the parent handler after a short delay to ensure state is updated
     setTimeout(() => {
-      console.log('[DEBUG] AutocompleteField: Calling parent onSuggestionSelect with', suggestion);
       try {
         onSuggestionSelect(suggestion);
-        console.log('[DEBUG] AutocompleteField: Parent onSuggestionSelect completed successfully');
       } catch (error) {
         console.error('[DEBUG] AutocompleteField: Error in parent onSuggestionSelect', error);
       }
@@ -131,22 +113,17 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
 
   // Hide suggestions when input loses focus (with slight delay to allow tap)
   const handleBlur = () => {
-    console.log('[DEBUG] AutocompleteField: Input lost focus');
     setTimeout(() => {
-      console.log('[DEBUG] AutocompleteField: Hiding suggestions after blur delay');
       setShowSuggestions(false);
     }, 150);
   };
 
   // Show suggestions when input gains focus and has text
   const handleFocus = () => {
-    console.log('[DEBUG] AutocompleteField: Input gained focus with value', value);
     if (value.trim() && suggestions.length > 0) {
-      console.log('[DEBUG] AutocompleteField: Showing existing suggestions');
       setShowSuggestions(true);
     } else if (value.trim()) {
       // If there's text but no suggestions, fetch them
-      console.log('[DEBUG] AutocompleteField: Fetching suggestions for existing text');
       fetchSuggestions(value);
     }
   };
@@ -177,7 +154,6 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
       
       {showSuggestions && suggestions.length > 0 && (
         <View style={styles.suggestionsContainer} onStartShouldSetResponder={() => {
-          console.log('[DEBUG] AutocompleteField: Suggestions container touched');
           return false;
         }}>
           <FlatList
@@ -188,12 +164,10 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
             nestedScrollEnabled={true}
             scrollEnabled={false} // Disable scrolling to prevent conflict with parent ScrollView
             renderItem={({ item }) => {
-              console.log('[DEBUG] AutocompleteField: Rendering suggestion item', item);
               return (
                 <TouchableOpacity
                   style={styles.suggestionItem}
                   onPress={() => {
-                    console.log('[DEBUG] AutocompleteField: Suggestion item pressed', item);
                     handleSuggestionSelect(item);
                   }}
                 >
@@ -220,13 +194,13 @@ const AutocompleteField: React.FC<AutocompleteFieldProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   label: {
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   required: {
     color: '#ff3b30',
@@ -237,8 +211,8 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#333',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: DIMENSIONS.RADIUS_SM,
+    padding: DIMENSIONS.PADDING_SM,
     backgroundColor: '#1a1a1a',
     fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#fff',
@@ -249,8 +223,8 @@ const styles = StyleSheet.create({
   },
   loadingIndicator: {
     position: 'absolute',
-    right: 12,
-    top: 12,
+    right: DIMENSIONS.PADDING_SM,
+    top: DIMENSIONS.PADDING_SM,
   },
   suggestionsContainer: {
     position: 'absolute',
@@ -260,7 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a1a',
     borderWidth: 1,
     borderColor: '#333',
-    borderRadius: 8,
+    borderRadius: DIMENSIONS.RADIUS_SM,
     zIndex: 1000,
     maxHeight: 200,
     shadowColor: '#000',
@@ -276,7 +250,7 @@ const styles = StyleSheet.create({
     maxHeight: 200,
   },
   suggestionItem: {
-    padding: 12,
+    padding: DIMENSIONS.PADDING_SM,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
@@ -287,13 +261,13 @@ const styles = StyleSheet.create({
   suggestionSubtext: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#999',
-    marginTop: 2,
+    marginTop: DIMENSIONS.SPACE_XS,
   },
   errorText: {
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#ff3b30',
     fontStyle: 'italic',
-    marginTop: 5,
+    marginTop: DIMENSIONS.SPACE_XS,
   },
 });
 

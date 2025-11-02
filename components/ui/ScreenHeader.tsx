@@ -71,10 +71,10 @@ const styles = StyleSheet.create({
     marginLeft: DIMENSIONS.SPACE_MD,
   },
   actionButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: DIMENSIONS.PADDING_XS,
+    paddingHorizontal: DIMENSIONS.PADDING_SM,
     backgroundColor: COLORS.PRIMARY,
-    borderRadius: 6,
+    borderRadius: DIMENSIONS.RADIUS_XS,
   },
   actionButtonText: {
     color: '#fff',
@@ -84,6 +84,7 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 40,
   },
+
 });
 
 export default ScreenHeader;

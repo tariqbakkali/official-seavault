@@ -2,7 +2,7 @@ import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 interface CategoryWithStats {
   id: string;
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: 16,
-    marginBottom: 20,
+    marginBottom: DIMENSIONS.MARGIN_LG,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
+    padding: DIMENSIONS.PADDING_LG,
   },
   categoryContent: {
     // Content wrapper for the gradient overlay
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.MARGIN_XS,
   },
   categorySubtext: {
     fontSize: TYPOGRAPHY.SIZE_MD,
@@ -90,8 +90,8 @@ const styles = StyleSheet.create({
     top: 16,
     right: 16,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: DIMENSIONS.PADDING_SM,
+    paddingVertical: DIMENSIONS.PADDING_XS,
     borderRadius: 12,
   },
   completionText: {

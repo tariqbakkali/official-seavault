@@ -12,7 +12,7 @@ import { Trophy, Filter } from 'lucide-react-native';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { AchievementCard } from '@/components';
-import { COLORS } from '@/constants';
+import { COLORS, DIMENSIONS } from '@/constants';
 import { TYPOGRAPHY } from '@/constants';
 
 export default function AchievementsScreen() {
@@ -209,18 +209,18 @@ const styles = StyleSheet.create({
   },
   filterContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: DIMENSIONS.PADDING_XL,
+    paddingVertical: DIMENSIONS.PADDING_MD,
     backgroundColor: COLORS.SURFACE,
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_MD,
   },
   filterButton: {
     flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+    paddingVertical: DIMENSIONS.PADDING_SM,
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
+    borderRadius: DIMENSIONS.RADIUS_LG,
     alignItems: 'center',
-    marginHorizontal: 4,
+    marginHorizontal: DIMENSIONS.SPACE_XS,
     backgroundColor: COLORS.SURFACE_SECONDARY,
   },
   activeFilterButton: {
@@ -235,28 +235,29 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_PRIMARY,
   },
   listContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_XL,
     // Reduce top padding to account for safe area insets and ScreenHeader padding
     paddingTop: 5,
-    paddingBottom: 100,
+    paddingBottom: DIMENSIONS.SPACE_XXXL,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: DIMENSIONS.PADDING_XL,
   },
   emptyTitle: {
     fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: '600',
     color: '#fff',
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: DIMENSIONS.SPACE_LG,
+    marginBottom: DIMENSIONS.SPACE_SM,
   },
   emptySubtitle: {
     fontSize: TYPOGRAPHY.SIZE_LG,
     color: '#666',
     textAlign: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
   },
+
 });

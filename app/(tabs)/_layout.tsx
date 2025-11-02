@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { Fish, Grid3x3, Plus, User } from 'lucide-react-native';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TAB_CONFIG, COLORS, DIMENSIONS } from '@/constants';
+import { TAB_CONFIG, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     paddingTop: DIMENSIONS.SPACE_SM,
   },
   tabLabel: {
-    fontSize: DIMENSIONS.SPACE_SM + 2,
+    fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: '500',
   },
 });

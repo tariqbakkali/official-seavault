@@ -14,13 +14,12 @@ import { Settings, LogOut } from 'lucide-react-native';
 import { ImageWithFallback } from '@/components';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
-import { ROUTES} from '@/constants';
+import { ROUTES, TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { supabase } from '@/services/supabase';
 import StatsSection from './components/StatsSection';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll, clearUserSync } from '@/utils/syncUtils';
 import LoadingState from '@/components/LoadingState';
-import { TYPOGRAPHY } from '@/constants';
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -274,15 +273,15 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 20,
+    paddingVertical: DIMENSIONS.PADDING_XL,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
   },
   avatarContainer: {
     width: 100,
     height: 100,
     borderRadius: 50,
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.MARGIN_LG,
     borderWidth: 3,
     borderColor: '#333',
   },
@@ -295,7 +294,7 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.MARGIN_XS,
   },
   email: {
     fontSize: TYPOGRAPHY.SIZE_LG,
@@ -304,22 +303,22 @@ const styles = StyleSheet.create({
   menuSection: {
     backgroundColor: '#1a1a1a',
     borderRadius: 16,
-    margin: 20,
+    margin: DIMENSIONS.MARGIN_LG,
     overflow: 'hidden',
-    marginBottom: 32,
+    marginBottom: DIMENSIONS.MARGIN_XL,
   },
   menuItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: DIMENSIONS.PADDING_LG,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
   menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: DIMENSIONS.GAP_LG,
   },
   menuItemTitle: {
     fontSize: TYPOGRAPHY.SIZE_XL,
@@ -329,7 +328,7 @@ const styles = StyleSheet.create({
   menuItemSubtitle: {
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: '#666',
-    marginTop: 2,
+    marginTop: DIMENSIONS.MARGIN_XS / 2,
   },
   chevron: {
     fontSize: TYPOGRAPHY.SIZE_XXXL,

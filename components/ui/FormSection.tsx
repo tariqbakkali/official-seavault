@@ -28,13 +28,13 @@ const FormSection: React.FC<FormSectionProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: 20,
+    marginBottom: DIMENSIONS.SPACE_LG,
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 12,
+    marginBottom: DIMENSIONS.SPACE_MD,
   },
   content: {
     // Add any additional styling for content if needed

@@ -16,6 +16,7 @@ import { PasswordStrengthIndicator } from '@/screens/profile/edit/components/Pas
 import { LoadingView } from '@/screens/profile/edit/components/LoadingView';
 import { Lock } from 'lucide-react-native';
 import { styles } from '@/screens/profile/edit/styles';
+import { DIMENSIONS } from '@/constants';
 
 export default function ChangePasswordScreen() {
   const insets = useSafeAreaInsets();
@@ -117,9 +118,9 @@ export default function ChangePasswordScreen() {
           </View>
         </View>
         
-        <View style={{ paddingHorizontal: 20 }}>
+        <View style={{ paddingHorizontal: DIMENSIONS.PADDING_LG }}>
           <TouchableOpacity 
-            style={[styles.button, styles.primaryButton, { marginTop: 20 }]}
+            style={[styles.button, styles.primaryButton, { marginTop: DIMENSIONS.MARGIN_LG }]}
             onPress={handleChangePassword}
             disabled={saving || Object.keys(validationErrors).some(key => key.includes('Password')) || !currentPassword || !newPassword || !confirmPassword}
           >
@@ -129,7 +130,7 @@ export default function ChangePasswordScreen() {
           </TouchableOpacity>
         </View>
         
-        <View style={{ height: 50 }} />
+        <View style={{ height: DIMENSIONS.SPACE_XXXL }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

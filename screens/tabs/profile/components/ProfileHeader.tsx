@@ -2,7 +2,7 @@ import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ImageWithFallback } from '@/components';
 import { Profile } from '@/types/database';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -53,15 +53,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile, onEditProfile }:
 const styles = StyleSheet.create({
   profileSection: {
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 32,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.MARGIN_XL,
   },
   avatarContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: DIMENSIONS.MARGIN_LG,
   },
   avatar: {
     width: '100%',
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.MARGIN_XS,
   },
   userEmail: {
     fontSize: TYPOGRAPHY.SIZE_LG,
@@ -79,13 +79,13 @@ const styles = StyleSheet.create({
   },
   membershipContainer: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
+    gap: DIMENSIONS.GAP_SM,
+    marginTop: DIMENSIONS.MARGIN_SM,
   },
   membershipBadge: {
     backgroundColor: '#1a1a1a',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
+    paddingVertical: DIMENSIONS.PADDING_XS,
     borderRadius: 12,
   },
   premiumBadge: {
@@ -103,10 +103,10 @@ const styles = StyleSheet.create({
   },
   editProfileButton: {
     backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    paddingVertical: DIMENSIONS.PADDING_MD,
     borderRadius: 20,
-    marginTop: 16,
+    marginTop: DIMENSIONS.MARGIN_LG,
   },
   editProfileText: {
     color: '#fff',

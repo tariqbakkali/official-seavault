@@ -1,4 +1,4 @@
-import { adjust, normalizeFont } from '@/utils/responsive';
+import { adjust, normalizeFont, spacing } from '@/utils/responsive';
 import { Dimensions } from 'react-native';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -12,51 +12,84 @@ export const DIMENSIONS = {
   SCREEN_HEIGHT,
   
   // Common spacing values
-  SPACE_XS: 4,
-  SPACE_SM: 8,
-  SPACE_MD: 12,
-  SPACE_LG: 16,
-  SPACE_XL: 20,
-  SPACE_XXL: 24,
-  SPACE_XXXL: 32,
+  SPACE_XS: spacing(4),
+  SPACE_SM: spacing(8),
+  SPACE_MD: spacing(12),
+  SPACE_LG: spacing(16),
+  SPACE_XL: spacing(20),
+  SPACE_XXL: spacing(24),
+  SPACE_XXXL: spacing(32),
+  SPACE_40: spacing(40),
+  SPACE_48: spacing(48),
+  SPACE_50: spacing(50),
+  SPACE_60: spacing(60),
   
   // Padding values
-  PADDING_HORIZONTAL: 20,
-  PADDING_VERTICAL: 16,
+  PADDING_HORIZONTAL: spacing(20),
+  PADDING_VERTICAL: spacing(16),
+  PADDING_XS: spacing(4),
+  PADDING_SM: spacing(8),
+  PADDING_MD: spacing(12),
+  PADDING_LG: spacing(16),
+  PADDING_XL: spacing(20),
+  PADDING_XXL: spacing(24),
+  PADDING_XXXL: spacing(32),
+  
+  // Margin values
+  MARGIN_XS: spacing(4),
+  MARGIN_SM: spacing(8),
+  MARGIN_MD: spacing(12),
+  MARGIN_LG: spacing(16),
+  MARGIN_XL: spacing(20),
+  MARGIN_XXL: spacing(24),
+  MARGIN_XXXL: spacing(32),
+  MARGIN_40: spacing(40),
+  MARGIN_50: spacing(50),
+  MARGIN_60: spacing(60),
+  
+  // Gap values
+  GAP_XS: spacing(4),
+  GAP_SM: spacing(8),
+  GAP_MD: spacing(12),
+  GAP_LG: spacing(16),
+  GAP_XL: spacing(20),
+  GAP_XXL: spacing(24),
+  GAP_XXXL: spacing(32),
   
   // Border radius
-  RADIUS_SM: 8,
-  RADIUS_MD: 12,
-  RADIUS_LG: 16,
-  RADIUS_XL: 20,
-  RADIUS_XXL: 24,
-  RADIUS_FULL: 9999,
+  RADIUS_XS: spacing(2),
+  RADIUS_SM: spacing(8),
+  RADIUS_MD: spacing(12),
+  RADIUS_LG: spacing(16),
+  RADIUS_XL: spacing(20),
+  RADIUS_XXL: spacing(24),
+  RADIUS_FULL: spacing(9999),
   
   // Icon sizes
-  ICON_XS: 12,
-  ICON_SM: 16,
-  ICON_MD: 20,
-  ICON_LG: 24,
-  ICON_XL: 32,
-  ICON_XXL: 48,
+  ICON_XS: spacing(12),
+  ICON_SM: spacing(16),
+  ICON_MD: spacing(20),
+  ICON_LG: spacing(24),
+  ICON_XL: spacing(32),
+  ICON_XXL: spacing(48),
   
   // Button heights
-  BUTTON_HEIGHT_SM: 36,
-  BUTTON_HEIGHT_MD: 48,
-  BUTTON_HEIGHT_LG: 52,
+  BUTTON_HEIGHT_SM: spacing(36),
+  BUTTON_HEIGHT_MD: spacing(48),
+  BUTTON_HEIGHT_LG: spacing(52),
   
   // Card dimensions
-  CARD_MIN_HEIGHT: 120,
-  CARD_MAX_WIDTH: SCREEN_WIDTH - 40,
+  CARD_MIN_HEIGHT: spacing(120),
+  CARD_MAX_WIDTH: spacing(SCREEN_WIDTH - 40),
   
   // Tab bar
-  TAB_BAR_HEIGHT: 88,
+  TAB_BAR_HEIGHT: spacing(88),
   
   // Header
-  HEADER_HEIGHT: 56,
+  HEADER_HEIGHT: spacing(56),
   
   // Thumbnail size
-  THUMBNAIL_SIZE: 150,
+  THUMBNAIL_SIZE: spacing(150),
 } as const;
 
 /**

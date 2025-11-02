@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Alert, Platform } from 'react-native';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import { GoogleMaps, AppleMaps } from 'expo-maps';
@@ -38,7 +38,6 @@ const MapDiagnostic = () => {
     const key = Constants.expoConfig?.extra?.GOOGLE_MAPS_API_KEY || '';
     setApiKey(key);
   };
-console.log('api key:', process.env.GOOGLE_MAPS_API_KEY);
   // Simple marker for the map
   const markers = location ? [{
     id: 'current-location',
@@ -138,22 +137,22 @@ console.log('api key:', process.env.GOOGLE_MAPS_API_KEY);
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: DIMENSIONS.PADDING_MD,
     backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    margin: 20,
+    borderRadius: DIMENSIONS.RADIUS_SM,
+    margin: DIMENSIONS.PADDING_MD,
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_XXL,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: DIMENSIONS.SPACE_LG,
     textAlign: 'center',
   },
   infoBox: {
     backgroundColor: 'white',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
+    padding: DIMENSIONS.PADDING_XS,
+    borderRadius: DIMENSIONS.RADIUS_XS,
+    marginBottom: DIMENSIONS.SPACE_XS,
     borderWidth: 1,
     borderColor: '#ddd',
   },
@@ -173,16 +172,16 @@ const styles = StyleSheet.create({
     color: '#ff0000',
   },
   mapContainer: {
-    marginTop: 15,
+    marginTop: DIMENSIONS.PADDING_LG,
   },
   mapLabel: {
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: DIMENSIONS.SPACE_XS,
   },
   mapPlaceholder: {
     height: 200,
     backgroundColor: '#e0e0e0',
-    borderRadius: 5,
+    borderRadius: DIMENSIONS.RADIUS_XS,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#ccc',
@@ -191,29 +190,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   note: {
-    marginTop: 15,
+    marginTop: DIMENSIONS.PADDING_LG,
     fontSize: TYPOGRAPHY.SIZE_SM,
     color: '#666',
     fontStyle: 'italic',
     textAlign: 'center',
   },
   troubleshootingSection: {
-    marginTop: 20,
-    padding: 15,
+    marginTop: DIMENSIONS.PADDING_LG,
+    padding: DIMENSIONS.PADDING_LG,
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderRadius: DIMENSIONS.RADIUS_SM,
     borderWidth: 1,
     borderColor: '#ddd',
   },
   troubleshootingTitle: {
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: DIMENSIONS.SPACE_XS,
     color: '#333',
   },
   troubleshootingText: {
     fontSize: TYPOGRAPHY.SIZE_MD,
-    marginBottom: 5,
+    marginBottom: DIMENSIONS.SPACE_XS,
     color: '#666',
   },
 });

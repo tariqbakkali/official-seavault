@@ -243,6 +243,7 @@ const AddDiveSiteScreen = () => {
         latitude: lat,
         longitude: lng,
         osm_id: null,
+        updated_at: new Date().toISOString(),
       });
 
       Alert.alert('Success', 'Dive site added successfully!', [
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    paddingBottom: 40,
+    paddingBottom: DIMENSIONS.PADDING_XL,
     backgroundColor: COLORS.BACKGROUND,
   },
   content: {
@@ -339,9 +340,9 @@ const styles = StyleSheet.create({
   },
   coordinatesDisplay: {
     backgroundColor: COLORS.SURFACE,
-    padding: 12,
+    padding: DIMENSIONS.PADDING_MD,
     borderRadius: 8,
-    marginTop: 16,
+    marginTop: DIMENSIONS.MARGIN_LG,
     borderWidth: 1,
     borderColor: COLORS.BORDER_SECONDARY,
   },
@@ -349,25 +350,25 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_PRIMARY,
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: DIMENSIONS.MARGIN_SM,
   },
   coordinateText: {
     color: COLORS.TEXT_SECONDARY,
     fontSize: TYPOGRAPHY.SIZE_MD,
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.MARGIN_XS,
   },
   instructions: {
     backgroundColor: COLORS.SURFACE,
-    padding: 12,
+    padding: DIMENSIONS.PADDING_MD,
     borderRadius: 8,
-    marginTop: 16,
+    marginTop: DIMENSIONS.MARGIN_LG,
     borderWidth: 1,
     borderColor: COLORS.BORDER_SECONDARY,
   },
   instructionsText: {
     color: COLORS.TEXT_SECONDARY,
     fontSize: TYPOGRAPHY.SIZE_MD,
-    marginBottom: 4,
+    marginBottom: DIMENSIONS.MARGIN_XS,
   },
 });
 

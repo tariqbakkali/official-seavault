@@ -15,7 +15,7 @@ import { getLeaderboardData } from '@/services/leaderboardService';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
 import LeaderboardEntry from './components/LeaderboardEntry';
-import { TYPOGRAPHY } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 interface LeaderboardEntryType {
   user_id: string;
@@ -169,9 +169,9 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_LG,
   },
   listContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
     // Reduce the top padding since we have safe area insets and ScreenHeader padding
-    paddingTop: 5,
-    paddingBottom: 20,
+    paddingTop: DIMENSIONS.PADDING_XS,
+    paddingBottom: DIMENSIONS.PADDING_LG,
   },
 });
