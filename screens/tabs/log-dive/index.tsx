@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 import ErrorDisplay from '@/components/ErrorDisplay';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import DiveSitePicker from './components/DiveSitePicker';
@@ -27,6 +28,13 @@ const LogDiveScreen = () => {
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // New state for initial loading screen
+  const [showInitialLoading, setShowInitialLoading] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => setShowInitialLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const {
     // State
@@ -69,7 +77,8 @@ const LogDiveScreen = () => {
     }, 100); // Small delay to ensure proper cleanup
   };
 
-  if (isLoading.diveSites) {
+  // Show loading screen during initial load or data fetching
+  if (showInitialLoading || isLoading.diveSites) {
     return (
       <View
         style={[
@@ -86,18 +95,7 @@ const LogDiveScreen = () => {
           onBackPress={handleBackPress}
           showBackButton={shouldShowBackButton}
         />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: DIMENSIONS.MARGIN_XL }}>
-          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-          <Text
-            style={{
-              color: COLORS.TEXT_PRIMARY,
-              textAlign: 'center',
-              marginTop: DIMENSIONS.MARGIN_MD,
-            }}
-          >
-            Loading dive sites...
-          </Text>
-        </View>
+        <LoadingScreen message="Preparing dive log..." />
       </View>
     );
   }
