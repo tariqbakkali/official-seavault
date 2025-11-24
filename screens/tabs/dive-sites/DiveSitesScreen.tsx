@@ -6,6 +6,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import LoadingState from '@/components/LoadingState';
 import ErrorDisplay from '@/components/ErrorDisplay';
 import DiveSiteMarker from '@/components/DiveSiteMarker';
+import CountryFlag from '@/components/CountryFlag';
 import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 /**
@@ -34,7 +35,10 @@ const DiveSitesScreen = () => {
 
   const renderDiveSite = ({ item }: { item: any }) => (
     <View style={styles.siteCard}>
-      <Text style={styles.siteName}>{item.name}</Text>
+      <View style={styles.headerRow}>
+        <CountryFlag latitude={item.latitude} longitude={item.longitude} />
+        <Text style={styles.siteName}>{item.name}</Text>
+      </View>
       <Text style={styles.coordinates}>
         Lat: {formatCoordinate(item.latitude)} | Lng: {formatCoordinate(item.longitude)}
       </Text>
@@ -91,6 +95,11 @@ const styles = StyleSheet.create({
     padding: DIMENSIONS.PADDING_MD,
     borderRadius: 8,
     marginBottom: DIMENSIONS.MARGIN_MD,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: DIMENSIONS.MARGIN_XS,
   },
   siteName: {
     fontSize: TYPOGRAPHY.SIZE_XL,

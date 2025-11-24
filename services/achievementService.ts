@@ -1,26 +1,22 @@
 import { supabase } from '@/services/supabase';
 import { UserAchievement } from '@/types/database';
-import { userAchievements$ } from '@/stores/syncedObservables';
+import { userAchievements$, achievements$ } from '@/stores/syncedObservables';
+
+/**
+ * Check if a user has already unlocked an achievement
+ */
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Check if a user has already unlocked an achievement
  */
 export const hasUserUnlockedAchievement = async (userId: string, achievementId: string): Promise<boolean> => {
+  const userAchievements = userAchievements$.get() || {};
+  const achievementsArray = Object.values(userAchievements);
   
-  const { data, error } = await supabase
-    .from('user_achievements')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('achievement_id', achievementId)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error checking user achievement:', error);
-    return false;
-  }
-
-  const result = !!data;
-  return result;
+  return achievementsArray.some((ua: any) => 
+    ua.user_id === userId && ua.achievement_id === achievementId
+  );
 };
 
 /**
@@ -34,43 +30,34 @@ export const awardAchievement = async (userId: string, achievementId: string): P
     return null;
   }
 
-  // Award the achievement
-  const { data, error } = await supabase
-    .from('user_achievements')
-    .insert([{
-      user_id: userId,
-      achievement_id: achievementId,
-      unlocked_at: new Date().toISOString()
-    }] as any)
-    .select();
+  const id = uuidv4();
+  const newAchievement = {
+    id,
+    user_id: userId,
+    achievement_id: achievementId,
+    unlocked_at: new Date().toISOString()
+  };
 
-  if (error) {
+  try {
+    // Award the achievement by updating the observable
+    // This will trigger the sync to Supabase
+    (userAchievements$ as any)[id].set(newAchievement);
+    
+    return newAchievement as UserAchievement;
+  } catch (error) {
     console.error('Error awarding achievement:', error);
     return null;
   }
-
-  
-  // Force refresh the user achievements observable
-  userAchievements$.get();
-  
-  return data && data.length > 0 ? data[0] : null;
 };
 
 /**
  * Get all achievements for a user
  */
 export const getUserAchievements = async (userId: string): Promise<UserAchievement[]> => {
-  const { data, error } = await supabase
-    .from('user_achievements')
-    .select('*')
-    .eq('user_id', userId);
-
-  if (error) {
-    console.error('Error fetching user achievements:', error);
-    return [];
-  }
-
-  return data || [];
+  const userAchievements = userAchievements$.get() || {};
+  const achievementsArray = Object.values(userAchievements);
+  
+  return achievementsArray.filter((ua: any) => ua.user_id === userId) as UserAchievement[];
 };
 
 /**
@@ -94,15 +81,13 @@ export const checkAndAwardSightingAchievements = async (userId: string, creature
   // Award all achievements for reached thresholds
   for (const threshold of reachedThresholds) {
     
-    // Get the achievement by code
-    const { data: achievement, error } = await supabase
-      .from('achievements')
-      .select('id')
-      .eq('code', threshold.code)
-      .maybeSingle();
+    // Get the achievement by code from observable
+    const allAchievements = achievements$.get() || {};
+    const achievementsArray = Object.values(allAchievements);
+    const achievement = achievementsArray.find((a: any) => a.code === threshold.code);
 
-    if (error || !achievement) {
-      console.error('Error fetching achievement:', error);
+    if (!achievement) {
+      console.error('Achievement not found:', threshold.code);
       continue;
     }
 

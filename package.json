@@ -19,7 +19,7 @@
     "verify-database-simple": "node scripts/verify-database-simple.js",
     "start": "expo start",
     "android-dev-build": "eas build --platform android --profile development",
-    "ios dev build": "eas build --platform ios --profile development",
+    "ios-dev-build": "eas build --platform ios --profile development",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "apk": "eas build --platform android --profile preview",

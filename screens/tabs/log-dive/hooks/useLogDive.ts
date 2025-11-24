@@ -45,7 +45,7 @@ export const useLogDive = () => {
   // Removed selectedImage state as it's no longer needed
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  const { creatures: allCreatures, categories: allCategories, diveSites: allDiveSites, createSighting, isLoading } = useSyncedData();
+  const { creatures: allCreatures, categories: allCategories, diveSites: allDiveSites, createSighting, isLoading, errors } = useSyncedData();
 
   // Determine if we should show back button based on navigation source
   const shouldShowBackButton = source === 'creature';
@@ -193,5 +193,6 @@ export const useLogDive = () => {
     handleDeselectDiveSite,
     handleSubmit,
     shouldShowBackButton,
+    errors,
   };
 };

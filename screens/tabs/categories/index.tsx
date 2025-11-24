@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -147,6 +148,15 @@ export default function CategoriesTab() {
     }, [loadData])
   );
 
+  const [searchQuery, setSearchQuery] = React.useState('');
+
+  const filteredCategories = React.useMemo(() => {
+    if (!searchQuery) return categories;
+    return categories.filter(c => 
+      c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [categories, searchQuery]);
+
   const renderCategory = ({ item }: { item: CategoryWithStats }) => (
     <TouchableOpacity
       style={styles.categoryCard}
@@ -199,10 +209,20 @@ export default function CategoriesTab() {
             <Text style={styles.offlineText}>You're offline. All content available.</Text>
           </View>
         )}
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search categories..."
+            placeholderTextColor={COLORS.TEXT_TERTIARY}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            clearButtonMode="while-editing"
+          />
+        </View>
       </View>
 
       <FlatList
-        data={categories}
+        data={filteredCategories}
         keyExtractor={(item) => item.id}
         renderItem={renderCategory}
         contentContainerStyle={styles.listContainer}
@@ -288,5 +308,17 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_PRIMARY,
     fontSize: TYPOGRAPHY.SIZE_SM,
     fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+  },
+  searchContainer: {
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
+    paddingVertical: DIMENSIONS.SPACE_SM,
+    marginBottom: DIMENSIONS.SPACE_MD,
+  },
+  searchInput: {
+    color: COLORS.TEXT_PRIMARY,
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    height: 40,
   },
 });

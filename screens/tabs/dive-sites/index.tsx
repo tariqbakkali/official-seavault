@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -34,6 +34,7 @@ const AddDiveSiteScreen = () => {
     longitudeDelta: 5,
   });
   const [scrollEnabled, setScrollEnabled] = useState(true);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true);
 
   const { diveSites, createDiveSite } = useSyncedData();
 
@@ -70,6 +71,8 @@ const AddDiveSiteScreen = () => {
         setLatitude(DEFAULT_COORDINATES.latitude.toString());
         setLongitude(DEFAULT_COORDINATES.longitude.toString());
         setSelectedCoordinate(DEFAULT_COORDINATES);
+      } finally {
+        setIsLoadingLocation(false);
       }
     };
 
@@ -282,17 +285,24 @@ const AddDiveSiteScreen = () => {
           />
 
           {/* Map for coordinate selection */}
-          <CoordinateSelectionSection
-            isSelectingCoordinates={true}
-            setIsSelectingCoordinates={() => {}}
-            validSites={validSites}
-            initialRegion={initialRegion}
-            handleMapPress={handleMapPress}
-            handleMarkerDragEnd={handleMarkerDragEnd}
-            selectedCoordinate={selectedCoordinate}
-            onMapGestureBegin={() => setScrollEnabled(false)}
-            onMapGestureEnd={() => setScrollEnabled(true)}
-          />
+          {isLoadingLocation ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+              <Text style={styles.loadingText}>Loading map...</Text>
+            </View>
+          ) : (
+            <CoordinateSelectionSection
+              isSelectingCoordinates={true}
+              setIsSelectingCoordinates={() => {}}
+              validSites={validSites}
+              initialRegion={initialRegion}
+              handleMapPress={handleMapPress}
+              handleMarkerDragEnd={handleMarkerDragEnd}
+              selectedCoordinate={selectedCoordinate}
+              onMapGestureBegin={() => setScrollEnabled(false)}
+              onMapGestureEnd={() => setScrollEnabled(true)}
+            />
+          )}
 
           {/* Display selected coordinates */}
           {/* {latitude && longitude && (
@@ -369,6 +379,19 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_SECONDARY,
     fontSize: TYPOGRAPHY.SIZE_MD,
     marginBottom: DIMENSIONS.MARGIN_XS,
+  },
+  loadingContainer: {
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: DIMENSIONS.RADIUS_LG,
+    marginTop: DIMENSIONS.MARGIN_LG,
+  },
+  loadingText: {
+    marginTop: DIMENSIONS.MARGIN_MD,
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: TYPOGRAPHY.SIZE_MD,
   },
 });
 

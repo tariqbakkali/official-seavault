@@ -5,10 +5,12 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import ErrorDisplay from '@/components/ErrorDisplay';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import DiveSitePicker from './components/DiveSitePicker';
 import DateTimePickerSection from './components/DateTimePickerSection';
@@ -44,6 +46,7 @@ const LogDiveScreen = () => {
     handleDeselectDiveSite,
     handleSubmit,
     shouldShowBackButton,
+    errors,
   } = useLogDive();
 
   // Update form data if a dive site was selected from the modal
@@ -83,15 +86,50 @@ const LogDiveScreen = () => {
           onBackPress={handleBackPress}
           showBackButton={shouldShowBackButton}
         />
-        <Text
-          style={{
-            color: COLORS.TEXT_PRIMARY,
-            textAlign: 'center',
-            marginTop: DIMENSIONS.MARGIN_LG,
-          }}
-        >
-          Loading dive sites...
-        </Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: DIMENSIONS.MARGIN_XL }}>
+          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+          <Text
+            style={{
+              color: COLORS.TEXT_PRIMARY,
+              textAlign: 'center',
+              marginTop: DIMENSIONS.MARGIN_MD,
+            }}
+          >
+            Loading dive sites...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Convert error observable to string if needed
+  const errorObj = errors?.diveSites;
+  const hasError = errorObj && (typeof errorObj !== 'object' || Object.keys(errorObj).length > 0);
+  
+  const errorMessage = hasError ? 
+    (typeof errorObj === 'object' ? JSON.stringify(errorObj) : String(errorObj)) : 
+    null;
+
+  if (errorMessage) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            paddingTop: insets.top,
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+          },
+        ]}
+      >
+        <ScreenHeader
+          title="Log Dive"
+          onBackPress={handleBackPress}
+          showBackButton={shouldShowBackButton}
+        />
+        <ErrorDisplay 
+          message={String(errorMessage)} 
+        />
       </View>
     );
   }

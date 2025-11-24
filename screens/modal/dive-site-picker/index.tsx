@@ -1,5 +1,5 @@
 import { Plus, MapPin, Search } from 'lucide-react-native';
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Database } from '@/types/database';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+import CountryFlag from '@/components/CountryFlag';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { forceSyncAll } from '@/utils/syncUtils';
 
@@ -80,7 +81,7 @@ export default function DiveSitePickerScreen() {
   }, [allDiveSites, searchQuery]);
 
   // Render dive site item for the list
-  const renderDiveSiteItem = ({ item }: { item: DiveSite }) => {
+  const renderDiveSiteItem = useCallback(({ item }: { item: DiveSite }) => {
     return (
       <TouchableOpacity
         style={styles.diveSiteItem}
@@ -89,7 +90,12 @@ export default function DiveSitePickerScreen() {
       >
         <View style={styles.diveSiteContent}>
           <View style={styles.iconContainer}>
-            <MapPin size={20} color={COLORS.PRIMARY} />
+            <CountryFlag 
+              latitude={item.latitude || 0} 
+              longitude={item.longitude || 0} 
+              size={24} 
+              style={{ marginRight: 0 }}
+            />
           </View>
           <View style={styles.diveSiteInfo}>
             <Text style={styles.diveSiteName} numberOfLines={1}>
@@ -104,7 +110,7 @@ export default function DiveSitePickerScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, []);
 
   return (
     <View
@@ -181,6 +187,9 @@ export default function DiveSitePickerScreen() {
             </View>
           }
           showsVerticalScrollIndicator={false}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
         />
       </View>
     </View>

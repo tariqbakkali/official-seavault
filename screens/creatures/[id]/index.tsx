@@ -301,6 +301,7 @@ export default function CreatureDetailScreen() {
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
       >
         {/* Creature Image */}
         <View style={styles.imageContainer}>

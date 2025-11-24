@@ -64,7 +64,7 @@ export const userAchievements$ = observable(customSynced({
     if (!userId) return select.eq('user_id', '00000000-0000-0000-0000-000000000000'); // Return empty result for unauthenticated users
     return select.eq('user_id', userId);
   },
-  actions: ['read'],
+  actions: ['read', 'create'],
   persist: { name: 'user_achievements' },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
@@ -209,6 +209,9 @@ export const currentUserProfile$ = observable(customSynced({
   realtime: true, // Enable realtime for all, filtering will be done by Supabase
 }))
 
+// Flag to prevent repeated profile error logging
+let profileErrorLogged = false;
+
 export const allUsersProfiles$ = observable(customSynced({
   supabase,
   collection: 'profiles',
@@ -216,9 +219,21 @@ export const allUsersProfiles$ = observable(customSynced({
   persist: { name: 'allUsersProfiles' },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
-  realtime: true,
+  realtime: false, // Disable realtime to reduce load
+  retry: {
+    infinite: false,
+    times: 1, // Only retry once
+    delay: 5000, // Wait 5 seconds before retry
+  },
   onError: (error: any) => {
-    console.error('[allUsersProfiles$ onError] Error syncing profiles:', error);
+    // Silently handle the error - profiles are optional
+    // Only log once to avoid spam
+    if (!profileErrorLogged) {
+      console.warn('[allUsersProfiles$] Profiles sync disabled due to permissions. This is expected if RLS restricts access.');
+      profileErrorLogged = true;
+    }
+    // Don't throw - let the app continue without profiles
+    return;
   }
 }));
 
