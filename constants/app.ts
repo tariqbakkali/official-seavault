@@ -6,6 +6,7 @@ export const APP_CONFIG = {
   TAGLINE: 'Discover them all',
   VERSION: '1.0.0',
   BUILD: process.env.NODE_ENV || 'development',
+  DEEP_LINK_SCHEME: 'seavault',
 } as const;
 
 export const APP_FEATURES = {

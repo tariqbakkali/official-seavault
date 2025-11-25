@@ -10,6 +10,7 @@ import {
   Dimensions,
   SafeAreaView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, X, ChevronLeft, Check } from 'lucide-react-native';
@@ -41,6 +42,12 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const insets = useSafeAreaInsets();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 50;
+
   // Reset state when opening/closing
   React.useEffect(() => {
     if (visible) {
@@ -48,13 +55,27 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
       setSelectedCategory(null);
       setSearchQuery('');
       setSelectedCreatureIds(new Set(initialSelectedCreatureIds));
+      // Reset pagination
+      setCurrentPage(0);
+      setHasMore(true);
     }
   }, [visible, initialSelectedCreatureIds]);
+
+  // Reset pagination when search or category changes
+  React.useEffect(() => {
+    if (visible && currentView === 'creatures') {
+      setCurrentPage(0);
+      setHasMore(true);
+    }
+  }, [searchQuery, selectedCategory, currentView, visible]);
 
   const handleCategoryPress = (category: any) => {
     setSelectedCategory(category);
     setCurrentView('creatures');
     setSearchQuery(''); // Clear search when entering category? Or keep it? Let's clear.
+    // Reset pagination when switching categories
+    setCurrentPage(0);
+    setHasMore(true);
   };
 
   const handleCreatureToggle = (creatureId: string) => {
@@ -81,18 +102,18 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
     onClose();
   };
 
-  // Filter Logic
+  // Filter Logic with Pagination
   const filteredData = useMemo(() => {
     if (currentView === 'categories') {
       const categories = catalog?.categories || [];
       if (!searchQuery) return categories;
-      return categories.filter((c: any) => 
+      return categories.filter((c: any) =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     } else {
-      // Creatures View
+      // Creatures View with Pagination
       let creatures = catalog?.creatures || [];
-      
+
       // Filter by Category if selected
       if (selectedCategory) {
         creatures = creatures.filter((c: any) => c.category_id === selectedCategory.id);
@@ -100,15 +121,22 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
 
       // Filter by Search
       if (searchQuery) {
-        creatures = creatures.filter((c: any) => 
+        creatures = creatures.filter((c: any) =>
           c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           c.scientific_name?.toLowerCase().includes(searchQuery.toLowerCase())
         );
       }
-      
-      return creatures;
+
+      // Apply pagination - slice the array
+      const endIndex = (currentPage + 1) * PAGE_SIZE;
+      const paginatedCreatures = creatures.slice(0, endIndex);
+
+      // Update hasMore flag
+      setHasMore(creatures.length > endIndex);
+
+      return paginatedCreatures;
     }
-  }, [currentView, selectedCategory, searchQuery, catalog]);
+  }, [currentView, selectedCategory, searchQuery, catalog, currentPage, PAGE_SIZE]);
 
   const renderCategoryItem = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -168,7 +196,7 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
               </TouchableOpacity>
             )}
           </View>
-          
+
           <Text style={styles.headerTitle}>
             {currentView === 'categories' ? 'Select Category' : selectedCategory?.name || 'Select Creatures'}
           </Text>
@@ -199,10 +227,28 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
           contentContainerStyle={styles.listContent}
           columnWrapperStyle={styles.columnWrapper}
           showsVerticalScrollIndicator={false}
+          onEndReached={() => {
+            if (currentView === 'creatures' && hasMore && !loadingMore) {
+              setLoadingMore(true);
+              setTimeout(() => {
+                setCurrentPage(prev => prev + 1);
+                setLoadingMore(false);
+              }, 300); // Small delay for smooth UX
+            }
+          }}
+          onEndReachedThreshold={0.3}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No results found</Text>
             </View>
+          }
+          ListFooterComponent={
+            loadingMore && currentView === 'creatures' ? (
+              <View style={styles.loadingFooter}>
+                <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+                <Text style={styles.loadingText}>Loading more creatures...</Text>
+              </View>
+            ) : null
           }
         />
 
@@ -356,6 +402,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
     fontSize: TYPOGRAPHY.SIZE_MD,
+  },
+  loadingFooter: {
+    paddingVertical: DIMENSIONS.PADDING_LG,
+    alignItems: 'center',
+    gap: DIMENSIONS.SPACE_SM,
+  },
+  loadingText: {
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: TYPOGRAPHY.SIZE_SM,
+    marginTop: DIMENSIONS.SPACE_XS,
   },
 });
 

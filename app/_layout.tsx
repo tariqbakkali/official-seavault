@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import {
   ActivityIndicator,
@@ -21,6 +21,7 @@ import {
 import 'react-native-get-random-values';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { hasCompletedOnboarding } from '@/utils/onboardingStorage';
 
 // Initialize Sentry
 Sentry.init({
@@ -32,6 +33,7 @@ export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
   const { profile } = useSyncedData();
   const [currentUserID, setCurrentUserIDState] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const insets = useSafeAreaInsets();
 
   // Get the current user's profile from the profile object
@@ -45,6 +47,9 @@ export default function RootLayout() {
         // Initialize the app using the app initializer
         await initializeApp();
 
+        // Check if user has completed onboarding
+        const onboardingCompleted = await hasCompletedOnboarding();
+
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -57,6 +62,11 @@ export default function RootLayout() {
 
         setCurrentUserID(userId);
         setCurrentUserIDState(userId);
+
+        // Show onboarding if not completed and not authenticated
+        if (!onboardingCompleted && !userId) {
+          setShowOnboarding(true);
+        }
 
         await forceSyncAll(); // Ensure all data is synchronized after session check
       } catch (error) {
@@ -105,6 +115,19 @@ export default function RootLayout() {
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={{ color: '#fff', marginTop: DIMENSIONS.MARGIN_MD }}>Loading...</Text>
       </View>
+    );
+  }
+
+  // Show onboarding if needed
+  if (showOnboarding) {
+    return (
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="onboarding" />
+      </Stack>
     );
   }
 

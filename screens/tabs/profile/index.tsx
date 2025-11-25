@@ -36,7 +36,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = React.useState(true);
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  
+
   const { creatures: allCreatures, categories: allCategories, currentUserSightings: allSightings, wishlists: allWishlists, profile: userProfile, achievements: allAchievements, userAchievements: allUserAchievements, creatures: allCreaturesData } = useSyncedData();
 
   const loadData = React.useCallback(() => {
@@ -49,24 +49,24 @@ export default function ProfileScreen() {
       const wishlistsArray = allWishlists ? Object.values(allWishlists) : [];
       const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
 
-      
+
       // Create mock userData object to match the expected format
       const userData = {
         sightings: sightingsArray,
         wishlists: wishlistsArray,
         profile: profileData
       };
-      
+
       // Create mock catalog object to match the expected format
       const catalog = {
         creatures: creaturesArray as any[],
         categories: categoriesArray as any[],
         achievements: allAchievements ? Object.values(allAchievements) : []
       };
-      
+
       // Get user achievements
       const userAchievementsArray = allUserAchievements ? Object.values(allUserAchievements) : [];
-      
+
       // Only calculate stats when we have the necessary data
       if (creaturesArray.length > 0 && categoriesArray.length > 0) {
         if (userData && catalog) {
@@ -74,25 +74,25 @@ export default function ProfileScreen() {
           setUserStats(stats);
         }
       }
-      
+
       // Calculate achievements with status (this block is for the achievements list, not the stats summary)
       // This part of the code is redundant for the profile screen's stats summary
       // and should be removed or refactored if not used elsewhere in this component.
       // For now, we will keep it as is, but it does not affect the stats summary.
       const unlockedAchievementIds = new Set(userAchievementsArray.map((ua: any) => ua.achievement_id));
       const uniqueCreatures = new Set(sightingsArray.map((s: any) => s.creature_id)).size;
-      
+
       const achievementsWithStatus = (allAchievements ? Object.values(allAchievements) : [])
         .map((achievement: any) => {
           let progress = 0;
           let total = 0;
-          
+
           if (achievement.category === 'collection') {
             progress = uniqueCreatures;
             const match = achievement.description?.match(/Log (\d+) different species/);
             total = match ? parseInt(match[1], 10) : 0;
           }
-          
+
           return {
             ...achievement,
             unlocked: unlockedAchievementIds.has(achievement.id),
@@ -100,7 +100,7 @@ export default function ProfileScreen() {
             total
           };
         });
-        
+
       setAchievementsWithStatus(achievementsWithStatus);
     } catch (error) {
       console.error('Error loading profile data:', error);
@@ -137,14 +137,14 @@ export default function ProfileScreen() {
       'Are you sure you want to sign out?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Sign Out', 
+        {
+          text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
             try {
               // Clear user data from Legend State before signing out
               clearUserSync();
-              
+
               await supabase.auth.signOut();
               clearUserSync(); // Clear user sync data on logout
               router.replace(ROUTES.AUTH.LOGIN);
@@ -160,9 +160,9 @@ export default function ProfileScreen() {
 
   // Extract profile data safely
   const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
-  
+
   const totalCount = allAchievements ? Object.values(allAchievements).length : 0;
-  
+
   const menuItems: MenuItem[] = [
     {
       icon: <Settings size={24} color="#fff" />,
@@ -182,8 +182,8 @@ export default function ProfileScreen() {
   // Show loading state while data is being fetched
   if (loading) {
     return (
-      <View style={[styles.container, { 
-        paddingTop: insets.top, 
+      <View style={[styles.container, {
+        paddingTop: insets.top,
         paddingLeft: insets.left,
         paddingRight: insets.right
       }]}>
@@ -193,9 +193,9 @@ export default function ProfileScreen() {
     );
   }
 
-    return (
-    <View style={[styles.container, { 
-      paddingTop: insets.top, 
+  return (
+    <View style={[styles.container, {
+      paddingTop: insets.top,
       paddingLeft: insets.left,
       paddingRight: insets.right
     }]}>
@@ -230,7 +230,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Stats Section */}
-        <StatsSection 
+        <StatsSection
           uniqueCreatures={userStats?.uniqueCreatures || 0}
           totalPoints={userStats?.totalPoints || 0}
           achievementsUnlocked={userStats?.achievementsUnlocked || 0}

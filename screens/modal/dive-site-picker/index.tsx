@@ -8,6 +8,7 @@ import {
   TextInput,
   FlatList,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -24,6 +25,12 @@ export default function DiveSitePickerScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const insets = useSafeAreaInsets();
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = React.useState(0);
+  const [loadingMore, setLoadingMore] = React.useState(false);
+  const [hasMore, setHasMore] = React.useState(true);
+  const PAGE_SIZE = 30;
 
   const params = useLocalSearchParams();
   const diveSiteEntryId = params.diveSiteEntryId as string;
@@ -55,30 +62,47 @@ export default function DiveSitePickerScreen() {
     router.push('/dive-sites/add');
   };
 
-  // Filter and prioritize dive sites based on search query
+  // Reset pagination when search changes
+  React.useEffect(() => {
+    setCurrentPage(0);
+    setHasMore(true);
+  }, [searchQuery]);
+
+  // Filter and prioritize dive sites based on search query with pagination
   const filteredDiveSites = useMemo(() => {
     const diveSitesArray = allDiveSites
       ? (Object.values(allDiveSites) as DiveSite[])
       : [];
 
-    if (!searchQuery) return diveSitesArray;
+    let filtered = diveSitesArray;
 
-    const query = searchQuery.toLowerCase();
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
 
-    const startsWithQuery: DiveSite[] = [];
-    const containsQuery: DiveSite[] = [];
+      const startsWithQuery: DiveSite[] = [];
+      const containsQuery: DiveSite[] = [];
 
-    diveSitesArray.forEach((site: DiveSite) => {
-      const siteName = site.name.toLowerCase();
-      if (siteName.startsWith(query)) {
-        startsWithQuery.push(site);
-      } else if (siteName.includes(query)) {
-        containsQuery.push(site);
-      }
-    });
+      diveSitesArray.forEach((site: DiveSite) => {
+        const siteName = site.name.toLowerCase();
+        if (siteName.startsWith(query)) {
+          startsWithQuery.push(site);
+        } else if (siteName.includes(query)) {
+          containsQuery.push(site);
+        }
+      });
 
-    return [...startsWithQuery, ...containsQuery];
-  }, [allDiveSites, searchQuery]);
+      filtered = [...startsWithQuery, ...containsQuery];
+    }
+
+    // Apply pagination
+    const endIndex = (currentPage + 1) * PAGE_SIZE;
+    const paginated = filtered.slice(0, endIndex);
+
+    // Update hasMore flag
+    setHasMore(filtered.length > endIndex);
+
+    return paginated;
+  }, [allDiveSites, searchQuery, currentPage, PAGE_SIZE]);
 
   // Render dive site item for the list
   const renderDiveSiteItem = useCallback(({ item }: { item: DiveSite }) => {
@@ -90,10 +114,10 @@ export default function DiveSitePickerScreen() {
       >
         <View style={styles.diveSiteContent}>
           <View style={styles.iconContainer}>
-            <CountryFlag 
-              latitude={item.latitude || 0} 
-              longitude={item.longitude || 0} 
-              size={24} 
+            <CountryFlag
+              latitude={item.latitude || 0}
+              longitude={item.longitude || 0}
+              size={24}
               style={{ marginRight: 0 }}
             />
           </View>
@@ -190,6 +214,24 @@ export default function DiveSitePickerScreen() {
           initialNumToRender={10}
           maxToRenderPerBatch={10}
           windowSize={5}
+          onEndReached={() => {
+            if (hasMore && !loadingMore) {
+              setLoadingMore(true);
+              setTimeout(() => {
+                setCurrentPage(prev => prev + 1);
+                setLoadingMore(false);
+              }, 300);
+            }
+          }}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.loadingFooter}>
+                <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+                <Text style={styles.loadingText}>Loading more dive sites...</Text>
+              </View>
+            ) : null
+          }
         />
       </View>
     </View>
@@ -311,5 +353,15 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_MD,
     color: COLORS.TEXT_TERTIARY,
     textAlign: 'center',
+  },
+  loadingFooter: {
+    paddingVertical: DIMENSIONS.PADDING_LG,
+    alignItems: 'center',
+    gap: DIMENSIONS.SPACE_SM,
+  },
+  loadingText: {
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: TYPOGRAPHY.SIZE_SM,
+    marginTop: DIMENSIONS.SPACE_XS,
   },
 });

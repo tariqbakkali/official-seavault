@@ -9,8 +9,11 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   ScrollView,
+  Animated,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/services/supabase';
 import { ROUTES, COLORS, DIMENSIONS, APP_CONFIG } from '@/constants';
 import { TYPOGRAPHY } from '@/constants';
@@ -18,17 +21,33 @@ import { getPasswordResetRedirectUrl } from '@/utils/authUtils';
 import { isValidEmail } from './utils/authValidation';
 import { showAlert } from '@/utils/alertUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSyncedData } from '@/hooks/useSyncedData'; // Import useSyncedData hook
+import { useSyncedData } from '@/hooks/useSyncedData';
+
+// Warm up the browser for faster OAuth
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [fullName, setFullName] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [isSignUp, setIsSignUp] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
-  const { createProfileForCurrentUser, fetchUserData } = useSyncedData(); // Get the createProfileForCurrentUser function
+  const { createProfileForCurrentUser, fetchUserData } = useSyncedData();
 
-  // Function to handle password reset
+  // Fade in animation on mount
+  React.useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
   const handlePasswordReset = async () => {
     if (!email) {
       showAlert('Error', 'Please enter your email address');
@@ -42,7 +61,6 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      // Send password reset email with redirect URL from constants
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: getPasswordResetRedirectUrl()
       });
@@ -64,10 +82,108 @@ export default function LoginScreen() {
     }
   };
 
-  const handleAuth = async () => {
+  const handleGoogleSignIn = async () => {
+    console.log('[OAuth] 🔵 Google Sign-In: Starting...');
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${APP_CONFIG.DEEP_LINK_SCHEME}://auth/callback`,
+          skipBrowserRedirect: true,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
+          },
+        },
+      });
 
+      if (error) throw error;
+
+      if (data?.url) {
+        console.log('[OAuth] 🔵 Opening in-app browser modal...');
+        const result = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          `${APP_CONFIG.DEEP_LINK_SCHEME}://auth/callback`
+        );
+
+        console.log('[OAuth] Result:', result.type);
+
+        if (result.type === 'success') {
+          console.log('[OAuth] ✅ Authentication successful!');
+          // Loading state will be cleared by auth state change
+        } else {
+          console.log('[OAuth] ⚠️ User cancelled or dismissed');
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    } catch (error: any) {
+      console.error('[OAuth] ❌ Failed:', error.message);
+      showAlert('Error', error.message || 'Failed to sign in with Google');
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    console.log('[OAuth] 🍎 Apple Sign-In: Starting...');
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: `${APP_CONFIG.DEEP_LINK_SCHEME}://auth/callback`,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        console.log('[OAuth] 🍎 Opening in-app browser modal...');
+        const result = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          `${APP_CONFIG.DEEP_LINK_SCHEME}://auth/callback`
+        );
+
+        console.log('[OAuth] Result:', result.type);
+
+        if (result.type === 'success') {
+          console.log('[OAuth] ✅ Authentication successful!');
+          // Loading state will be cleared by auth state change
+        } else {
+          console.log('[OAuth] ⚠️ User cancelled or dismissed');
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    } catch (error: any) {
+      console.error('[OAuth] ❌ Failed:', error.message);
+      showAlert('Error', error.message || 'Failed to sign in with Apple');
+      setLoading(false);
+    }
+  };
+
+  const handleAuth = async () => {
     if (!email || !password) {
       showAlert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (isSignUp && !fullName.trim()) {
+      showAlert('Error', 'Please enter your full name');
+      return;
+    }
+
+    if (isSignUp && password !== confirmPassword) {
+      showAlert('Error', 'Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      showAlert('Error', 'Password must be at least 6 characters long');
       return;
     }
 
@@ -82,6 +198,11 @@ export default function LoginScreen() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              full_name: fullName.trim()
+            }
+          }
         });
 
         if (error) {
@@ -90,19 +211,16 @@ export default function LoginScreen() {
         }
 
         if (data) {
-          // Check if email confirmation is required
           if (data.user && !data.user.email_confirmed_at) {
             showAlert(
               'Confirm Your Email',
               'Please check your email and click the confirmation link to complete your registration.',
-              () => setIsSignUp(false) // Pass a callback for OK button
+              () => setIsSignUp(false)
             );
-            // Switch to sign in mode so user can sign in after confirming email
             setIsSignUp(false);
           } else {
-            // Wait a bit for initial sync to complete
             await new Promise((resolve) => setTimeout(resolve, 200));
-            await createProfileForCurrentUser({});
+            await createProfileForCurrentUser({ full_name: fullName.trim() });
             showAlert('Success', 'Account created successfully!');
           }
         } else {
@@ -120,20 +238,11 @@ export default function LoginScreen() {
         }
 
         if (data) {
-          console.log('[LoginScreen] Signin successful', {
-            hasUser: !!data.user,
-            hasSession: !!data.session,
-            userId: data.user?.id,
-          });
-
-          // Wait a bit for initial sync to complete
+          console.log('[LoginScreen] Signin successful');
           await new Promise((resolve) => setTimeout(resolve, 200));
-          // After successful login, ensure profile exists
           await createProfileForCurrentUser({});
-          // Also fetch user data to populate the profile observable
           await fetchUserData();
         } else {
-          console.log('[LoginScreen] Signin failed: No data returned');
           showAlert('Error', 'Invalid email or password. Please try again.');
         }
       }
@@ -144,94 +253,197 @@ export default function LoginScreen() {
         error.message || 'An error occurred. Please try again.'
       );
     } finally {
-      console.log('[LoginScreen] Authentication process completed');
       setLoading(false);
     }
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
-        },
-      ]}
-    >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+    <View style={styles.container}>
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            opacity: fadeAnim,
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+          },
+        ]}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.title}>{APP_CONFIG.NAME}</Text>
-          <Text style={styles.subtitle}>{APP_CONFIG.TAGLINE}</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* App Logo/Title */}
+            <View style={styles.header}>
+              <Text style={styles.title}>{APP_CONFIG.NAME}</Text>
+              <Text style={styles.subtitle}>{APP_CONFIG.TAGLINE}</Text>
+            </View>
 
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#666"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!loading}
-            />
+            {/* Main Form Card */}
+            <View style={styles.formCard}>
+              <View style={styles.form}>
+                {/* Name Field (Sign Up Only) */}
+                {isSignUp && (
+                  <View style={styles.inputContainer}>
+                    <Ionicons name="person-outline" size={20} color="#666" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Full Name"
+                      placeholderTextColor="#666"
+                      value={fullName}
+                      onChangeText={setFullName}
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                      editable={!loading}
+                    />
+                  </View>
+                )}
 
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#666"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCorrect={false}
-              editable={!loading}
-            />
+                {/* Email Field */}
+                <View style={styles.inputContainer}>
+                  <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    placeholderTextColor="#666"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!loading}
+                  />
+                </View>
 
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleAuth}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>
-                  {isSignUp ? 'Sign Up' : 'Sign In'}
-                </Text>
-              )}
-            </TouchableOpacity>
+                {/* Password Field */}
+                <View style={styles.inputContainer}>
+                  <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Password"
+                    placeholderTextColor="#666"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    autoCorrect={false}
+                    editable={!loading}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color="#666"
+                    />
+                  </TouchableOpacity>
+                </View>
 
-            <TouchableOpacity
-              style={styles.switchButton}
-              onPress={() => {
-                setIsSignUp(!isSignUp);
-              }}
-              disabled={loading}
-            >
-              <Text style={styles.switchText}>
-                {isSignUp
-                  ? 'Already have an account? Sign In'
-                  : 'Need an account? Sign Up'}
-              </Text>
-            </TouchableOpacity>
+                {/* Confirm Password Field (Sign Up Only) */}
+                {isSignUp && (
+                  <View style={styles.inputContainer}>
+                    <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Confirm Password"
+                      placeholderTextColor="#666"
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      secureTextEntry={!showConfirmPassword}
+                      autoCorrect={false}
+                      editable={!loading}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      <Ionicons
+                        name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                        size={20}
+                        color="#666"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                )}
 
-            {/* Add Forgot Password link */}
-            <TouchableOpacity
-              style={styles.forgotPasswordButton}
-              onPress={handlePasswordReset}
-              disabled={loading}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+                {/* Main Action Button */}
+                <TouchableOpacity
+                  style={[styles.button, loading && styles.buttonDisabled]}
+                  onPress={handleAuth}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.buttonText}>
+                      {isSignUp ? 'Sign Up' : 'Sign In'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+                {/* Divider */}
+                <View style={styles.dividerContainer}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>OR</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                {/* Social Login Buttons */}
+                <View style={styles.socialButtonsContainer}>
+                  <TouchableOpacity
+                    style={styles.socialButton}
+                    onPress={handleGoogleSignIn}
+                    disabled={loading}
+                  >
+                    <Ionicons name="logo-google" size={24} color="#fff" />
+                    <Text style={styles.socialButtonText}>Continue with Google</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.socialButton}
+                    onPress={handleAppleSignIn}
+                    disabled={loading}
+                  >
+                    <Ionicons name="logo-apple" size={24} color="#fff" />
+                    <Text style={styles.socialButtonText}>Continue with Apple</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Switch Mode Button */}
+                <TouchableOpacity
+                  style={styles.switchButton}
+                  onPress={() => setIsSignUp(!isSignUp)}
+                  disabled={loading}
+                >
+                  <Text style={styles.switchText}>
+                    {isSignUp
+                      ? 'Already have an account? Sign In'
+                      : 'Need an account? Sign Up'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Forgot Password Link */}
+                {!isSignUp && (
+                  <TouchableOpacity
+                    style={styles.forgotPasswordButton}
+                    onPress={handlePasswordReset}
+                    disabled={loading}
+                  >
+                    <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Animated.View>
     </View>
   );
 }
@@ -247,8 +459,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: DIMENSIONS.PADDING_XXL,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
     paddingVertical: DIMENSIONS.PADDING_XXL,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: DIMENSIONS.SPACE_XL,
   },
   title: {
     fontSize: TYPOGRAPHY.SIZE_DISPLAY,
@@ -261,20 +477,37 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_XL,
     color: '#666',
     textAlign: 'center',
-    marginBottom: DIMENSIONS.SPACE_48,
+  },
+  formCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: DIMENSIONS.RADIUS_XL,
+    padding: DIMENSIONS.PADDING_XL,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   form: {
     gap: DIMENSIONS.SPACE_LG,
   },
-  input: {
-    paddingHorizontal: DIMENSIONS.PADDING_LG,
-    paddingVertical: DIMENSIONS.PADDING_MD,
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#1a1a1a',
     borderRadius: DIMENSIONS.RADIUS_MD,
-    fontSize: TYPOGRAPHY.SIZE_LG,
-    color: '#fff',
     borderWidth: 1,
     borderColor: '#333',
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
+  },
+  inputIcon: {
+    marginRight: DIMENSIONS.SPACE_SM,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: DIMENSIONS.PADDING_MD,
+    fontSize: TYPOGRAPHY.SIZE_LG,
+    color: '#fff',
+  },
+  eyeIcon: {
+    padding: DIMENSIONS.PADDING_XS,
   },
   button: {
     backgroundColor: '#007AFF',
@@ -291,18 +524,49 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: '600',
   },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: DIMENSIONS.SPACE_SM,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#333',
+  },
+  dividerText: {
+    color: '#666',
+    paddingHorizontal: DIMENSIONS.PADDING_MD,
+    fontSize: TYPOGRAPHY.SIZE_SM,
+  },
+  socialButtonsContainer: {
+    gap: DIMENSIONS.SPACE_MD,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#333',
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    padding: DIMENSIONS.PADDING_MD,
+    gap: DIMENSIONS.SPACE_MD,
+  },
+  socialButtonText: {
+    color: '#fff',
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    fontWeight: '600',
+  },
   switchButton: {
     alignItems: 'center',
-    marginTop: DIMENSIONS.SPACE_LG,
+    marginTop: DIMENSIONS.SPACE_MD,
   },
   switchText: {
     color: '#007AFF',
     fontSize: TYPOGRAPHY.SIZE_MD,
   },
-  // Add styles for Forgot Password link
   forgotPasswordButton: {
     alignItems: 'center',
-    marginTop: DIMENSIONS.SPACE_SM,
+    marginTop: DIMENSIONS.SPACE_XS,
   },
   forgotPasswordText: {
     color: '#007AFF',
