@@ -12,6 +12,8 @@ import {
   Animated,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
+// import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+// import * as AppleAuthentication from 'expo-apple-authentication';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/services/supabase';
@@ -46,6 +48,20 @@ export default function LoginScreen() {
       duration: 800,
       useNativeDriver: true,
     }).start();
+  }, []);
+
+  // Configure Google Sign-In
+  React.useEffect(() => {
+    try {
+      const { GoogleSignin } = require('@react-native-google-signin/google-signin');
+      GoogleSignin.configure({
+        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+        offlineAccess: true,
+        scopes: ['profile', 'email'],
+      });
+    } catch (e) {
+      console.log('[GoogleSignin] Not available (likely in Expo Go)');
+    }
   }, []);
 
   const handlePasswordReset = async () => {
@@ -83,46 +99,80 @@ export default function LoginScreen() {
   };
 
   const handleGoogleSignIn = async () => {
-    console.log('[OAuth] 🔵 Google Sign-In: Starting...');
+    console.log('[OAuth] 🔵 Google Sign-In: Starting native flow...');
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${APP_CONFIG.DEEP_LINK_SCHEME}://auth/callback`,
-          skipBrowserRedirect: true,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account',
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        console.log('[OAuth] 🔵 Opening in-app browser modal...');
-        const result = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          `${APP_CONFIG.DEEP_LINK_SCHEME}://auth/callback`
-        );
-
-        console.log('[OAuth] Result:', result.type);
-
-        if (result.type === 'success') {
-          console.log('[OAuth] ✅ Authentication successful!');
-          // Loading state will be cleared by auth state change
-        } else {
-          console.log('[OAuth] ⚠️ User cancelled or dismissed');
-          setLoading(false);
-        }
-      } else {
-        setLoading(false);
+      let GoogleSignin, statusCodes;
+      try {
+        const googleSigninModule = require('@react-native-google-signin/google-signin');
+        GoogleSignin = googleSigninModule.GoogleSignin;
+        statusCodes = googleSigninModule.statusCodes;
+      } catch (e) {
+        throw new Error('Native Google Sign-In is not available. You must use a development build.');
       }
+
+      // Check if device supports Google Play Services (Android only)
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+
+      // Show native account picker
+      const response = await GoogleSignin.signIn();
+
+      if (response.data) {
+        console.log('[OAuth] 🔵 User selected:', response.data.user.email);
+
+        // Get ID token for Supabase
+        const tokens = await GoogleSignin.getTokens();
+
+        if (!tokens.idToken) {
+          throw new Error('No ID token received from Google');
+        }
+
+        console.log('[OAuth] 🔵 Exchanging ID token with Supabase...');
+
+        // Sign in to Supabase with Google ID token
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: tokens.idToken,
+        });
+
+        if (error) throw error;
+
+        console.log('[OAuth] ✅ Authentication successful!');
+
+        // Profile will be created automatically by handle_new_user trigger
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        await createProfileForCurrentUser({});
+        await fetchUserData();
+      } else {
+        console.log('[OAuth] ⚠️ User cancelled flow');
+      }
+
     } catch (error: any) {
-      console.error('[OAuth] ❌ Failed:', error.message);
-      showAlert('Error', error.message || 'Failed to sign in with Google');
+      console.error('[OAuth] ❌ Failed:', error);
+
+      // Need to safely access statusCodes since it might be undefined if require failed
+      const googleSigninModule = tryRequireGoogleSignin();
+      const statusCodes = googleSigninModule?.statusCodes;
+
+      if (statusCodes && error.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log('[OAuth] ⚠️ User cancelled');
+      } else if (statusCodes && error.code === statusCodes.IN_PROGRESS) {
+        showAlert('Error', 'Sign in already in progress');
+      } else if (statusCodes && error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        showAlert('Error', 'Google Play Services not available.');
+      } else {
+        showAlert('Error', error.message || 'Failed to sign in with Google');
+      }
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const tryRequireGoogleSignin = () => {
+    try {
+      return require('@react-native-google-signin/google-signin');
+    } catch (e) {
+      return null;
     }
   };
 
@@ -130,38 +180,83 @@ export default function LoginScreen() {
     console.log('[OAuth] 🍎 Apple Sign-In: Starting...');
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'apple',
-        options: {
-          redirectTo: `${APP_CONFIG.DEEP_LINK_SCHEME}://auth/callback`,
-          skipBrowserRedirect: true,
-        },
-      });
+      let AppleAuthentication;
+      try {
+        AppleAuthentication = require('expo-apple-authentication');
+      } catch (e) {
+        console.log('[AppleAuth] Native module not found, falling back to web');
+      }
 
-      if (error) throw error;
+      const isAvailable = AppleAuthentication ? await AppleAuthentication.isAvailableAsync() : false;
 
-      if (data?.url) {
-        console.log('[OAuth] 🍎 Opening in-app browser modal...');
-        const result = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          `${APP_CONFIG.DEEP_LINK_SCHEME}://auth/callback`
-        );
+      if (isAvailable && Platform.OS === 'ios') {
+        console.log('[OAuth] 🍎 Using Native Apple Sign-In');
 
-        console.log('[OAuth] Result:', result.type);
+        const credential = await AppleAuthentication.signInAsync({
+          requestedScopes: [
+            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+            AppleAuthentication.AppleAuthenticationScope.EMAIL,
+          ],
+        });
 
-        if (result.type === 'success') {
+        console.log('[OAuth] 🍎 Credential received');
+
+        if (credential.identityToken) {
+          const { error, data } = await supabase.auth.signInWithIdToken({
+            provider: 'apple',
+            token: credential.identityToken,
+          });
+
+          if (error) throw error;
+
           console.log('[OAuth] ✅ Authentication successful!');
-          // Loading state will be cleared by auth state change
+
+          // Profile will be created automatically by handle_new_user trigger
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          await createProfileForCurrentUser({});
+          await fetchUserData();
         } else {
-          console.log('[OAuth] ⚠️ User cancelled or dismissed');
-          setLoading(false);
+          throw new Error('No identity token provided');
         }
       } else {
-        setLoading(false);
+        console.log('[OAuth] 🍎 Using Web OAuth (Android/Fallback)');
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'apple',
+          options: {
+            redirectTo: `${APP_CONFIG.DEEP_LINK_SCHEME}://auth/callback`,
+            skipBrowserRedirect: true,
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.url) {
+          console.log('[OAuth] 🍎 Opening in-app browser modal...');
+          const result = await WebBrowser.openAuthSessionAsync(
+            data.url,
+            `${APP_CONFIG.DEEP_LINK_SCHEME}://auth/callback`
+          );
+
+          console.log('[OAuth] Result:', result.type);
+
+          if (result.type === 'success') {
+            console.log('[OAuth] ✅ Authentication successful!');
+            // Loading state will be cleared by auth state change
+          } else {
+            console.log('[OAuth] ⚠️ User cancelled or dismissed');
+            setLoading(false);
+          }
+        } else {
+          setLoading(false);
+        }
       }
     } catch (error: any) {
-      console.error('[OAuth] ❌ Failed:', error.message);
-      showAlert('Error', error.message || 'Failed to sign in with Apple');
+      console.error('[OAuth] ❌ Failed:', error);
+      if (error.code === 'ERR_CANCELED') {
+        console.log('[OAuth] ⚠️ User cancelled');
+      } else {
+        showAlert('Error', error.message || 'Failed to sign in with Apple');
+      }
       setLoading(false);
     }
   };

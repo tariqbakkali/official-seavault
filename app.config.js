@@ -104,6 +104,8 @@ export default ({ config }) => {
         },
       ],
       'expo-secure-store',
+      '@react-native-google-signin/google-signin',
+      'expo-apple-authentication',
       // 'sentry-expo',
     ],
     experiments: {
