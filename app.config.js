@@ -7,12 +7,7 @@ export default ({ config }) => {
     version: '1.0.6',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
-    android: {
-      adaptiveIcon: {
-        foregroundImage: './assets/images/adaptive-icon.png',
-        backgroundColor: '#1B87E1',
-      },
-    },
+
     splash: {
       image: './assets/images/icon.png',
       backgroundColor: '#1B87E1',
@@ -36,6 +31,10 @@ export default ({ config }) => {
       },
     },
     android: {
+      adaptiveIcon: {
+        foregroundImage: './assets/images/adaptive-icon.png',
+        backgroundColor: '#1B87E1',
+      },
       package: 'com.seavault.app',
       edgeToEdgeEnabled: true,
       permissions: [

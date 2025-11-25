@@ -20,14 +20,14 @@ import { useSyncedData } from '@/hooks/useSyncedData';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { toggleWishlistItem } from '@/stores/syncedObservables';
 import { DIMENSIONS, TYPOGRAPHY } from '@/constants';
-import {  COLORS } from '@/constants';
+import { COLORS } from '@/constants';
 
 const { width } = Dimensions.get('window');
 
 export default function CreatureDetailScreen() {
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  
+
   // State variables instead of Zustand store
   const [creature, setCreature] = React.useState<Creature | null>(null);
   const [sightings, setSightings] = React.useState<Sighting[]>([]);
@@ -37,7 +37,7 @@ export default function CreatureDetailScreen() {
   const [loading, setLoading] = React.useState(true);
   // Add state for dive sites
   const [diveSites, setDiveSites] = React.useState<DiveSite[]>([]);
-  
+
   // Use updated observable-based store
   const { creatures, wishlists, currentUserSightings, diveSites: allDiveSites, profile } = useSyncedData();
   const userProfile = profile ? Object.values(profile)[0] : undefined;
@@ -50,7 +50,7 @@ export default function CreatureDetailScreen() {
   React.useEffect(() => {
     const userWishlists = wishlists || {};
     const wishlistEntries = Object.values(userWishlists);
-    const isCreatureWishlisted = wishlistEntries.some((item: any) => 
+    const isCreatureWishlisted = wishlistEntries.some((item: any) =>
       item && item.creature_id === id
     );
     setIsWishlisted(isCreatureWishlisted);
@@ -59,7 +59,7 @@ export default function CreatureDetailScreen() {
   const loadData = React.useCallback(() => {
     try {
       setLoading(true);
-      
+
       // Fetch creature data using the new observable-based approach
       const allCreaturesArray = creatures ? Object.values(creatures) : [];
       const creatureData: any = allCreaturesArray.find((c: any) => c.id === id);
@@ -68,7 +68,7 @@ export default function CreatureDetailScreen() {
       // Check if creature is wishlisted using the wishlists observable
       const userWishlists = wishlists || {};
       const wishlistEntries = Object.values(userWishlists);
-      const isCreatureWishlisted = wishlistEntries.some((item: any) => 
+      const isCreatureWishlisted = wishlistEntries.some((item: any) =>
         item && item.creature_id === id
       );
       setIsWishlisted(isCreatureWishlisted);
@@ -79,22 +79,22 @@ export default function CreatureDetailScreen() {
         // Fetch sightings for this creature using the currentUserSightings observable
         // This observable is already filtered for the current user
         const userSightingsArray = currentUserSightings ? Object.values(currentUserSightings) : [];
-        const sightingsArray = userSightingsArray.filter((sighting: any) => 
+        const sightingsArray = userSightingsArray.filter((sighting: any) =>
           sighting && sighting.creature_id === id
         ) as Sighting[];
         setSightings(sightingsArray);
         setIsSeen(sightingsArray.length > 0);
-        
+
         // Fetch dive sites for all sightings using the diveSites observable
         if (sightingsArray.length > 0) {
           const diveSiteIds = sightingsArray
             .map((sighting: any) => sighting.dive_site_id)
             .filter((id): id is string => id !== null && id !== undefined);
-        
+
           if (diveSiteIds.length > 0) {
             // Fetch dive sites from the diveSites observable
             const allDiveSitesArray = allDiveSites ? Object.values(allDiveSites) : [];
-            const diveSitesArray = allDiveSitesArray.filter((site: any) => 
+            const diveSitesArray = allDiveSitesArray.filter((site: any) =>
               site && diveSiteIds.includes(site.id)
             ) as DiveSite[];
             setDiveSites(diveSitesArray);
@@ -114,7 +114,7 @@ export default function CreatureDetailScreen() {
 
   const handleWishlistToggle = async () => {
     if (!creature) return;
-    
+
     try {
       const userId = userProfile && typeof userProfile === 'object' && userProfile.hasOwnProperty('id') ? (userProfile as any).id : undefined;
       if (!userId) return;
@@ -122,14 +122,14 @@ export default function CreatureDetailScreen() {
       // Toggle wishlist item using the new toggleWishlistItem function
       // This function handles both adding and removing from wishlist
       const result = await toggleWishlistItem(creature.id);
-      
+
       // Update local state to reflect the change
       // The result indicates whether the item was added (true) or removed (false)
       setIsWishlisted(result);
     } catch (error) {
       console.error('Error toggling wishlist:', error);
       Alert.alert('Error', 'Failed to update wishlist');
-      
+
     }
   };
 
@@ -138,7 +138,7 @@ export default function CreatureDetailScreen() {
       // Navigate to log dive screen with creature and category pre-selected
       router.push({
         pathname: '/(tabs)/log-dive',
-        params: { 
+        params: {
           selectedCategory: creature.category_id,
           selectedCreature: creature.id,
           source: 'creature'
@@ -149,38 +149,38 @@ export default function CreatureDetailScreen() {
 
   // Group sightings by dive site for better UI organization
   const groupSightingsByDiveSite = () => {
-    const grouped: { 
-      [key: string]: { 
-        diveSite: DiveSite | null; 
-        sightings: Sighting[] 
-      } 
+    const grouped: {
+      [key: string]: {
+        diveSite: DiveSite | null;
+        sightings: Sighting[]
+      }
     } = {};
-    
+
     sightings.forEach(sighting => {
       const diveSiteId = sighting.dive_site_id || 'unknown';
-      const diveSite = diveSiteId !== 'unknown' 
-        ? diveSites.find(site => site.id === diveSiteId) || null 
+      const diveSite = diveSiteId !== 'unknown'
+        ? diveSites.find(site => site.id === diveSiteId) || null
         : null;
-      
+
       if (!grouped[diveSiteId]) {
         grouped[diveSiteId] = {
           diveSite,
           sightings: []
         };
       }
-      
+
       grouped[diveSiteId].sightings.push(sighting);
     });
-    
+
     return grouped;
   };
 
   const renderSighting = ({ item, index }: { item: Sighting; index: number }) => {
     // Find the dive site name for this sighting
-    const diveSite = item.dive_site_id 
-      ? diveSites.find(site => site.id === item.dive_site_id) 
+    const diveSite = item.dive_site_id
+      ? diveSites.find(site => site.id === item.dive_site_id)
       : null;
-    
+
     return (
       <View style={styles.sightingCard}>
         <View style={styles.sightingHeader}>
@@ -200,42 +200,42 @@ export default function CreatureDetailScreen() {
             )}
           </View>
         </View>
-        
+
         {diveSite && (
           <View style={styles.diveSiteInfo}>
             <MapPin size={16} color="#666" />
             <Text style={styles.diveSiteName}>{diveSite.name}</Text>
           </View>
         )}
-        
+
         {item.dive_type && (
           <View style={styles.detailRow}>
             <Text style={styles.detailLabelNew}>Dive Type:</Text>
             <Text style={styles.detailValueNew}>{item.dive_type}</Text>
           </View>
         )}
-        
+
         {item.depth && (
           <View style={styles.detailRow}>
             <Text style={styles.detailLabelNew}>Depth:</Text>
             <Text style={styles.detailValueNew}>{item.depth}</Text>
           </View>
         )}
-        
+
         {item.dive_notes && (
           <View style={styles.notesSection}>
             <Text style={styles.notesLabel}>Dive Notes</Text>
             <Text style={styles.notesText}>{item.dive_notes}</Text>
           </View>
         )}
-        
+
         {item.creature_notes && (
           <View style={styles.notesSection}>
             <Text style={styles.notesLabel}>Creature Notes</Text>
             <Text style={styles.notesText}>{item.creature_notes}</Text>
           </View>
         )}
-        
+
         {item.image_url && (
           <View style={styles.imageSection}>
             <OfflineImageHandler
@@ -252,14 +252,14 @@ export default function CreatureDetailScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { 
-        paddingTop: insets.top, 
+      <View style={[styles.container, {
+        paddingTop: insets.top,
         paddingBottom: insets.bottom,
         paddingLeft: insets.left,
         paddingRight: insets.right
       }]}>
-        <ScreenHeader 
-          title="Loading..." 
+        <ScreenHeader
+          title="Loading..."
           onBackPress={() => router.back()}
           showBackButton={true}
         />
@@ -269,14 +269,14 @@ export default function CreatureDetailScreen() {
 
   if (!creature) {
     return (
-      <View style={[styles.container, { 
-        paddingTop: insets.top, 
+      <View style={[styles.container, {
+        paddingTop: insets.top,
         paddingBottom: insets.bottom,
         paddingLeft: insets.left,
         paddingRight: insets.right
       }]}>
-        <ScreenHeader 
-          title="Creature Not Found" 
+        <ScreenHeader
+          title="Creature Not Found"
           onBackPress={() => router.back()}
           showBackButton={true}
         />
@@ -288,8 +288,8 @@ export default function CreatureDetailScreen() {
   }
 
   return (
-    <View style={[styles.container, { 
-      paddingTop: insets.top, 
+    <View style={[styles.container, {
+      paddingTop: insets.top,
       paddingBottom: insets.bottom,
       paddingLeft: insets.left,
       paddingRight: insets.right
@@ -297,11 +297,11 @@ export default function CreatureDetailScreen() {
       <TouchableOpacity onPress={() => router.back()} style={[styles.backButton, { top: insets.top + 10 }]}>
         <ArrowLeft size={DIMENSIONS.ICON_LG} color={COLORS.TEXT_PRIMARY} />
       </TouchableOpacity>
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
       >
         {/* Creature Image */}
         <View style={styles.imageContainer}>
@@ -312,33 +312,33 @@ export default function CreatureDetailScreen() {
             showOfflineIndicator={true}
           />
         </View>
-        
+
         {/* Creature Info */}
         <View style={styles.infoContainer}>
           <View style={styles.nameRow}>
             <Text style={styles.name}>{creature.name}</Text>
           </View>
-          
-                    <View style={styles.scientificNameRow}>
-          
-                      {creature.scientific_name && (
-          
-                        <Text style={styles.scientificName}>{creature.scientific_name}</Text>
-          
-                      )}
-          
-                      <View style={styles.pointsBadge}>
-          
-                        <Text style={styles.pointsBadgeText}>{creature.points} PTS</Text>
-          
-                      </View>
-          
-                    </View>
+
+          <View style={styles.scientificNameRow}>
+
+            {creature.scientific_name && (
+
+              <Text style={styles.scientificName}>{creature.scientific_name}</Text>
+
+            )}
+
+            <View style={styles.pointsBadge}>
+
+              <Text style={styles.pointsBadgeText}>{creature.points} PTS</Text>
+
+            </View>
+
+          </View>
         </View>
-        
+
         {/* Tab Navigation */}
         <View style={styles.tabContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'about' && styles.activeTab]}
             onPress={() => setActiveTab('about')}
           >
@@ -346,7 +346,7 @@ export default function CreatureDetailScreen() {
               About
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.tab, activeTab === 'sightings' && styles.activeTab]}
             onPress={() => setActiveTab('sightings')}
           >
@@ -355,7 +355,7 @@ export default function CreatureDetailScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-        
+
         {/* Tab Content */}
         {activeTab === 'about' ? (
           <View style={styles.tabContent}>
@@ -365,7 +365,7 @@ export default function CreatureDetailScreen() {
                 <Text style={styles.sectionText}>{creature.description}</Text>
               </View>
             )}
-            
+
             <View style={styles.detailsGrid}>
               {creature.habitat && (
                 <View style={styles.detailItem}>
@@ -373,42 +373,42 @@ export default function CreatureDetailScreen() {
                   <Text style={styles.detailValue}>{creature.habitat}</Text>
                 </View>
               )}
-              
+
               {creature.diet && (
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Diet</Text>
                   <Text style={styles.detailValue}>{creature.diet}</Text>
                 </View>
               )}
-              
+
               {creature.depth_range && (
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Depth Range</Text>
                   <Text style={styles.detailValue}>{creature.depth_range}</Text>
                 </View>
               )}
-              
+
               {creature.length && (
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Length</Text>
                   <Text style={styles.detailValue}>{creature.length}</Text>
                 </View>
               )}
-              
+
               {creature.weight && (
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Weight</Text>
                   <Text style={styles.detailValue}>{creature.weight}</Text>
                 </View>
               )}
-              
+
               {creature.lifespan && (
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Lifespan</Text>
                   <Text style={styles.detailValue}>{creature.lifespan}</Text>
                 </View>
               )}
-              
+
               {creature.class && (
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Class</Text>
@@ -727,7 +727,7 @@ const styles = StyleSheet.create({
     paddingTop: DIMENSIONS.PADDING_MD,
     flexDirection: 'row',
     gap: DIMENSIONS.GAP_MD,
-    backgroundColor: '#000', 
+    backgroundColor: '#000',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

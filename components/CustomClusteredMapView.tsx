@@ -28,6 +28,8 @@ interface ClusteredMapViewProps {
   onMapGestureBegin?: () => void; // Add gesture control props
   onMapGestureEnd?: () => void; // Add gesture control props
   isMarkerDraggable?: boolean; // Add draggable marker support
+  userLocation?: { latitude: number; longitude: number } | null; // Add user location prop
+  showUserLocation?: boolean; // Add show user location prop
 }
 
 export interface CustomClusteredMapViewRef {
@@ -53,6 +55,8 @@ const CustomClusteredMapView = forwardRef<
       onMapGestureBegin,
       onMapGestureEnd,
       isMarkerDraggable = false, // Default to false for backward compatibility
+      userLocation,
+      showUserLocation = false,
     }: ClusteredMapViewProps,
     ref: React.ForwardedRef<CustomClusteredMapViewRef>
   ) => {
@@ -134,19 +138,19 @@ const CustomClusteredMapView = forwardRef<
     // Convert initial region to camera position
     const cameraPosition = selectedCoordinate
       ? {
-          coordinates: {
-            latitude: selectedCoordinate.latitude,
-            longitude: selectedCoordinate.longitude,
-          },
-          zoom: 15, // Zoom in when a specific location is selected
-        }
+        coordinates: {
+          latitude: selectedCoordinate.latitude,
+          longitude: selectedCoordinate.longitude,
+        },
+        zoom: 15, // Zoom in when a specific location is selected
+      }
       : {
-          coordinates: {
-            latitude: initialRegion.latitude,
-            longitude: initialRegion.longitude,
-          },
-          zoom: 10, // Adjust as needed
-        };
+        coordinates: {
+          latitude: initialRegion.latitude,
+          longitude: initialRegion.longitude,
+        },
+        zoom: 10, // Adjust as needed
+      };
 
     // Convert markers for expo-maps
     const mapMarkers = markers
@@ -235,6 +239,23 @@ const CustomClusteredMapView = forwardRef<
           draggable: isMarkerDraggable, // Make the selected marker draggable if enabled
         };
         mapMarkers.push(selectedMarker);
+      }
+    }
+
+    // Add user location marker if enabled and available
+    if (showUserLocation && userLocation) {
+      if (
+        typeof userLocation.latitude === 'number' &&
+        typeof userLocation.longitude === 'number'
+      ) {
+        const userMarker = {
+          id: 'user-location',
+          coordinates: userLocation,
+          title: 'You are here',
+          color: '#2196F3', // Material Blue
+          // You might want a custom icon or different style for user location
+        };
+        mapMarkers.push(userMarker);
       }
     }
 
@@ -453,4 +474,4 @@ const CustomClusteredMapView = forwardRef<
   }
 );
 
-export default CustomClusteredMapView;
+export default React.memo(CustomClusteredMapView);

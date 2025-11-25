@@ -35,13 +35,14 @@ export const awardAchievement = async (userId: string, achievementId: string): P
     id,
     user_id: userId,
     achievement_id: achievementId,
-    unlocked_at: new Date().toISOString()
+    unlocked_at: new Date().toISOString(),
+    created_at: new Date().toISOString()
   };
 
   try {
     // Award the achievement by updating the observable
     // This will trigger the sync to Supabase
-    (userAchievements$ as any)[id].set(newAchievement);
+    userAchievements$[id].set(newAchievement);
     
     return newAchievement as UserAchievement;
   } catch (error) {

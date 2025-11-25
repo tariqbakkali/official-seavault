@@ -14,6 +14,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import { AchievementCard } from '@/components';
 import { COLORS, DIMENSIONS } from '@/constants';
 import { TYPOGRAPHY } from '@/constants';
+import { awardAchievement } from '@/services/achievementService';
 
 export default function AchievementsScreen() {
   const [achievementsWithStatus, setAchievementsWithStatus] = React.useState<any[]>([]);
@@ -21,8 +22,8 @@ export default function AchievementsScreen() {
   const [activeFilter, setActiveFilter] = React.useState<'all' | 'unlocked' | 'locked'>('all');
   const insets = useSafeAreaInsets();
   const { id: selectedAchievementId } = useLocalSearchParams();
-  
-  const { achievements: allAchievements, userAchievements: allUserAchievements, currentUserSightings, creatures } = useSyncedData();
+
+  const { achievements: allAchievements, userAchievements: allUserAchievements, currentUserSightings, creatures, profile } = useSyncedData();
 
   React.useEffect(() => {
     const loadData = () => {
@@ -30,7 +31,7 @@ export default function AchievementsScreen() {
         // Get unlocked achievements
         const userAchievementsArray = allUserAchievements ? Object.values(allUserAchievements) : [];
         const unlockedAchievementIds = new Set(userAchievementsArray.map((ua: any) => ua.achievement_id));
-        
+
         // Create a map for quick creature lookup
         const creaturesMap = new Map(
           (creatures ? Object.values(creatures) : []).map((creature: any) => [creature.id, creature])
@@ -51,13 +52,13 @@ export default function AchievementsScreen() {
             sightedCreatureClasses.add(creature.class);
           }
         });
-        
+
         // Get all achievements with unlock status and progress
         const achievementsWithStatus = (allAchievements ? Object.values(allAchievements) : [])
           .map((achievement: any) => {
             let progress = 0;
             let total = 0;
-            
+
             if (achievement.category === 'collection' || achievement.category === 'beginner') {
               progress = uniqueCreatures;
               if (achievement.code === 'first_catch') {
@@ -89,11 +90,11 @@ export default function AchievementsScreen() {
                   break;
               }
             }
-            
+
             const isAlreadyUnlocked = unlockedAchievementIds.has(achievement.id);
             const isCurrentlyMeetingCriteria = (total > 0 && progress >= total);
             const unlocked = isAlreadyUnlocked || isCurrentlyMeetingCriteria;
-            
+
             return {
               ...achievement,
               unlocked: unlocked,
@@ -116,22 +117,48 @@ export default function AchievementsScreen() {
     loadData();
   }, [allAchievements, allUserAchievements, currentUserSightings, creatures]);
 
+  // Auto-award achievements that meet criteria but aren't in database
+  React.useEffect(() => {
+    const autoAwardAchievements = async () => {
+      // Get current user ID from profile
+      const currentUser = profile ? Object.values(profile)[0] : null;
+      if (!currentUser?.id) return;
+
+      for (const achievement of achievementsWithStatus) {
+        if (achievement.unlocked && achievement.progress >= achievement.total && achievement.total > 0) {
+          // Check if already in database
+          const alreadyAwarded = allUserAchievements &&
+            Object.values(allUserAchievements).some((ua: any) =>
+              ua.achievement_id === achievement.id
+            );
+
+          if (!alreadyAwarded) {
+            console.log('Auto-awarding achievement:', achievement.name);
+            await awardAchievement(currentUser.id, achievement.id);
+          }
+        }
+      }
+    };
+
+    autoAwardAchievements();
+  }, [achievementsWithStatus, profile, allUserAchievements]);
+
   // Apply filtering based on active filter
   React.useEffect(() => {
     let filtered = [...achievementsWithStatus];
-    
+
     if (activeFilter === 'unlocked') {
       filtered = filtered.filter(a => a.unlocked);
     } else if (activeFilter === 'locked') {
       filtered = filtered.filter(a => !a.unlocked);
     }
-    
+
     setFilteredAchievements(filtered);
   }, [achievementsWithStatus, activeFilter]);
 
   const renderAchievement = ({ item }: { item: any }) => (
-    <AchievementCard 
-      achievement={item} 
+    <AchievementCard
+      achievement={item}
       unlocked={item.unlocked}
       progress={item.progress}
       total={item.total}
@@ -146,35 +173,35 @@ export default function AchievementsScreen() {
   const totalCount = achievementsWithStatus.length;
 
   return (
-    <View style={[styles.container, { 
-      paddingTop: insets.top, 
+    <View style={[styles.container, {
+      paddingTop: insets.top,
       paddingBottom: insets.bottom,
       paddingLeft: insets.left,
       paddingRight: insets.right
     }]}>
-      <ScreenHeader 
-        title={`Achievements (${unlockedCount}/${totalCount})`} 
+      <ScreenHeader
+        title={`Achievements (${unlockedCount}/${totalCount})`}
         onBackPress={() => router.back()}
         showBackButton={true}
       />
 
       {/* Filter buttons */}
       <View style={styles.filterContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.filterButton, activeFilter === 'all' && styles.activeFilterButton]}
           onPress={() => setActiveFilter('all')}
         >
           <Text style={[styles.filterText, activeFilter === 'all' && styles.activeFilterText]}>All</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.filterButton, activeFilter === 'unlocked' && styles.activeFilterButton]}
           onPress={() => setActiveFilter('unlocked')}
         >
           <Text style={[styles.filterText, activeFilter === 'unlocked' && styles.activeFilterText]}>Unlocked</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.filterButton, activeFilter === 'locked' && styles.activeFilterButton]}
           onPress={() => setActiveFilter('locked')}
         >
