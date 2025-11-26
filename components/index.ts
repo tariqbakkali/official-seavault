@@ -3,7 +3,7 @@
 // UI Components
 export { default as ImageWithFallback } from './ImageWithFallback';
 export * from './LoadingShimmer';
-export * from './LoadingState';
+
 export * from './DefaultImagePlaceholder';
 export * from './ErrorDisplay';
 export * from './ImagePicker';

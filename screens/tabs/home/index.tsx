@@ -21,6 +21,7 @@ import { getLeaderboardData } from '@/services/leaderboardService';
 import { forceSyncAll } from '@/utils/syncUtils';
 import { Creature, Category, Sighting, Wishlist } from '@/types/database';
 import StatCard from './components/StatCard';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 import { allUsersProfiles$ } from '@/stores/syncedObservables';
 
 interface LeaderboardEntry {
@@ -317,27 +318,14 @@ export default function HomeScreen() {
     },
   ];
 
+
+
+  // ... (existing imports)
+
+  // ... (inside component)
+
   if (loading) {
-    return (
-      <View
-        style={[
-          styles.container,
-          {
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom,
-            paddingLeft: insets.left,
-            paddingRight: insets.right,
-          },
-        ]}
-      >
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{APP_CONFIG.NAME}</Text>
-            <Text style={styles.subtitle}>{APP_CONFIG.TAGLINE}</Text>
-          </View>
-        </View>
-      </View>
-    );
+    return <LoadingScreen variant="fullscreen" />;
   }
 
   return (

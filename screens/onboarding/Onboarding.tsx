@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     FlatList,
     ViewToken,
+    ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -64,6 +65,7 @@ const slides: OnboardingSlide[] = [
 
 export default function OnboardingScreen() {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [loadingState, setLoadingState] = useState<'idle' | 'skipping' | 'completing'>('idle');
     const flatListRef = useRef<FlatList>(null);
 
     const onViewableItemsChanged = useRef(
@@ -90,13 +92,25 @@ export default function OnboardingScreen() {
     };
 
     const handleSkip = async () => {
-        await setOnboardingComplete();
-        router.replace('/(auth)/login');
+        setLoadingState('skipping');
+        try {
+            await setOnboardingComplete();
+            router.replace('/(auth)/login');
+        } catch (error) {
+            console.error('Error saving onboarding status:', error);
+            setLoadingState('idle');
+        }
     };
 
     const handleGetStarted = async () => {
-        await setOnboardingComplete();
-        router.replace('/(auth)/login');
+        setLoadingState('completing');
+        try {
+            await setOnboardingComplete();
+            router.replace('/(auth)/login');
+        } catch (error) {
+            console.error('Error saving onboarding status:', error);
+            setLoadingState('idle');
+        }
     };
 
     const renderSlide = ({ item }: { item: OnboardingSlide }) => {
@@ -114,8 +128,17 @@ export default function OnboardingScreen() {
     return (
         <View style={styles.container}>
             {/* Skip Button */}
-            <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-                <Text style={styles.skipText}>Skip</Text>
+            {/* Skip Button */}
+            <TouchableOpacity
+                style={styles.skipButton}
+                onPress={handleSkip}
+                disabled={loadingState !== 'idle'}
+            >
+                {loadingState === 'skipping' ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                    <Text style={[styles.skipText, loadingState !== 'idle' && { opacity: 0.5 }]}>Skip</Text>
+                )}
             </TouchableOpacity>
 
             {/* Slides */}
@@ -148,12 +171,17 @@ export default function OnboardingScreen() {
             {/* Next / Get Started Button */}
             <View style={styles.footer}>
                 <TouchableOpacity
-                    style={styles.nextButton}
+                    style={[styles.nextButton, loadingState !== 'idle' && { opacity: 0.8 }]}
                     onPress={handleNext}
+                    disabled={loadingState !== 'idle'}
                 >
-                    <Text style={styles.nextButtonText}>
-                        {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
-                    </Text>
+                    {loadingState === 'completing' ? (
+                        <ActivityIndicator size="small" color="#000" />
+                    ) : (
+                        <Text style={styles.nextButtonText}>
+                            {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
+                        </Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>

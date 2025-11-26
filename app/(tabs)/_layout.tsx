@@ -3,21 +3,25 @@ import { Fish, Grid3x3, Plus, User } from 'lucide-react-native';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TAB_CONFIG, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import { TabBarProvider, useTabBar } from '@/contexts/TabBarContext';
 
-export default function TabLayout() {
+function TabsContent() {
   const insets = useSafeAreaInsets();
+  const { isTabBarVisible } = useTabBar();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: [
-          styles.tabBar,
-          {
-            height: DIMENSIONS.TAB_BAR_HEIGHT + insets.bottom - 12,
-            paddingBottom: insets.bottom,
-          },
-        ],
+        tabBarStyle: isTabBarVisible
+          ? [
+            styles.tabBar,
+            {
+              height: DIMENSIONS.TAB_BAR_HEIGHT + insets.bottom - 12,
+              paddingBottom: insets.bottom,
+            },
+          ]
+          : { display: 'none' },
         tabBarActiveTintColor: COLORS.PRIMARY,
         tabBarInactiveTintColor: COLORS.TEXT_DISABLED,
         tabBarShowLabel: true,
@@ -56,6 +60,14 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+  );
+}
+
+export default function TabLayout() {
+  return (
+    <TabBarProvider>
+      <TabsContent />
+    </TabBarProvider>
   );
 }
 

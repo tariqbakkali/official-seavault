@@ -19,6 +19,7 @@ import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
 import NetInfo from '@react-native-community/netinfo';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 interface CategoryWithStats extends Category {
   seen: number;
@@ -32,7 +33,7 @@ export default function CategoriesTab() {
   const [loading, setLoading] = React.useState(true);
   const [isOffline, setIsOffline] = React.useState(false);
   const insets = useSafeAreaInsets();
-  
+
   const { categories: allCategories, creatures: allCreatures, currentUserSightings: allSightings, wishlists: allWishlists, profile: userProfile, userAchievements: allUserAchievements } = useSyncedData();
 
   const loadData = React.useCallback(() => {
@@ -41,14 +42,14 @@ export default function CategoriesTab() {
       NetInfo.fetch().then(state => {
         setIsOffline(!state.isConnected);
       });
-      
+
       // Extract data from observables properly
       const categoriesArray = allCategories ? Object.values(allCategories) : [];
       const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
       const sightingsArray = allSightings ? Object.values(allSightings) : [];
       const wishlistsArray = allWishlists ? Object.values(allWishlists) : [];
       const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
-      
+
       if (categoriesArray.length > 0) {
         // Create mock userData object to match the expected format
         const userData = {
@@ -56,25 +57,25 @@ export default function CategoriesTab() {
           wishlists: wishlistsArray,
           profile: profileData
         };
-        
+
         // Create mock catalog object to match the expected format
         const catalog = {
           creatures: creaturesArray as any[],
           categories: categoriesArray as any[],
           achievements: [] // We don't have achievements in observables
         };
-        
+
         let categoriesWithStats: CategoryWithStats[] = categoriesArray.map((category: any) => ({
           ...category,
           seen: 0,
           total: 0,
           completion: 0
         }));
-        
+
         // If we have user data, calculate stats
         if (userData && catalog) {
           const stats = calculateUserStats(userData, catalog);
-          
+
           // Map categories with their stats
           categoriesWithStats = categoriesArray.map((category: any) => {
             const categoryStat = stats.categoryStats[category.id] || {
@@ -82,7 +83,7 @@ export default function CategoriesTab() {
               total: 0,
               completion: 0
             };
-            
+
             return {
               ...category,
               seen: categoryStat.seen,
@@ -91,7 +92,7 @@ export default function CategoriesTab() {
             };
           });
         }
-        
+
         setCategories(categoriesWithStats);
       }
     } catch (error) {
@@ -152,7 +153,7 @@ export default function CategoriesTab() {
 
   const filteredCategories = React.useMemo(() => {
     if (!searchQuery) return categories;
-    return categories.filter(c => 
+    return categories.filter(c =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [categories, searchQuery]);
@@ -185,20 +186,12 @@ export default function CategoriesTab() {
   );
 
   if (loading) {
-    return (
-      <View style={[styles.container, { 
-        paddingTop: insets.top, 
-        paddingLeft: insets.left,
-        paddingRight: insets.right
-      }]}>
-        <ScreenHeader title="Categories" />
-      </View>
-    );
+    return <LoadingScreen variant="fullscreen" />;
   }
 
   return (
-    <View style={[styles.container, { 
-      paddingTop: insets.top, 
+    <View style={[styles.container, {
+      paddingTop: insets.top,
       paddingLeft: insets.left,
       paddingRight: insets.right
     }]}>

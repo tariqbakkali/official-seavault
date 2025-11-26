@@ -5,12 +5,12 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
   ScrollView,
   Linking,
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
+import SharkAnimation from '@/components/ui/SharkAnimation';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/services/supabase';
 import { showAlert } from '@/utils/alertUtils';
@@ -33,7 +33,7 @@ export default function ResetPasswordScreen() {
   // Function to parse URL and set up session
   const parseUrlAndSetupSession = async (url: string) => {
     try {
-      
+
       // Check if URL contains fragment parameters
       if (url && url.includes('#')) {
         // Parse fragment parameters
@@ -43,19 +43,19 @@ export default function ResetPasswordScreen() {
           const accessToken = fragmentParams.get('access_token');
           const refreshToken = fragmentParams.get('refresh_token');
           const type = fragmentParams.get('type');
-          
-         
-          
+
+
+
           // Check if we have the necessary parameters for a recovery session
           if (type === 'recovery' && accessToken) {
-            
+
             // Set the session manually
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken || '', // refresh_token might be optional
             });
-            
-            
+
+
             if (error) {
               console.error('Session setup error:', error);
               return false;
@@ -77,28 +77,28 @@ export default function ResetPasswordScreen() {
   React.useEffect(() => {
     const checkResetCapability = async () => {
       try {
-        
+
         // Try to get the current URL
         let urlSetupSuccess = false;
-        
+
         try {
           const url = await Linking.getInitialURL();
-          
+
           if (url) {
             urlSetupSuccess = await parseUrlAndSetupSession(url);
           } else {
           }
         } catch (urlError) {
         }
-        
+
         // If URL parsing didn't work, check if we have a valid session
         if (!urlSetupSuccess) {
           const { data: { session }, error } = await supabase.auth.getSession();
-          
+
           if (error) {
             console.error('Session check error:', error);
           } else {
-            
+
             // If we have a session with a user, we can reset the password
             if (session && session.user) {
               setCanResetPassword(true);
@@ -115,9 +115,9 @@ export default function ResetPasswordScreen() {
         setCheckingReset(false);
       }
     };
-    
+
     checkResetCapability();
-    
+
     // Also listen for URL events while this component is mounted
     const urlSubscription = Linking.addEventListener('url', async (event) => {
       const success = await parseUrlAndSetupSession(event.url);
@@ -126,7 +126,7 @@ export default function ResetPasswordScreen() {
         setCheckingReset(false);
       }
     });
-    
+
     return () => {
       urlSubscription.remove();
     };
@@ -176,9 +176,9 @@ export default function ResetPasswordScreen() {
       const { error } = await supabase.auth.updateUser({
         password: password
       });
-      
+
       if (error) throw error;
-      
+
       showAlert(
         'Success',
         'Password updated successfully!',
@@ -198,8 +198,8 @@ export default function ResetPasswordScreen() {
   // Show loading state while checking
   if (checkingReset) {
     return (
-      <View style={[styles.container, { 
-        paddingTop: insets.top, 
+      <View style={[styles.container, {
+        paddingTop: insets.top,
         paddingBottom: insets.bottom,
         paddingLeft: insets.left,
         paddingRight: insets.right
@@ -207,7 +207,7 @@ export default function ResetPasswordScreen() {
         <View style={styles.centeredContent}>
           <Text style={styles.title}>{APP_CONFIG.NAME}</Text>
           <Text style={styles.subtitle}>Preparing Password Reset</Text>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <SharkAnimation size={100} color={COLORS.PRIMARY} />
           <Text style={styles.message}>
             Please wait while we prepare your password reset...
           </Text>
@@ -219,8 +219,8 @@ export default function ResetPasswordScreen() {
   // Show a message if we can't reset the password and don't have a token
   if (!canResetPassword) {
     return (
-      <View style={[styles.container, { 
-        paddingTop: insets.top, 
+      <View style={[styles.container, {
+        paddingTop: insets.top,
         paddingBottom: insets.bottom,
         paddingLeft: insets.left,
         paddingRight: insets.right
@@ -243,13 +243,13 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <View style={[styles.container, { 
-      paddingTop: insets.top, 
+    <View style={[styles.container, {
+      paddingTop: insets.top,
       paddingBottom: insets.bottom,
       paddingLeft: insets.left,
       paddingRight: insets.right
     }]}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -270,7 +270,7 @@ export default function ResetPasswordScreen() {
               autoCorrect={false}
               editable={!loading}
             />
-            
+
             <PasswordStrengthIndicator password={password} passwordStrength={passwordStrength} />
 
             <Text style={styles.label}>Confirm New Password</Text>
@@ -292,7 +292,7 @@ export default function ResetPasswordScreen() {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" />
+                <SharkAnimation size={24} color="#fff" />
               ) : (
                 <Text style={styles.buttonText}>Reset Password</Text>
               )}

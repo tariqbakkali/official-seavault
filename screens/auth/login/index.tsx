@@ -7,10 +7,11 @@ import {
   TouchableOpacity,
   Platform,
   KeyboardAvoidingView,
-  ActivityIndicator,
   ScrollView,
   Animated,
+  Image,
 } from 'react-native';
+import SharkAnimation from '@/components/ui/SharkAnimation';
 import * as WebBrowser from 'expo-web-browser';
 // import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 // import * as AppleAuthentication from 'expo-apple-authentication';
@@ -475,7 +476,7 @@ export default function LoginScreen() {
                   disabled={loading}
                 >
                   {loading ? (
-                    <ActivityIndicator color="#fff" />
+                    <SharkAnimation size={24} color="#fff" />
                   ) : (
                     <Text style={styles.buttonText}>
                       {isSignUp ? 'Sign Up' : 'Sign In'}
@@ -492,22 +493,32 @@ export default function LoginScreen() {
 
                 {/* Social Login Buttons */}
                 <View style={styles.socialButtonsContainer}>
+                  {/* Google Sign-In Button - Official Branding */}
                   <TouchableOpacity
-                    style={styles.socialButton}
+                    style={[styles.googleButton, loading && styles.buttonDisabled]}
                     onPress={handleGoogleSignIn}
                     disabled={loading}
+                    activeOpacity={1}
                   >
-                    <Ionicons name="logo-google" size={24} color="#fff" />
-                    <Text style={styles.socialButtonText}>Continue with Google</Text>
+                    <Image
+                      source={{
+                        uri: 'https://developers.google.com/identity/images/g-logo.png',
+                      }}
+                      style={styles.googleLogo}
+                      resizeMode="contain"
+                    />
+                    <Text style={styles.googleButtonText}>Continue with Google</Text>
                   </TouchableOpacity>
 
+                  {/* Apple Sign-In Button - Official Branding */}
                   <TouchableOpacity
-                    style={styles.socialButton}
+                    style={[styles.appleButton, loading && styles.buttonDisabled]}
                     onPress={handleAppleSignIn}
                     disabled={loading}
+                    activeOpacity={0.8}
                   >
-                    <Ionicons name="logo-apple" size={24} color="#fff" />
-                    <Text style={styles.socialButtonText}>Continue with Apple</Text>
+                    <Ionicons name="logo-apple" size={20} color="#fff" />
+                    <Text style={styles.appleButtonText}>Continue with Apple</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -637,19 +648,53 @@ const styles = StyleSheet.create({
   socialButtonsContainer: {
     gap: DIMENSIONS.SPACE_MD,
   },
-  socialButton: {
+  // Google Sign-In Button - Official Style
+  googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#333',
+    backgroundColor: '#fff',
     borderRadius: DIMENSIONS.RADIUS_MD,
-    padding: DIMENSIONS.PADDING_MD,
-    gap: DIMENSIONS.SPACE_MD,
+    paddingVertical: DIMENSIONS.PADDING_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    borderWidth: 1,
+    borderColor: '#dadce0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  socialButtonText: {
+  googleLogo: {
+    width: 20,
+    height: 20,
+    marginRight: DIMENSIONS.SPACE_MD,
+    backgroundColor: 'transparent',
+  },
+  googleButtonText: {
+    color: '#3c4043',
+    fontSize: TYPOGRAPHY.SIZE_MD,
+    fontWeight: '500',
+    letterSpacing: 0.25,
+  },
+  // Apple Sign-In Button - Official Style
+  appleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000',
+    borderRadius: DIMENSIONS.RADIUS_MD,
+    paddingVertical: DIMENSIONS.PADDING_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    borderWidth: 1,
+    borderColor: '#000',
+  },
+  appleButtonText: {
     color: '#fff',
     fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: '600',
+    marginLeft: DIMENSIONS.SPACE_SM,
+    letterSpacing: 0.25,
   },
   switchButton: {
     alignItems: 'center',

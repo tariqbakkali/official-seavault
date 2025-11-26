@@ -19,7 +19,7 @@ import { supabase } from '@/services/supabase';
 import StatsSection from './components/StatsSection';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll, clearUserSync } from '@/utils/syncUtils';
-import LoadingState from '@/components/LoadingState';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -34,52 +34,57 @@ export default function ProfileScreen() {
   const [userStats, setUserStats] = React.useState<any>(null);
   const [achievementsWithStatus, setAchievementsWithStatus] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [signingOut, setSigningOut] = React.useState(false); // <-- NEW STATE
+
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const { creatures: allCreatures, categories: allCategories, currentUserSightings: allSightings, wishlists: allWishlists, profile: userProfile, achievements: allAchievements, userAchievements: allUserAchievements, creatures: allCreaturesData } = useSyncedData();
+  const {
+    creatures: allCreatures,
+    categories: allCategories,
+    currentUserSightings: allSightings,
+    wishlists: allWishlists,
+    profile: userProfile,
+    achievements: allAchievements,
+    userAchievements: allUserAchievements,
+    creatures: allCreaturesData
+  } = useSyncedData();
 
   const loadData = React.useCallback(() => {
     try {
       setLoading(true);
-      // Extract data from observables
+
       const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
       const categoriesArray = allCategories ? Object.values(allCategories) : [];
       const sightingsArray = allSightings ? Object.values(allSightings) : [];
       const wishlistsArray = allWishlists ? Object.values(allWishlists) : [];
       const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
 
-
-      // Create mock userData object to match the expected format
       const userData = {
         sightings: sightingsArray,
         wishlists: wishlistsArray,
         profile: profileData
       };
 
-      // Create mock catalog object to match the expected format
       const catalog = {
-        creatures: creaturesArray as any[],
-        categories: categoriesArray as any[],
+        creatures: creaturesArray,
+        categories: categoriesArray,
         achievements: allAchievements ? Object.values(allAchievements) : []
       };
 
-      // Get user achievements
       const userAchievementsArray = allUserAchievements ? Object.values(allUserAchievements) : [];
 
-      // Only calculate stats when we have the necessary data
       if (creaturesArray.length > 0 && categoriesArray.length > 0) {
-        if (userData && catalog) {
-          const stats = calculateUserStats(userData, catalog, userAchievementsArray, allCreaturesData ? Object.values(allCreaturesData) : []);
-          setUserStats(stats);
-        }
+        const stats = calculateUserStats(
+          userData,
+          catalog,
+          userAchievementsArray,
+          allCreaturesData ? Object.values(allCreaturesData) : []
+        );
+        setUserStats(stats);
       }
 
-      // Calculate achievements with status (this block is for the achievements list, not the stats summary)
-      // This part of the code is redundant for the profile screen's stats summary
-      // and should be removed or refactored if not used elsewhere in this component.
-      // For now, we will keep it as is, but it does not affect the stats summary.
-      const unlockedAchievementIds = new Set(userAchievementsArray.map((ua: any) => ua.achievement_id));
+      const unlockedIds = new Set(userAchievementsArray.map((i: any) => i.achievement_id));
       const uniqueCreatures = new Set(sightingsArray.map((s: any) => s.creature_id)).size;
 
       const achievementsWithStatus = (allAchievements ? Object.values(allAchievements) : [])
@@ -95,7 +100,7 @@ export default function ProfileScreen() {
 
           return {
             ...achievement,
-            unlocked: unlockedAchievementIds.has(achievement.id),
+            unlocked: unlockedIds.has(achievement.id),
             progress,
             total
           };
@@ -107,9 +112,16 @@ export default function ProfileScreen() {
     } finally {
       setLoading(false);
     }
-  }, [allCreatures, allCategories, allSightings, allWishlists, userProfile, allAchievements, allUserAchievements]);
+  }, [
+    allCreatures,
+    allCategories,
+    allSightings,
+    allWishlists,
+    userProfile,
+    allAchievements,
+    allUserAchievements
+  ]);
 
-  // Refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       loadData();
@@ -131,6 +143,7 @@ export default function ProfileScreen() {
     loadData();
   }, [loadData]);
 
+  // ⛔ SIGNOUT WITH LOADING
   const handleSignOut = () => {
     Alert.alert(
       'Sign Out',
@@ -142,25 +155,28 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Clear user data from Legend State before signing out
+              setSigningOut(true);
+
+              // Clear local data
               clearUserSync();
 
+              // Sign out - this will trigger onAuthStateChange which handles navigation
               await supabase.auth.signOut();
-              clearUserSync(); // Clear user sync data on logout
-              router.replace(ROUTES.AUTH.LOGIN);
+
+              // No need to call router.replace - auth state change will handle it
+              // No need to reset signingOut - component will unmount
             } catch (error) {
               console.error('Error signing out:', error);
               Alert.alert('Error', 'Failed to sign out. Please try again.');
+              setSigningOut(false);
             }
-          }
+          },
         },
       ]
     );
   };
 
-  // Extract profile data safely
   const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
-
   const totalCount = allAchievements ? Object.values(allAchievements).length : 0;
 
   const menuItems: MenuItem[] = [
@@ -179,7 +195,7 @@ export default function ProfileScreen() {
     },
   ];
 
-  // Show loading state while data is being fetched
+  // SCREEN LOADING (initial data load)
   if (loading) {
     return (
       <View style={[styles.container, {
@@ -188,11 +204,26 @@ export default function ProfileScreen() {
         paddingRight: insets.right
       }]}>
         <ScreenHeader title="Profile" />
-        <LoadingState message="Loading profile data..." />
+        <LoadingScreen message="Loading profile data..." />
       </View>
     );
   }
 
+  // LOGOUT LOADING SCREEN
+  if (signingOut) {
+    return (
+      <View style={[styles.container, {
+        paddingTop: insets.top,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }]}>
+
+        <LoadingScreen message="Signing out..." />
+      </View>
+    );
+  }
+
+  // MAIN SCREEN
   return (
     <View style={[styles.container, {
       paddingTop: insets.top,
@@ -200,6 +231,7 @@ export default function ProfileScreen() {
       paddingRight: insets.right
     }]}>
       <ScreenHeader title="Profile" />
+
       <ScrollView
         style={styles.scrollView}
         refreshControl={
@@ -209,12 +241,8 @@ export default function ProfileScreen() {
             tintColor="#007AFF"
           />
         }
-        // Allow maps to handle gestures by not intercepting them
-        onStartShouldSetResponderCapture={() => false}
-        onMoveShouldSetResponderCapture={() => false}
-        onResponderTerminationRequest={() => false}
       >
-        {/* Profile Header */}
+        {/* HEADER */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <ImageWithFallback
@@ -223,13 +251,14 @@ export default function ProfileScreen() {
               fallbackColor="#333"
             />
           </View>
+
           <Text style={styles.name}>
             {profileData?.full_name || 'User'}
           </Text>
           <Text style={styles.email}>{profileData?.email}</Text>
         </View>
 
-        {/* Stats Section */}
+        {/* STATS */}
         <StatsSection
           uniqueCreatures={userStats?.uniqueCreatures || 0}
           totalPoints={userStats?.totalPoints || 0}
@@ -237,7 +266,7 @@ export default function ProfileScreen() {
           totalAchievements={totalCount}
         />
 
-        {/* Menu Items */}
+        {/* MENU */}
         <View style={styles.menuSection}>
           {menuItems.map((item, index) => (
             <TouchableOpacity
@@ -252,6 +281,7 @@ export default function ProfileScreen() {
                   <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
                 </View>
               </View>
+
               {item.chevron && (
                 <Text style={styles.chevron}>›</Text>
               )}
@@ -264,13 +294,8 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  scrollView: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: '#000' },
+  scrollView: { flex: 1 },
   header: {
     alignItems: 'center',
     paddingVertical: DIMENSIONS.PADDING_XL,
@@ -285,21 +310,14 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#333',
   },
-  avatar: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
+  avatar: { width: '100%', height: '100%', resizeMode: 'cover' },
   name: {
     fontSize: TYPOGRAPHY.SIZE_XXXL,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: DIMENSIONS.MARGIN_XS,
   },
-  email: {
-    fontSize: TYPOGRAPHY.SIZE_LG,
-    color: '#666',
-  },
+  email: { fontSize: TYPOGRAPHY.SIZE_LG, color: '#666' },
   menuSection: {
     backgroundColor: '#1a1a1a',
     borderRadius: 16,
@@ -315,23 +333,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
-  menuItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: DIMENSIONS.GAP_LG,
-  },
-  menuItemTitle: {
-    fontSize: TYPOGRAPHY.SIZE_XL,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  menuItemSubtitle: {
-    fontSize: TYPOGRAPHY.SIZE_MD,
-    color: '#666',
-    marginTop: DIMENSIONS.MARGIN_XS / 2,
-  },
-  chevron: {
-    fontSize: TYPOGRAPHY.SIZE_XXXL,
-    color: '#666',
-  },
+  menuItemLeft: { flexDirection: 'row', alignItems: 'center', gap: DIMENSIONS.GAP_LG },
+  menuItemTitle: { fontSize: TYPOGRAPHY.SIZE_XL, color: '#fff', fontWeight: '600' },
+  menuItemSubtitle: { fontSize: TYPOGRAPHY.SIZE_MD, color: '#666' },
+  chevron: { fontSize: TYPOGRAPHY.SIZE_XXXL, color: '#666' },
 });

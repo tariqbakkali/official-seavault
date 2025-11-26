@@ -9,7 +9,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { supabase } from '@/services/supabase';
-import { DIMENSIONS } from '@/constants';
+import { COLORS, DIMENSIONS } from '@/constants';
 import * as Sentry from '@sentry/react-native';
 import { setCurrentUserID } from '@/stores/syncedObservables';
 import { forceSyncAll } from '@/utils/syncUtils';
@@ -81,16 +81,17 @@ export default function RootLayout() {
     // Set up auth state change listener
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       const userId = session?.user?.id || null;
 
       if (userId) {
         await initializeUserSession(userId);
+        await forceSyncAll(); // Only sync when signing in
       } else {
         await cleanupUserSession();
+        // Skip forceSyncAll on sign-out for faster navigation
       }
 
-      await forceSyncAll();
       setCurrentUserID(userId);
       setCurrentUserIDState(userId);
     });
@@ -112,7 +113,7 @@ export default function RootLayout() {
           backgroundColor: '#000',
         }}
       >
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
         <Text style={{ color: '#fff', marginTop: DIMENSIONS.MARGIN_MD }}>Loading...</Text>
       </View>
     );

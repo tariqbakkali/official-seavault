@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
+import { COLORS } from '@/constants';
 import { ArrowLeft } from 'lucide-react-native';
 import { TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
@@ -11,8 +12,8 @@ interface LoadingViewProps {
 
 export const LoadingView: React.FC<LoadingViewProps> = ({ insets }) => {
   return (
-    <View style={[styles.container, { 
-      paddingTop: insets.top, 
+    <View style={[styles.container, {
+      paddingTop: insets.top,
       paddingBottom: insets.bottom,
       paddingLeft: insets.left,
       paddingRight: insets.right
@@ -25,7 +26,7 @@ export const LoadingView: React.FC<LoadingViewProps> = ({ insets }) => {
         <View style={styles.placeholder} />
       </View>
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
         <Text style={styles.loadingText}>Loading profile...</Text>
       </View>
     </View>

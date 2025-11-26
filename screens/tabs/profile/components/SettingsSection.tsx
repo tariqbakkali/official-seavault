@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { COLORS } from '@/constants';
 import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 
 interface SettingsSectionProps {
@@ -13,33 +14,33 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({ onDownloadCatalog, on
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Settings</Text>
-      
+
       <TouchableOpacity style={styles.settingItem} onPress={onDownloadCatalog} disabled={loading}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#007AFF" />
+            <ActivityIndicator size="small" color={COLORS.PRIMARY} />
             <Text style={styles.settingText}>Downloading...</Text>
           </View>
         ) : (
           <Text style={styles.settingText}>Download Latest Catalog</Text>
         )}
       </TouchableOpacity>
-      
+
       <TouchableOpacity style={styles.settingItem} onPress={onForceSync} disabled={loading}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#007AFF" />
+            <ActivityIndicator size="small" color={COLORS.PRIMARY} />
             <Text style={styles.settingText}>Syncing...</Text>
           </View>
         ) : (
           <Text style={styles.settingText}>Force Sync</Text>
         )}
       </TouchableOpacity>
-      
+
       <TouchableOpacity style={styles.settingItem} onPress={onSignOut} disabled={loading}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#007AFF" />
+            <ActivityIndicator size="small" color={COLORS.PRIMARY} />
             <Text style={[styles.settingText, styles.signOutText]}>Processing...</Text>
           </View>
         ) : (
