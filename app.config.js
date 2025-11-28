@@ -36,12 +36,6 @@ export default ({ config }) => {
         backgroundColor: '#1B87E1',
       },
       package: 'com.seavault.app',
-      edgeToEdgeEnabled: true,
-      navigationBar: {
-        visible: false,
-        barStyle: 'dark-content',
-        backgroundColor: '#00000000', // Transparent
-      },
       permissions: [
         'android.permission.ACCESS_FINE_LOCATION',
         'android.permission.ACCESS_COARSE_LOCATION',
