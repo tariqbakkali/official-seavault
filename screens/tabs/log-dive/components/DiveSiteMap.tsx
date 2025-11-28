@@ -1,17 +1,17 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
-import { GoogleMaps, AppleMaps } from 'expo-maps';
-import CustomClusteredMapView from '@/components/CustomClusteredMapView';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import MapboxClusteredMapView from '@/components/MapboxClusteredMapView';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { Database } from '@/types/database';
+import { optimizeMarkerData, convertToGeoJSON } from '@/utils/mapOptimization';
 
 interface DiveSiteMapProps {
   diveSites: Database['public']['Tables']['dive_sites']['Row'][] | null;
   selectedDiveSiteId: string | null;
   onDeselectDiveSite: () => void;
   onDiveSiteSelect: (siteId: string) => void;
-  onMapGestureBegin?: () => void; // Add gesture control props
-  onMapGestureEnd?: () => void;   // Add gesture control props
+  onMapGestureBegin?: () => void;
+  onMapGestureEnd?: () => void;
 }
 
 const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
@@ -23,8 +23,12 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
   onMapGestureEnd,
 }) => {
   const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Cleanup timeout on unmount
+
+  console.log('[DiveSiteMap] Rendering with:', {
+    diveSitesCount: diveSites?.length,
+    selectedDiveSiteId
+  });
+
   useEffect(() => {
     return () => {
       if (gestureTimeoutRef.current) {
@@ -32,74 +36,86 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
       }
     };
   }, []);
-  
-  // Function to safely end gestures
+
   const endGesture = () => {
-    // Clear any existing timeout
     if (gestureTimeoutRef.current) {
       clearTimeout(gestureTimeoutRef.current);
     }
-    
-    // Set a timeout to ensure the gesture ends
     gestureTimeoutRef.current = setTimeout(() => {
       if (onMapGestureEnd) {
         onMapGestureEnd();
       }
-    }, 100); // Small delay to ensure proper cleanup
+    }, 100);
   };
+
+  // Optimize marker data for performance
+  const optimizedMarkers = useMemo(() => {
+    if (!diveSites || diveSites.length === 0) return [];
+    return optimizeMarkerData(diveSites);
+  }, [diveSites]);
+
+  // Calculate marker counts
+  const totalMarkers = optimizedMarkers.length;
 
   // Helper function to calculate initial region focused on area with most dive sites
   const calculateInitialRegionForDenseArea = (sites: any[]) => {
     if (sites.length === 0) {
+      return {
+        latitude: 54,
+        longitude: 15,
+        latitudeDelta: 40,
+        longitudeDelta: 40,
+      };
+    }
+
+    if (sites.length === 1) {
+      return {
+        latitude: sites[0].geometry.coordinates[1],
+        longitude: sites[0].geometry.coordinates[0],
+        latitudeDelta: 10,
+        longitudeDelta: 10,
+      };
+    }
+
+    let minLat = 90;
+    let maxLat = -90;
+    let minLng = 180;
+    let maxLng = -180;
+
+    for (const site of sites) {
+      const lat = site.geometry.coordinates[1];
+      const lng = site.geometry.coordinates[0];
+
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+    }
+
+    const latDelta = (maxLat - minLat) * 1.2; // 20% padding
+    const lngDelta = (maxLng - minLng) * 1.2; // 20% padding
+
     return {
-      latitude: 54,
-      longitude: 15,
-      latitudeDelta: 40,
-      longitudeDelta: 40,
+      latitude: (maxLat + minLat) / 2,
+      longitude: (maxLng + minLng) / 2,
+      latitudeDelta: latDelta,
+      longitudeDelta: lngDelta,
     };
-  }
-
-  if (sites.length === 1) {
-    return {
-      latitude: sites[0].geometry.coordinates[1],
-      longitude: sites[0].geometry.coordinates[0],
-      latitudeDelta: 10,
-      longitudeDelta: 10,
-    };
-  }
-
-  let minLat = 90;
-  let maxLat = -90;
-  let minLng = 180;
-  let maxLng = -180;
-
-  for (const site of sites) {
-    const lat = site.geometry.coordinates[1];
-    const lng = site.geometry.coordinates[0];
-
-    if (lat < minLat) minLat = lat;
-    if (lat > maxLat) maxLat = lat;
-    if (lng < minLng) minLng = lng;
-    if (lng > maxLng) maxLng = lng;
-  }
-
-  const latDelta = (maxLat - minLat) * 1.2; // 20% padding
-  const lngDelta = (maxLng - minLng) * 1.2; // 20% padding
-
-  return {
-    latitude: (maxLat + minLat) / 2,
-    longitude: (maxLng + minLng) / 2,
-    latitudeDelta: latDelta,
-    longitudeDelta: lngDelta,
-  };
   };
 
   return (
     <View style={styles.mapCard}>
       <View style={styles.mapHeader}>
-        <Text style={styles.mapTitle}>Dive Site Location</Text>
+        <View>
+          <Text style={styles.mapTitle}>Dive Site Location</Text>
+          {totalMarkers > 0 && (
+            <Text style={styles.markerCount}>
+              {totalMarkers} site{totalMarkers !== 1 ? 's' : ''}
+            </Text>
+          )}
+        </View>
         {selectedDiveSiteId && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.deselectButton}
             onPress={onDeselectDiveSite}
           >
@@ -107,28 +123,22 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
           </TouchableOpacity>
         )}
       </View>
-      
-      <View 
+
+      <View
         style={styles.mapContainer}
-        // These handlers will help us detect when the user is interacting with the map
         onStartShouldSetResponder={() => {
-          // Notify parent that map interaction has started
           if (onMapGestureBegin) {
             onMapGestureBegin();
           }
-          return false; // Don't capture the responder, just notify
+          return false;
         }}
         onResponderRelease={() => {
-          // End gesture safely
           endGesture();
         }}
         onResponderTerminate={() => {
-          // End gesture safely
           endGesture();
         }}
-        // Add additional handlers to ensure cleanup
         onTouchEnd={() => {
-          // End gesture safely
           endGesture();
         }}
       >
@@ -136,34 +146,24 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
           (() => {
             const selectedSite = diveSites?.find(site => site.id === selectedDiveSiteId);
             if (selectedSite && selectedSite.latitude && selectedSite.longitude) {
-              // Convert initial region to camera position
-              const cameraPosition = {
-                coordinates: {
-                  latitude: selectedSite.latitude,
-                  longitude: selectedSite.longitude,
-                },
-                zoom: 15, // Zoom in for a single site
+              const initialRegion = {
+                latitude: selectedSite.latitude,
+                longitude: selectedSite.longitude,
+                latitudeDelta: 0.05,
+                longitudeDelta: 0.05,
               };
-              
-              // Platform-specific map view
-              const MapView = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
-              
-              // Create marker
-              const markers = [{
-                id: selectedSite.id,
-                coordinates: { 
-                  latitude: selectedSite.latitude, 
-                  longitude: selectedSite.longitude 
-                },
-                title: selectedSite.name,
-              }];
-              
+
               return (
-                <MapView
+                <MapboxClusteredMapView
                   style={styles.map}
-                  cameraPosition={cameraPosition}
-                  markers={markers}
-                  onMarkerClick={() => onDiveSiteSelect(selectedSite.id)}
+                  data={[]} // No markers when selected, or just the selected one
+                  initialRegion={initialRegion}
+                  selectedCoordinate={{
+                    latitude: selectedSite.latitude,
+                    longitude: selectedSite.longitude
+                  }}
+                  clusteringEnabled={false}
+                  onPress={() => onDiveSiteSelect(selectedSite.id)}
                 />
               );
             } else {
@@ -178,66 +178,19 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
           })()
         ) : diveSites && diveSites.length > 0 ? (
           (() => {
-            // Prepare data for clustering - SuperCluster expects GeoJSON format
-            // Filter out sites without valid coordinates
-            const validSites = diveSites
-              .filter(site => site.latitude !== null && site.longitude !== null && 
-                             site.latitude !== undefined && site.longitude !== undefined)
-              .map(site => ({
-                type: 'Feature',
-                id: site.id,
-                properties: {
-                  id: site.id,
-                  name: site.name,
-                },
-                geometry: {
-                  type: 'Point',
-                  coordinates: [site.longitude, site.latitude], // [longitude, latitude]
-                },
-              }));
-
-            // Calculate initial region focused on Netherlands shores
+            const validSites = convertToGeoJSON(optimizedMarkers);
             const initialRegion = calculateInitialRegionForDenseArea(validSites);
 
-            // Render function for individual markers
-            const renderMarker = (data: any) => {
-              // Add safety checks for marker data
-              if (!data || !data.geometry || !data.geometry.coordinates || 
-                  !Array.isArray(data.geometry.coordinates) || 
-                  data.geometry.coordinates.length < 2) {
-                return null;
-              }
-              
-              const latitude = data.geometry.coordinates[1];
-              const longitude = data.geometry.coordinates[0];
-              
-              // Validate coordinates
-              if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-                return null;
-              }
-              
-              // Create marker data
-              const markerData = {
-                id: data.properties.id,
-                title: data.properties.name,
-                coordinates: { latitude, longitude },
-                onPress: () => onDiveSiteSelect(data.properties.id),
-              };
-              
-              return markerData;
-            };
-
             return (
-              <CustomClusteredMapView
+              <MapboxClusteredMapView
                 style={styles.map}
                 data={validSites}
                 initialRegion={initialRegion}
-                renderMarker={renderMarker}
-                clusteringEnabled={false}
+                clusteringEnabled={true}
                 onPress={(event: any) => {
                   if (event.nativeEvent && event.nativeEvent.id) {
-      onDiveSiteSelect(event.nativeEvent.id);
-    }
+                    onDiveSiteSelect(event.nativeEvent.id);
+                  }
                 }}
                 onMapGestureBegin={onMapGestureBegin}
                 onMapGestureEnd={onMapGestureEnd}
@@ -280,6 +233,11 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_MD,
     fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
     color: COLORS.TEXT_PRIMARY,
+  },
+  markerCount: {
+    fontSize: TYPOGRAPHY.SIZE_SM,
+    color: COLORS.TEXT_SECONDARY,
+    marginTop: DIMENSIONS.SPACE_XS,
   },
   deselectButton: {
     backgroundColor: COLORS.ERROR,

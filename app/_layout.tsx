@@ -22,6 +22,12 @@ import 'react-native-get-random-values';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { hasCompletedOnboarding } from '@/utils/onboardingStorage';
+import * as NavigationBar from 'expo-navigation-bar';
+import Mapbox from '@rnmapbox/maps';
+import Constants from 'expo-constants';
+
+// Initialize Mapbox
+Mapbox.setAccessToken(Constants.expoConfig?.extra?.MAPBOX_ACCESS_TOKEN || process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || '');
 
 // Initialize Sentry
 Sentry.init({
@@ -46,6 +52,19 @@ export default function RootLayout() {
       try {
         // Initialize the app using the app initializer
         await initializeApp();
+
+        // Hide Android navigation bar after 3 seconds
+        if (Platform.OS === 'android') {
+          setTimeout(async () => {
+            try {
+              await NavigationBar.setVisibilityAsync('hidden');
+              await NavigationBar.setBehaviorAsync('overlay-swipe');
+              await NavigationBar.setBackgroundColorAsync('#00000000'); // Transparent
+            } catch (error) {
+              console.log('Navigation bar hide error:', error);
+            }
+          }, 3000); // 3 second delay
+        }
 
         // Check if user has completed onboarding
         const onboardingCompleted = await hasCompletedOnboarding();

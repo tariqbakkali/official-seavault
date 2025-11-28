@@ -1,9 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
-import { GoogleMaps, AppleMaps } from 'expo-maps';
 import * as Location from 'expo-location';
-import CustomClusteredMapView, { CustomClusteredMapViewRef } from '@/components/CustomClusteredMapView';
+import MapboxClusteredMapView, { MapboxClusteredMapViewRef } from '@/components/MapboxClusteredMapView';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { Database } from '@/types/database';
 import CountryFlag from '@/components/CountryFlag';
@@ -26,7 +25,7 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
   onMapGestureBegin,
   onMapGestureEnd,
 }) => {
-  const mapRef = useRef<CustomClusteredMapViewRef>(null);
+  const mapRef = useRef<MapboxClusteredMapViewRef>(null);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -157,9 +156,6 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
     }
   };
 
-  // Platform-specific map view component
-  const MapView = Platform.OS === 'android' ? GoogleMaps.View : AppleMaps.View;
-
   const renderMapContent = () => {
     if (mapError) {
       return (
@@ -176,31 +172,25 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
       const selectedSite = diveSites?.find(site => site.id === selectedDiveSiteId);
       if (selectedSite && selectedSite.latitude && selectedSite.longitude) {
         // Convert initial region to camera position
-        const cameraPosition = {
-          coordinates: {
-            latitude: selectedSite.latitude,
-            longitude: selectedSite.longitude,
-          },
-          zoom: 15, // Zoom in for a single site
+        const initialRegion = {
+          latitude: selectedSite.latitude,
+          longitude: selectedSite.longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
         };
 
-        // Create marker
-        const markers = [{
-          id: selectedSite.id,
-          coordinates: {
-            latitude: selectedSite.latitude,
-            longitude: selectedSite.longitude
-          },
-          title: selectedSite.name,
-        }];
-
         return (
-          <MapView
+          <MapboxClusteredMapView
             key={`selected-${mapKey}`}
             style={styles.map}
-            cameraPosition={cameraPosition}
-            markers={markers}
-            onMarkerClick={() => onDiveSiteSelect(selectedSite.id)}
+            data={[]} // Single marker handled by selectedCoordinate
+            initialRegion={initialRegion}
+            selectedCoordinate={{
+              latitude: selectedSite.latitude,
+              longitude: selectedSite.longitude
+            }}
+            clusteringEnabled={false}
+            onPress={() => onDiveSiteSelect(selectedSite.id)}
           />
         );
       } else {
@@ -236,136 +226,20 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
       // Calculate initial region
       const initialRegion = calculateInitialRegionForDenseArea(validSites);
 
-      // Render function for individual markers
-      const renderMarker = (data: any) => {
-        // Add safety checks for marker data
-        if (!data || !data.geometry || !data.geometry.coordinates ||
-          !Array.isArray(data.geometry.coordinates) ||
-          data.geometry.coordinates.length < 2) {
-          return null;
-        }
-
-        const latitude = data.geometry.coordinates[1];
-        const longitude = data.geometry.coordinates[0];
-
-        // Validate coordinates
-        if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-          return null;
-        }
-
-        // Create marker data
-        const markerData = {
-          id: data.properties.id,
-          title: data.properties.name,
-          coordinates: { latitude, longitude },
-          onPress: () => onDiveSiteSelect(data.properties.id),
-        };
-
-        return markerData;
-      };
-
-      // Render function for clusters
-      const renderCluster = (cluster: any, onPress: () => void) => {
-        // Add safety checks for cluster data
-        if (!cluster || !cluster.geometry || !cluster.geometry.coordinates ||
-          !Array.isArray(cluster.geometry.coordinates) ||
-          cluster.geometry.coordinates.length < 2) {
-          return null;
-        }
-
-        const latitude = cluster.geometry.coordinates[1];
-        const longitude = cluster.geometry.coordinates[0];
-
-        // Validate coordinates
-        if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-          return null;
-        }
-
-        const pointCount = cluster && cluster.properties && cluster.properties.point_count ?
-          cluster.properties.point_count : 0;
-
-        // Create marker data for cluster
-        const clusterMarkerData = {
-          id: `cluster-${cluster.properties?.cluster_id || 'unknown'}`,
-          title: `${pointCount} sites`,
-          coordinates: { latitude, longitude },
-          onPress: onPress,
-        };
-
-        return clusterMarkerData;
-      };
-
       return (
-        <CustomClusteredMapView
+        <MapboxClusteredMapView
           key={`clustered-${mapKey}`}
           ref={mapRef}
           style={styles.map}
           data={validSites}
           initialRegion={initialRegion}
-          renderMarker={renderMarker}
-          renderCluster={renderCluster}
           clusteringEnabled={validSites.length > 5} // Only enable clustering if there are more than 5 sites
           userLocation={userLocation}
           showUserLocation={true}
-          onClusterPress={(clusterId: string, children: any[]) => {
-            // When a cluster is pressed, show a selection dialog or zoom in
-            try {
-              if (children && children.length > 0) {
-                // If there's only one site in the cluster, select it directly
-                if (children.length === 1) {
-                  onDiveSiteSelect(children[0].properties.id);
-                }
-                // If there are only a few sites (2-5), show selection dialog
-                else if (children.length <= 5) {
-                  const siteOptions = children.map((child: any) => ({ text: child.properties.name, onPress: () => onDiveSiteSelect(child.properties.id) }));
-
-                  // Show an alert to let the user choose a dive site
-                  Alert.alert(
-                    'Select a Dive Site',
-                    'Multiple dive sites are clustered here. Please choose one:',
-                    [...siteOptions, { text: 'Cancel', style: 'cancel' }]
-                  );
-                }
-                // If there are many sites, zoom in
-                else {
-                  // Calculate bounding box for the children
-                  let minLat = 90;
-                  let maxLat = -90;
-                  let minLng = 180;
-                  let maxLng = -180;
-
-                  children.forEach(child => {
-                    const lat = child.geometry.coordinates[1];
-                    const lng = child.geometry.coordinates[0];
-                    minLat = Math.min(minLat, lat);
-                    maxLat = Math.max(maxLat, lat);
-                    minLng = Math.min(minLng, lng);
-                    maxLng = Math.max(maxLng, lng);
-                  });
-
-                  const centerLat = (minLat + maxLat) / 2;
-                  const centerLng = (minLng + maxLng) / 2;
-
-                  const latitudeDelta = (maxLat - minLat) * 1.5;
-                  const longitudeDelta = (maxLng - minLng) * 1.5;
-
-                  const newCameraPosition = {
-                    coordinates: {
-                      latitude: centerLat,
-                      longitude: centerLng,
-                    },
-                    // Adjust zoom level based on the delta, or set a default if delta is too small
-                    zoom: Math.max(1, Math.min(15, Math.round(Math.log(360 / (longitudeDelta > 0 ? longitudeDelta : 0.1)) / Math.LN2))),
-                  };
-                  mapRef.current?.setCamera(newCameraPosition);
-                }
-              }
-            } catch (error) {
-              console.warn('Error handling cluster press:', error);
-            }
-          }}
           onPress={(event: any) => {
-            // Map onPress handler - no longer needed as coordinate selection is in AddDiveSiteScreen
+            if (event.nativeEvent && event.nativeEvent.id) {
+              onDiveSiteSelect(event.nativeEvent.id);
+            }
           }}
           onMapGestureBegin={onMapGestureBegin}
           onMapGestureEnd={onMapGestureEnd}

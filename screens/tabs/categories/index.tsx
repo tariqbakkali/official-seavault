@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
+import { Search } from 'lucide-react-native';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
 import { ImageWithFallback } from '@/components';
@@ -203,9 +204,10 @@ export default function CategoriesTab() {
           </View>
         )}
         <View style={styles.searchContainer}>
+          <Search size={20} color={COLORS.TEXT_TERTIARY} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search categories..."
+            placeholder="Search categories & creatures..."
             placeholderTextColor={COLORS.TEXT_TERTIARY}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -303,13 +305,20 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
   },
   searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.SURFACE,
     borderRadius: DIMENSIONS.RADIUS_MD,
     paddingHorizontal: DIMENSIONS.PADDING_MD,
     paddingVertical: DIMENSIONS.SPACE_SM,
     marginBottom: DIMENSIONS.SPACE_MD,
+    gap: DIMENSIONS.GAP_SM,
+  },
+  searchIcon: {
+    marginRight: DIMENSIONS.SPACE_XS,
   },
   searchInput: {
+    flex: 1,
     color: COLORS.TEXT_PRIMARY,
     fontSize: TYPOGRAPHY.SIZE_MD,
     height: 40,

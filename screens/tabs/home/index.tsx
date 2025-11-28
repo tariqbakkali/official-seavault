@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'; // Add proper imp
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Eye, Heart, Trophy } from 'lucide-react-native';
 import { router, useFocusEffect } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
 import { ImageWithFallback } from '@/components';
@@ -293,6 +294,7 @@ export default function HomeScreen() {
     setRefreshing(true);
     try {
       await forceSyncAll();
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error) {
       console.error('Error during refresh:', error);
     } finally {
@@ -375,7 +377,10 @@ export default function HomeScreen() {
               <Text style={styles.sectionTitle}>Top Explorers</Text>
             </View>
             <TouchableOpacity
-              onPress={() => router.push(ROUTES.MODAL.LEADERBOARD)}
+              onPress={() => {
+                Haptics.selectionAsync();
+                router.push(ROUTES.MODAL.LEADERBOARD);
+              }}
             >
               <Text style={styles.seeAllButton}>See All</Text>
             </TouchableOpacity>

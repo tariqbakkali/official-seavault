@@ -37,6 +37,11 @@ export default ({ config }) => {
       },
       package: 'com.seavault.app',
       edgeToEdgeEnabled: true,
+      navigationBar: {
+        visible: false,
+        barStyle: 'dark-content',
+        backgroundColor: '#00000000', // Transparent
+      },
       permissions: [
         'android.permission.ACCESS_FINE_LOCATION',
         'android.permission.ACCESS_COARSE_LOCATION',
@@ -83,24 +88,10 @@ export default ({ config }) => {
       ],
       // Add expo-maps plugin for proper expo-maps integration
       [
-        'expo-maps',
+        '@rnmapbox/maps',
         {
-          googleMaps: {
-            apiKey:
-              process.env.GOOGLE_MAPS_API_KEY ||
-              process.env.GOOGLE_MAPS_API_KEY ||
-              '',
-          },
-          android: {
-            googleMaps: {
-              apiKey:
-                process.env.GOOGLE_MAPS_API_KEY ||
-                process.env.GOOGLE_MAPS_API_KEY ||
-                '',
-            },
-          },
-          requestLocationPermission: true,
-          locationPermission: 'Allow SeaVault to use your location',
+          RNMapboxMapsImpl: 'mapbox',
+          downloadToken: process.env.MAPBOX_DOWNLOADS_TOKEN,
         },
       ],
       'expo-secure-store',
@@ -113,6 +104,7 @@ export default ({ config }) => {
     },
     extra: {
       GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || '',
+      MAPBOX_ACCESS_TOKEN: process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || '',
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
       router: {

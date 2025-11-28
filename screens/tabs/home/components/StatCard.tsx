@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Eye, Heart, Trophy } from 'lucide-react-native';
 import { COLORS, TYPOGRAPHY, DIMENSIONS } from '@/constants';
+import { AnimatedPressable } from '@/components';
 
 interface StatCardProps {
   type: 'discovered' | 'wishlist' | 'points' | 'achievements';
@@ -10,24 +11,6 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ type, value, onPress }) => {
-  const scaleValue = React.useRef(new Animated.Value(1)).current;
-  
-  const handlePressIn = () => {
-    Animated.spring(scaleValue, {
-      toValue: 0.95,
-      useNativeDriver: true,
-      friction: 8,
-    }).start();
-  };
-  
-  const handlePressOut = () => {
-    Animated.spring(scaleValue, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 8,
-    }).start();
-  };
-
   const getIcon = () => {
     switch (type) {
       case 'discovered':
@@ -89,25 +72,22 @@ const StatCard: React.FC<StatCardProps> = ({ type, value, onPress }) => {
   };
 
   return (
-    <TouchableOpacity 
-      style={[styles.statCard, { backgroundColor: getBackgroundColor() }]} 
+    <AnimatedPressable
+      style={[styles.statCard, { backgroundColor: getBackgroundColor() }]}
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      activeOpacity={0.8}
+      hapticStyle="light"
+      scaleValue={0.95}
     >
-      <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
-        {getIcon()}
-      </Animated.View>
+      {getIcon()}
       <Text style={[styles.statValue, { color: getColor() }]}>{value}</Text>
-      <Text 
-        style={styles.statLabel} 
-        numberOfLines={1} 
+      <Text
+        style={styles.statLabel}
+        numberOfLines={1}
         ellipsizeMode="tail"
       >
         {getLabel()}
       </Text>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 };
 

@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, X, ChevronLeft, Check } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withSequence } from 'react-native-reanimated';
 import { COLORS, TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
 
@@ -28,6 +30,55 @@ interface UniversalCreaturePickerProps {
   catalog: any;
   initialSelectedCreatureIds?: string[];
 }
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+
+const CreatureGridItem = ({ item, isSelected, onToggle }: { item: any, isSelected: boolean, onToggle: (id: string) => void }) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
+
+  const handlePress = () => {
+    // Haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Animation
+    scale.value = withSequence(
+      withSpring(0.95),
+      withSpring(1)
+    );
+
+    onToggle(item.id);
+  };
+
+  return (
+    <AnimatedTouchableOpacity
+      style={[styles.gridItem, isSelected && styles.selectedGridItem, animatedStyle]}
+      onPress={handlePress}
+      activeOpacity={0.8}
+    >
+      <OfflineImageHandler
+        uri={item.image_url}
+        style={styles.gridImage}
+        containerStyle={styles.gridImageContainer}
+      />
+      {isSelected && (
+        <View style={styles.checkmarkOverlay}>
+          <Check size={20} color="#fff" strokeWidth={3} />
+        </View>
+      )}
+      <View style={[styles.gridLabelContainer, isSelected && styles.selectedGridLabelContainer]}>
+        <Text style={[styles.gridLabel, isSelected && styles.selectedGridLabel]} numberOfLines={2}>
+          {item.name}
+        </Text>
+      </View>
+    </AnimatedTouchableOpacity>
+  );
+};
 
 const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
   visible,
@@ -63,19 +114,16 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
 
   // Reset pagination when search or category changes
   React.useEffect(() => {
-    if (visible && currentView === 'creatures') {
-      setCurrentPage(0);
-      setHasMore(true);
-    }
+    // Reset pagination whenever the data source criteria changes
+    setCurrentPage(0);
+    setHasMore(true);
   }, [searchQuery, selectedCategory, currentView, visible]);
 
   const handleCategoryPress = (category: any) => {
+    Haptics.selectionAsync();
     setSelectedCategory(category);
     setCurrentView('creatures');
-    setSearchQuery(''); // Clear search when entering category? Or keep it? Let's clear.
-    // Reset pagination when switching categories
-    setCurrentPage(0);
-    setHasMore(true);
+    setSearchQuery(''); // Clear search when entering category
   };
 
   const handleCreatureToggle = (creatureId: string) => {
@@ -89,12 +137,14 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
   };
 
   const handleBackToCategories = () => {
+    Haptics.selectionAsync();
     setCurrentView('categories');
     setSelectedCategory(null);
     setSearchQuery('');
   };
 
   const handleDone = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     // Find full creature objects
     const allCreatures = catalog?.creatures || [];
     const selected = allCreatures.filter((c: any) => selectedCreatureIds.has(c.id));
@@ -104,14 +154,38 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
 
   // Filter Logic with Pagination
   const filteredData = useMemo(() => {
+    // If there is a search query, we search EVERYTHING (categories + creatures)
+    // unless we are specifically inside a category view
+    if (searchQuery && currentView === 'categories') {
+      const lowerQuery = searchQuery.toLowerCase();
+
+      const categories = catalog?.categories || [];
+      const matchingCategories = categories.filter((c: any) =>
+        c.name.toLowerCase().includes(lowerQuery)
+      ).map((c: any) => ({ ...c, type: 'category' }));
+
+      const creatures = catalog?.creatures || [];
+      const matchingCreatures = creatures.filter((c: any) =>
+        c.name.toLowerCase().includes(lowerQuery) ||
+        c.scientific_name?.toLowerCase().includes(lowerQuery)
+      ).map((c: any) => ({ ...c, type: 'creature' }));
+
+      // Combine results
+      const combined = [...matchingCategories, ...matchingCreatures];
+
+      // Apply pagination to the combined results
+      const endIndex = (currentPage + 1) * PAGE_SIZE;
+      const paginatedData = combined.slice(0, endIndex);
+
+      return paginatedData;
+    }
+
     if (currentView === 'categories') {
       const categories = catalog?.categories || [];
-      if (!searchQuery) return categories;
-      return categories.filter((c: any) =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      // No search query, just return categories
+      return categories.map((c: any) => ({ ...c, type: 'category' }));
     } else {
-      // Creatures View with Pagination
+      // Creatures View (inside a category)
       let creatures = catalog?.creatures || [];
 
       // Filter by Category if selected
@@ -119,7 +193,7 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
         creatures = creatures.filter((c: any) => c.category_id === selectedCategory.id);
       }
 
-      // Filter by Search
+      // Filter by Search (if searching inside a category)
       if (searchQuery) {
         creatures = creatures.filter((c: any) =>
           c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -127,12 +201,12 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
         );
       }
 
-      // Apply pagination - slice the array
+      // Mark as creatures
+      creatures = creatures.map((c: any) => ({ ...c, type: 'creature' }));
+
+      // Apply pagination
       const endIndex = (currentPage + 1) * PAGE_SIZE;
       const paginatedCreatures = creatures.slice(0, endIndex);
-
-      // Update hasMore flag
-      setHasMore(creatures.length > endIndex);
 
       return paginatedCreatures;
     }
@@ -142,6 +216,7 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
     <TouchableOpacity
       style={styles.gridItem}
       onPress={() => handleCategoryPress(item)}
+      activeOpacity={0.7}
     >
       <OfflineImageHandler
         uri={item.image_url}
@@ -154,30 +229,20 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
     </TouchableOpacity>
   );
 
-  const renderCreatureItem = ({ item }: { item: any }) => {
-    const isSelected = selectedCreatureIds.has(item.id);
-    return (
-      <TouchableOpacity
-        style={[styles.gridItem, isSelected && styles.selectedGridItem]}
-        onPress={() => handleCreatureToggle(item.id)}
-      >
-        <OfflineImageHandler
-          uri={item.image_url}
-          style={styles.gridImage}
-          containerStyle={styles.gridImageContainer}
+  const renderItem = ({ item }: { item: any }) => {
+    if (item.type === 'category') {
+      return renderCategoryItem({ item });
+    } else {
+      // Creature Item
+      const isSelected = selectedCreatureIds.has(item.id);
+      return (
+        <CreatureGridItem
+          item={item}
+          isSelected={isSelected}
+          onToggle={handleCreatureToggle}
         />
-        {isSelected && (
-          <View style={styles.checkmarkOverlay}>
-            <Check size={20} color="#fff" strokeWidth={3} />
-          </View>
-        )}
-        <View style={[styles.gridLabelContainer, isSelected && styles.selectedGridLabelContainer]}>
-          <Text style={[styles.gridLabel, isSelected && styles.selectedGridLabel]} numberOfLines={2}>
-            {item.name}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
+      );
+    }
   };
 
   return (
@@ -198,7 +263,9 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
           </View>
 
           <Text style={styles.headerTitle}>
-            {currentView === 'categories' ? 'Select Category' : selectedCategory?.name || 'Select Creatures'}
+            {currentView === 'categories'
+              ? (searchQuery ? 'Search Results' : 'Select Category')
+              : selectedCategory?.name || 'Select Creatures'}
           </Text>
 
           <View style={styles.headerRight} />
@@ -209,7 +276,7 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
           <Search size={20} color={COLORS.TEXT_TERTIARY} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder={currentView === 'categories' ? "Search categories..." : "Search creatures..."}
+            placeholder={currentView === 'categories' ? "Search categories & creatures..." : "Search creatures..."}
             placeholderTextColor={COLORS.TEXT_TERTIARY}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -222,18 +289,18 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
           style={{ flex: 1 }}
           data={filteredData}
           keyExtractor={(item) => item.id}
-          renderItem={currentView === 'categories' ? renderCategoryItem : renderCreatureItem}
+          renderItem={renderItem}
           numColumns={COLUMN_COUNT}
           contentContainerStyle={styles.listContent}
           columnWrapperStyle={styles.columnWrapper}
           showsVerticalScrollIndicator={false}
           onEndReached={() => {
-            if (currentView === 'creatures' && hasMore && !loadingMore) {
+            if (hasMore && !loadingMore) {
               setLoadingMore(true);
               setTimeout(() => {
                 setCurrentPage(prev => prev + 1);
                 setLoadingMore(false);
-              }, 300); // Small delay for smooth UX
+              }, 300);
             }
           }}
           onEndReachedThreshold={0.3}
@@ -243,10 +310,10 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
             </View>
           }
           ListFooterComponent={
-            loadingMore && currentView === 'creatures' ? (
+            loadingMore ? (
               <View style={styles.loadingFooter}>
                 <ActivityIndicator size="small" color={COLORS.PRIMARY} />
-                <Text style={styles.loadingText}>Loading more creatures...</Text>
+                <Text style={styles.loadingText}>Loading more...</Text>
               </View>
             ) : null
           }

@@ -5,7 +5,6 @@ import { formatCoordinate } from '@/utils/diveSiteUtils';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import ErrorDisplay from '@/components/ErrorDisplay';
-import DiveSiteMarker from '@/components/DiveSiteMarker';
 import CountryFlag from '@/components/CountryFlag';
 import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
-import CustomClusteredMapView from '@/components/CustomClusteredMapView';
+import MapboxClusteredMapView from '@/components/MapboxClusteredMapView';
 
 interface MapContainerProps {
   data: any[];
@@ -36,7 +36,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
   isMarkerDraggable = false // Default to false for backward compatibility
 }) => {
   const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -45,14 +45,14 @@ const MapContainer: React.FC<MapContainerProps> = ({
       }
     };
   }, []);
-  
+
   // Function to safely end gestures
   const endGesture = () => {
     // Clear any existing timeout
     if (gestureTimeoutRef.current) {
       clearTimeout(gestureTimeoutRef.current);
     }
-    
+
     // Set a timeout to ensure the gesture ends
     gestureTimeoutRef.current = setTimeout(() => {
       if (onMapGestureEnd) {
@@ -63,7 +63,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      <View 
+      <View
         style={styles.mapWrapper}
         // These handlers will help us detect when the user is interacting with the map
         onStartShouldSetResponder={() => {
@@ -87,12 +87,11 @@ const MapContainer: React.FC<MapContainerProps> = ({
           endGesture();
         }}
       >
-        <CustomClusteredMapView
+        <MapboxClusteredMapView
           key={selectedCoordinate ? `${selectedCoordinate.latitude}-${selectedCoordinate.longitude}` : 'no-selection'}
           style={styles.map}
           data={data}
           initialRegion={initialRegion}
-          renderMarker={renderMarker}
           clusteringEnabled={clusteringEnabled && data.length > 10}
           onPress={onPress}
           onMarkerDragEnd={onMarkerDragEnd}
