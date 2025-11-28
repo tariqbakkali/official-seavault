@@ -13,7 +13,31 @@ export default ({ config }) => {
       backgroundColor: '#1B87E1',
       resizeMode: 'contain',
     },
-    scheme: 'SeaVault',
+    scheme: 'seavault',
+    ios: {
+      associatedDomains: ['applinks:seavault.app', 'applinks:www.seavault.app'],
+    },
+    android: {
+      intentFilters: [
+        {
+          action: 'VIEW',
+          autoVerify: true,
+          data: [
+            {
+              scheme: 'https',
+              host: 'seavault.app',
+              pathPrefix: '/upgrade',
+            },
+            {
+              scheme: 'https',
+              host: 'www.seavault.app',
+              pathPrefix: '/upgrade',
+            },
+          ],
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+      ],
+    },
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {

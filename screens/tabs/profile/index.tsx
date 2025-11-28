@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Settings, LogOut } from 'lucide-react-native';
+import { Settings, LogOut, Crown } from 'lucide-react-native';
 import { ImageWithFallback } from '@/components';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
@@ -180,6 +180,13 @@ export default function ProfileScreen() {
   const totalCount = allAchievements ? Object.values(allAchievements).length : 0;
 
   const menuItems: MenuItem[] = [
+    {
+      icon: <Crown size={24} color="#FFD700" />,
+      title: 'Go Pro',
+      subtitle: 'Unlock all features',
+      onPress: () => router.push('/modal/paywall'),
+      chevron: true,
+    },
     {
       icon: <Settings size={24} color="#fff" />,
       title: 'Account Settings',
