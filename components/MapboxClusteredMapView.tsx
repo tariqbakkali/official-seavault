@@ -58,9 +58,11 @@ const MapboxClusteredMapView = forwardRef<
             data,
             initialRegion,
             onPress,
+            onMarkerDragEnd,
             selectedCoordinate,
             onMapGestureBegin,
             onMapGestureEnd,
+            isMarkerDraggable = false,
             showUserLocation = false,
             clusteringEnabled = true,
         }: ClusteredMapViewProps,
@@ -69,6 +71,8 @@ const MapboxClusteredMapView = forwardRef<
         const mapRef = useRef<MapView>(null);
         const cameraRef = useRef<Camera>(null);
         const [isMapLoaded, setIsMapLoaded] = useState(false);
+        const [isDragging, setIsDragging] = useState(false);
+        const [draggedCoordinate, setDraggedCoordinate] = useState<{ latitude: number; longitude: number } | null>(null);
 
         // Expose setCamera function via ref
         useImperativeHandle(ref, () => ({
@@ -111,8 +115,6 @@ const MapboxClusteredMapView = forwardRef<
                 const feature = e.features[0];
                 if (feature.properties?.cluster) {
                     // Handle cluster press - zoom in
-                    // Mapbox handles expansion automatically if configured, or we can do it manually
-                    // For now let's just log or let user handle it
                     console.log('Cluster pressed', feature);
                 } else {
                     // Handle marker press
@@ -131,14 +133,67 @@ const MapboxClusteredMapView = forwardRef<
             }
         };
 
+        // Handle map press - either place marker or update drag position
+        const handleMapPress = async (e: any) => {
+            const { geometry } = e;
+            if (!geometry || !geometry.coordinates) return;
+
+            const [longitude, latitude] = geometry.coordinates;
+            const newCoordinate = { latitude, longitude };
+
+            // If marker is draggable and we have a selected coordinate, update it
+            if (isMarkerDraggable && selectedCoordinate) {
+                setIsDragging(true);
+                setDraggedCoordinate(newCoordinate);
+                
+                // Immediately call the drag end handler to update coordinates
+                if (onMarkerDragEnd) {
+                    onMarkerDragEnd({
+                        nativeEvent: {
+                            coordinate: newCoordinate,
+                        },
+                    });
+                }
+                
+                // Reset drag state after a short delay
+                setTimeout(() => {
+                    setIsDragging(false);
+                    setDraggedCoordinate(null);
+                }, 200);
+            } else {
+                // Normal map press handling
+                handleShapePress(e);
+            }
+        };
+
+        // Handle touch start to begin visual feedback
+        const handleTouchStart = () => {
+            if (isMarkerDraggable && selectedCoordinate) {
+                if (onMapGestureBegin) {
+                    onMapGestureBegin();
+                }
+            }
+        };
+
+        // Handle touch end
+        const handleTouchEnd = () => {
+            if (onMapGestureEnd) {
+                onMapGestureEnd();
+            }
+        };
+
+        // Get the current marker coordinate (dragged or selected)
+        const currentMarkerCoordinate = draggedCoordinate || selectedCoordinate;
+
         return (
             <View style={style}>
                 <MapView
                     ref={mapRef}
                     style={StyleSheet.absoluteFill}
                     onDidFinishLoadingMap={() => setIsMapLoaded(true)}
-                    onTouchStart={onMapGestureBegin}
-                    onTouchEnd={onMapGestureEnd}
+                    onPress={handleMapPress}
+                    onTouchStart={handleTouchStart}
+                    onTouchEnd={handleTouchEnd}
                     scaleBarEnabled={false}
                 >
                     <Camera
@@ -205,19 +260,19 @@ const MapboxClusteredMapView = forwardRef<
                     </ShapeSource>
 
                     {/* Selected Marker */}
-                    {selectedCoordinate && (
+                    {currentMarkerCoordinate && (
                         <ShapeSource
                             id="selectedMarkerSource"
                             shape={point([
-                                selectedCoordinate.longitude,
-                                selectedCoordinate.latitude,
+                                currentMarkerCoordinate.longitude,
+                                currentMarkerCoordinate.latitude,
                             ])}
                         >
                             <CircleLayer
                                 id="selectedMarker"
                                 style={{
-                                    circleColor: '#FF3B30',
-                                    circleRadius: 10,
+                                    circleColor: isDragging ? '#00FF00' : '#FF3B30',
+                                    circleRadius: isDragging ? 12 : 10,
                                     circleStrokeWidth: 2,
                                     circleStrokeColor: '#fff',
                                 }}

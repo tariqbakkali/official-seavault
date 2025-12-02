@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, View, ActivityIndicator, ViewStyle, StyleProp } from 'react-native';
+import { MapPin } from 'lucide-react-native';
 import { getCountryCodeFromCoordinates, getCountryFlag } from '@/utils/locationUtils';
 import { TYPOGRAPHY } from '@/constants';
 
@@ -57,14 +58,22 @@ const CountryFlag: React.FC<CountryFlagProps> = ({
     return <ActivityIndicator size="small" color="#999" style={[{ width: size, height: size }, style]} />;
   }
 
-  if (!flag) {
-    return null;
+  if (!flag && !code) {
+    return (
+      <View style={[styles.container, style]}>
+        <MapPin size={size} color="#666" />
+      </View>
+    );
   }
 
   return (
     <View style={[styles.container, style]}>
-      <Text style={[styles.flag, { fontSize: size }]}>{flag}</Text>
-      {showCode && code && <Text style={styles.code}>{code}</Text>}
+      {flag ? (
+        <Text style={[styles.flag, { fontSize: size }]}>{flag}</Text>
+      ) : (
+        <Text style={[styles.code, { fontSize: size * 0.8 }]}>{code}</Text>
+      )}
+      {showCode && flag && code && <Text style={styles.code}>{code}</Text>}
     </View>
   );
 };

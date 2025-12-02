@@ -83,7 +83,7 @@ export default function DiveSitePickerScreen() {
       const containsQuery: DiveSite[] = [];
 
       diveSitesArray.forEach((site: DiveSite) => {
-        const siteName = site.name.toLowerCase();
+        const siteName = (site.name || '').toLowerCase();
         if (siteName.startsWith(query)) {
           startsWithQuery.push(site);
         } else if (siteName.includes(query)) {
@@ -117,7 +117,7 @@ export default function DiveSitePickerScreen() {
             <CountryFlag
               latitude={item.latitude || 0}
               longitude={item.longitude || 0}
-              size={24}
+              size={32}
               style={{ marginRight: 0 }}
             />
           </View>
@@ -281,6 +281,11 @@ const styles = StyleSheet.create({
     paddingVertical: DIMENSIONS.SPACE_LG,
     paddingHorizontal: DIMENSIONS.SPACE_LG,
     gap: DIMENSIONS.SPACE_SM,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   addButtonIconContainer: {
     width: 24,

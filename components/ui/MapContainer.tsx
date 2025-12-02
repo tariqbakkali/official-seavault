@@ -88,7 +88,6 @@ const MapContainer: React.FC<MapContainerProps> = ({
         }}
       >
         <MapboxClusteredMapView
-          key={selectedCoordinate ? `${selectedCoordinate.latitude}-${selectedCoordinate.longitude}` : 'no-selection'}
           style={styles.map}
           data={data}
           initialRegion={initialRegion}

@@ -109,7 +109,7 @@ const CoordinateSelectionSection: React.FC<CoordinateSelectionSectionProps> = ({
         selectedCoordinate={selectedCoordinate}
         helperText={
           isSelectingCoordinates
-            ? 'Tap on the map to select the dive site location'
+            ? 'Tap on the map to place or move the marker'
             : 'Press the button above to select coordinates from the map'
         }
         onMapGestureBegin={onMapGestureBegin}

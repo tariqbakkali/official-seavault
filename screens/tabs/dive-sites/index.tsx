@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { hasValidCoordinates } from '@/utils/diveSiteUtils';
 import AutocompleteField from '@/components/forms/AutocompleteField';
+import FormField from '@/components/forms/FormField';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { COLORS, DIMENSIONS } from '@/constants';
 import { TYPOGRAPHY } from '@/constants';
@@ -21,6 +22,7 @@ const DEFAULT_COORDINATES = {
 
 const AddDiveSiteScreen = () => {
   const [diveSiteName, setDiveSiteName] = useState('');
+  const [searchText, setSearchText] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [selectedCoordinate, setSelectedCoordinate] = useState<{
@@ -138,8 +140,8 @@ const AddDiveSiteScreen = () => {
           return;
         }
 
-        // Update all location data
-        setDiveSiteName(suggestion.description);
+        // Update location data
+        setSearchText(suggestion.description);
         setLatitude(latitude.toString());
         setLongitude(longitude.toString());
         setSelectedCoordinate({ latitude, longitude });
@@ -274,13 +276,21 @@ const AddDiveSiteScreen = () => {
         />
 
         <View style={styles.content}>
-          {/* Search for location */}
-          <AutocompleteField
-            label="Search Location"
+          {/* Dive Site Name Input */}
+          <FormField
+            label="Dive Site Name"
             value={diveSiteName}
             onChangeText={setDiveSiteName}
-            placeholder="Search for dive site location"
+            placeholder="e.g. Blue Hole"
             required
+          />
+
+          {/* Search for location */}
+          <AutocompleteField
+            label="Search Area (Google Maps)"
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholder="Search for general area..."
             onSuggestionSelect={handleSuggestionSelect}
           />
 
@@ -304,31 +314,6 @@ const AddDiveSiteScreen = () => {
             />
           )}
 
-          {/* Display selected coordinates */}
-          {/* {latitude && longitude && (
-            <View style={styles.coordinatesDisplay}>
-              <Text style={styles.coordinatesTitle}>Selected Location:</Text>
-              <Text style={styles.coordinateText}>
-                Latitude: {parseFloat(latitude).toFixed(6)}
-              </Text>
-              <Text style={styles.coordinateText}>
-                Longitude: {parseFloat(longitude).toFixed(6)}
-              </Text>
-            </View>
-          )} */}
-
-          {/* Instructions */}
-          {/* <View style={styles.instructions}>
-            <Text style={styles.instructionsText}>
-              • Search for a location using the search bar above
-            </Text>
-            <Text style={styles.instructionsText}>
-              • Or tap anywhere on the map to select coordinates
-            </Text>
-            <Text style={styles.instructionsText}>
-              • Long press and drag the marker to adjust position
-            </Text>
-          </View> */}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -363,19 +348,6 @@ const styles = StyleSheet.create({
     marginBottom: DIMENSIONS.MARGIN_SM,
   },
   coordinateText: {
-    color: COLORS.TEXT_SECONDARY,
-    fontSize: TYPOGRAPHY.SIZE_MD,
-    marginBottom: DIMENSIONS.MARGIN_XS,
-  },
-  instructions: {
-    backgroundColor: COLORS.SURFACE,
-    padding: DIMENSIONS.PADDING_MD,
-    borderRadius: 8,
-    marginTop: DIMENSIONS.MARGIN_LG,
-    borderWidth: 1,
-    borderColor: COLORS.BORDER_SECONDARY,
-  },
-  instructionsText: {
     color: COLORS.TEXT_SECONDARY,
     fontSize: TYPOGRAPHY.SIZE_MD,
     marginBottom: DIMENSIONS.MARGIN_XS,
