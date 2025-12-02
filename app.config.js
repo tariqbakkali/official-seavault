@@ -52,6 +52,13 @@ export default ({ config }) => {
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        CFBundleURLTypes: [
+          {
+            CFBundleURLSchemes: [
+              process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.split('.').reverse().join('.') || 'com.googleusercontent.apps.253456152251-ped969r8t38ef0ukdps4oemm9028mshg',
+            ],
+          },
+        ],
       },
     },
     android: {

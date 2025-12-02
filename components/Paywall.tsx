@@ -1,22 +1,88 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform, Animated, ScrollView, Dimensions } from 'react-native';
 import Purchases, { PurchasesPackage } from 'react-native-purchases';
 import { getOfferings, purchasePackage } from '@/services/revenueCat';
 import { useShop } from '@/contexts/ShopContext';
 import { COLORS, TYPOGRAPHY, DIMENSIONS } from '@/constants';
-import { X } from 'lucide-react-native';
+import { X, Waves, Fish, TrendingUp, Shield, Headphones, Sparkles } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
 interface PaywallProps {
     onClose: () => void;
 }
 
+const { width, height } = Dimensions.get('window');
+
+// Animated bubble component
+const AnimatedBubble = ({ delay }: { delay: number }) => {
+    const translateY = useRef(new Animated.Value(height)).current;
+    const initialX = useRef(Math.random() * width).current;
+    const translateX = useRef(new Animated.Value(initialX)).current;
+    const scale = useRef(new Animated.Value(0.5 + Math.random() * 0.5)).current;
+
+    useEffect(() => {
+        const animate = () => {
+            translateY.setValue(height);
+            translateX.setValue(initialX);
+            Animated.parallel([
+                Animated.timing(translateY, {
+                    toValue: -100,
+                    duration: 8000 + Math.random() * 4000,
+                    delay,
+                    useNativeDriver: true,
+                }),
+                Animated.sequence([
+                    Animated.timing(translateX, {
+                        toValue: initialX + (Math.random() - 0.5) * 100,
+                        duration: 2000,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(translateX, {
+                        toValue: initialX - (Math.random() - 0.5) * 100,
+                        duration: 2000,
+                        useNativeDriver: true,
+                    }),
+                ]),
+            ]).start(() => animate());
+        };
+        animate();
+    }, []);
+
+    return (
+        <Animated.View
+            style={[
+                styles.bubble,
+                {
+                    transform: [{ translateY }, { translateX }, { scale }],
+                },
+            ]}
+        />
+    );
+};
+
 export default function Paywall({ onClose }: PaywallProps) {
     const [packages, setPackages] = useState<PurchasesPackage[]>([]);
     const [loading, setLoading] = useState(true);
     const { shop, error, redeemReferral } = useShop();
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(50)).current;
 
     useEffect(() => {
         loadOfferings();
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 600,
+                useNativeDriver: true,
+            }),
+            Animated.spring(slideAnim, {
+                toValue: 0,
+                tension: 50,
+                friction: 8,
+                useNativeDriver: true,
+            }),
+        ]).start();
     }, []);
 
     const loadOfferings = async () => {
@@ -35,10 +101,12 @@ export default function Paywall({ onClose }: PaywallProps) {
 
     const handlePurchase = async (pack: PurchasesPackage) => {
         try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             setLoading(true);
             const customerInfo = await purchasePackage(pack);
-            if (customerInfo?.entitlements.active['pro']) {
+            if (customerInfo?.entitlements.active['Pro']) {
                 const result = await redeemReferral();
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 if (result.success) {
                     Alert.alert('Success', 'You are now a Pro member! ' + result.message);
                 } else {
@@ -48,6 +116,7 @@ export default function Paywall({ onClose }: PaywallProps) {
             }
         } catch (error) {
             console.error('Purchase failed', error);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             Alert.alert('Error', 'Purchase failed. Please try again.');
         } finally {
             setLoading(false);
@@ -56,9 +125,11 @@ export default function Paywall({ onClose }: PaywallProps) {
 
     const handleRestore = async () => {
         try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setLoading(true);
             const customerInfo = await Purchases.restorePurchases();
-            if (customerInfo?.entitlements.active['pro']) {
+            if (customerInfo?.entitlements.active['Pro']) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 Alert.alert('Success', 'Purchases restored!');
                 onClose();
             } else {
@@ -66,6 +137,7 @@ export default function Paywall({ onClose }: PaywallProps) {
             }
         } catch (error) {
             console.error('Restore failed', error);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             Alert.alert('Error', 'Failed to restore purchases.');
         } finally {
             setLoading(false);
@@ -75,6 +147,7 @@ export default function Paywall({ onClose }: PaywallProps) {
     const handleRedeemCode = async () => {
         if (Platform.OS === 'ios') {
             try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 await Purchases.presentCodeRedemptionSheet();
             } catch (error) {
                 console.error('Redemption sheet failed', error);
@@ -82,178 +155,392 @@ export default function Paywall({ onClose }: PaywallProps) {
         }
     };
 
+    const handleClose = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onClose();
+    };
+
+    const features = [
+        { icon: Waves, title: 'Unlimited Dive Logs', description: 'Log every dive without limits' },
+        { icon: Fish, title: 'Full Creature Database', description: 'Access 1000+ marine species' },
+        { icon: TrendingUp, title: 'Advanced Analytics', description: 'Track your diving progress' },
+        { icon: Shield, title: 'Ad-Free Experience', description: 'Enjoy distraction-free diving' },
+        { icon: Headphones, title: 'Priority Support', description: 'Get help when you need it' },
+    ];
+
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-            </View>
+            <LinearGradient
+                colors={['#001a33', '#003d5c', '#006b8f']}
+                style={styles.loadingContainer}
+            >
+                {[...Array(6)].map((_, i) => (
+                    <AnimatedBubble key={i} delay={i * 400} />
+                ))}
+                <ActivityIndicator size="large" color="#4DD0E1" />
+                <Text style={styles.loadingText}>Loading premium features...</Text>
+            </LinearGradient>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <X color="#fff" size={24} />
+        <LinearGradient
+            colors={['#001a33', '#003d5c', '#006b8f']}
+            style={styles.container}
+        >
+            {/* Animated bubbles background */}
+            {[...Array(8)].map((_, i) => (
+                <AnimatedBubble key={i} delay={i * 500} />
+            ))}
+
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+                <View style={styles.closeButtonInner}>
+                    <X color="#fff" size={24} />
+                </View>
             </TouchableOpacity>
 
-            <Text style={styles.title}>Unlock SeaVault Pro</Text>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                <Animated.View
+                    style={[
+                        styles.content,
+                        {
+                            opacity: fadeAnim,
+                            transform: [{ translateY: slideAnim }],
+                        },
+                    ]}
+                >
+                    {/* Header */}
+                    <View style={styles.header}>
+                        <Sparkles color="#4DD0E1" size={32} />
+                        <Text style={styles.title}>Unlock SeaVault Pro</Text>
+                        <Text style={styles.subtitle}>
+                            Dive deeper into your underwater adventures
+                        </Text>
+                    </View>
 
-            {error ? (
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>{error}</Text>
-                </View>
-            ) : shop ? (
-                <View style={styles.discountContainer}>
-                    <Text style={styles.discountText}>
-                        Special Offer from {shop.name}!
-                    </Text>
-                    <Text style={styles.discountSubtext}>
-                        Save {shop.discount_percent}% on Lifetime Membership
-                    </Text>
-                </View>
-            ) : (
-                <Text style={styles.subtitle}>
-                    Get unlimited access to all features.
-                </Text>
-            )}
-
-            <View style={styles.packagesContainer}>
-                {packages.map((pack) => (
-                    <TouchableOpacity
-                        key={pack.identifier}
-                        style={styles.packageButton}
-                        onPress={() => handlePurchase(pack)}
-                    >
-                        <Text style={styles.packageTitle}>{pack.product.title}</Text>
-                        <Text style={styles.packagePrice}>{pack.product.priceString}</Text>
-                        {shop && (
-                            <Text style={styles.originalPrice}>
-                                (Normally $39.99)
+                    {/* Shop discount banner */}
+                    {error ? (
+                        <View style={styles.errorContainer}>
+                            <Text style={styles.errorText}>{error}</Text>
+                        </View>
+                    ) : shop ? (
+                        <View style={styles.discountContainer}>
+                            <Text style={styles.discountBadge}>🎉 SPECIAL OFFER</Text>
+                            <Text style={styles.discountText}>
+                                {shop.name} Exclusive
                             </Text>
+                            <Text style={styles.discountSubtext}>
+                                Save {shop.discount_percent}% on Lifetime Membership
+                            </Text>
+                        </View>
+                    ) : null}
+
+                    {/* Features Grid */}
+                    <View style={styles.featuresContainer}>
+                        {features.map((feature, index) => {
+                            const Icon = feature.icon;
+                            return (
+                                <Animated.View
+                                    key={index}
+                                    style={[
+                                        styles.featureCard,
+                                        {
+                                            opacity: fadeAnim,
+                                            transform: [
+                                                {
+                                                    translateY: slideAnim.interpolate({
+                                                        inputRange: [0, 50],
+                                                        outputRange: [0, 50 + index * 10],
+                                                    }),
+                                                },
+                                            ],
+                                        },
+                                    ]}
+                                >
+                                    <View style={styles.featureIconContainer}>
+                                        <Icon color="#4DD0E1" size={24} />
+                                    </View>
+                                    <View style={styles.featureTextContainer}>
+                                        <Text style={styles.featureTitle}>{feature.title}</Text>
+                                        <Text style={styles.featureDescription}>{feature.description}</Text>
+                                    </View>
+                                </Animated.View>
+                            );
+                        })}
+                    </View>
+
+                    {/* Package Selection */}
+                    <View style={styles.packagesContainer}>
+                        {packages.map((pack) => (
+                            <TouchableOpacity
+                                key={pack.identifier}
+                                style={styles.packageButton}
+                                onPress={() => handlePurchase(pack)}
+                                activeOpacity={0.8}
+                            >
+                                <LinearGradient
+                                    colors={['rgba(77, 208, 225, 0.2)', 'rgba(77, 208, 225, 0.05)']}
+                                    style={styles.packageGradient}
+                                >
+                                    <View style={styles.bestValueBadge}>
+                                        <Text style={styles.bestValueText}>BEST VALUE</Text>
+                                    </View>
+                                    <Text style={styles.packageTitle}>{pack.product.title}</Text>
+                                    <View style={styles.priceContainer}>
+                                        <Text style={styles.packagePrice}>{pack.product.priceString}</Text>
+                                        {shop && (
+                                            <Text style={styles.originalPrice}>
+                                                (Normally $39.99)
+                                            </Text>
+                                        )}
+                                    </View>
+                                    <Text style={styles.packageSubtitle}>One-time payment • Lifetime access</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {/* Footer */}
+                    <View style={styles.footer}>
+                        <TouchableOpacity onPress={handleRestore}>
+                            <Text style={styles.footerText}>Restore Purchases</Text>
+                        </TouchableOpacity>
+
+                        {Platform.OS === 'ios' && (
+                            <TouchableOpacity onPress={handleRedeemCode}>
+                                <Text style={styles.footerText}>Redeem Offer Code</Text>
+                            </TouchableOpacity>
                         )}
-                    </TouchableOpacity>
-                ))}
-            </View>
 
-            <View style={styles.footer}>
-                <TouchableOpacity onPress={handleRestore}>
-                    <Text style={styles.footerText}>Restore Purchases</Text>
-                </TouchableOpacity>
-
-                {Platform.OS === 'ios' && (
-                    <TouchableOpacity onPress={handleRedeemCode}>
-                        <Text style={styles.footerText}>Redeem Offer Code</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-        </View>
+                        <Text style={styles.termsText}>
+                            By purchasing, you agree to our Terms of Service
+                        </Text>
+                    </View>
+                </Animated.View>
+            </ScrollView>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
-        padding: DIMENSIONS.PADDING_XL,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     loadingContainer: {
         flex: 1,
-        backgroundColor: '#000',
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    loadingText: {
+        color: '#4DD0E1',
+        fontSize: TYPOGRAPHY.SIZE_MD,
+        marginTop: DIMENSIONS.MARGIN_MD,
+        fontWeight: '600',
+    },
+    bubble: {
+        position: 'absolute',
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: 'rgba(77, 208, 225, 0.15)',
+        borderWidth: 1,
+        borderColor: 'rgba(77, 208, 225, 0.3)',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingTop: 80,
+        paddingBottom: 40,
+    },
+    content: {
+        paddingHorizontal: DIMENSIONS.PADDING_LG,
     },
     closeButton: {
         position: 'absolute',
         top: 50,
         right: 20,
-        padding: 10,
+        zIndex: 10,
+    },
+    closeButtonInner: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: DIMENSIONS.MARGIN_XL,
     },
     title: {
-        fontSize: TYPOGRAPHY.SIZE_XXXL,
+        fontSize: 32,
         fontWeight: 'bold',
         color: '#fff',
-        marginBottom: DIMENSIONS.MARGIN_MD,
+        marginTop: DIMENSIONS.MARGIN_SM,
+        marginBottom: DIMENSIONS.MARGIN_XS,
         textAlign: 'center',
     },
     subtitle: {
         fontSize: TYPOGRAPHY.SIZE_LG,
-        color: '#ccc',
-        marginBottom: DIMENSIONS.MARGIN_XL,
+        color: 'rgba(255, 255, 255, 0.8)',
         textAlign: 'center',
+        paddingHorizontal: DIMENSIONS.PADDING_MD,
     },
     errorContainer: {
-        backgroundColor: 'rgba(255, 59, 48, 0.1)',
+        backgroundColor: 'rgba(255, 59, 48, 0.15)',
         padding: DIMENSIONS.PADDING_MD,
-        borderRadius: 12,
+        borderRadius: 16,
         marginBottom: DIMENSIONS.MARGIN_LG,
         borderWidth: 1,
         borderColor: 'rgba(255, 59, 48, 0.3)',
     },
     errorText: {
-        color: '#FF3B30',
+        color: '#FF6B6B',
         fontSize: TYPOGRAPHY.SIZE_MD,
         textAlign: 'center',
         fontWeight: '600',
     },
     discountContainer: {
-        backgroundColor: 'rgba(255, 215, 0, 0.1)',
-        padding: DIMENSIONS.PADDING_MD,
-        borderRadius: 12,
-        marginBottom: DIMENSIONS.MARGIN_LG,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 215, 0, 0.3)',
+        backgroundColor: 'rgba(255, 215, 0, 0.15)',
+        padding: DIMENSIONS.PADDING_LG,
+        borderRadius: 16,
+        marginBottom: DIMENSIONS.MARGIN_XL,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 215, 0, 0.4)',
+        alignItems: 'center',
+    },
+    discountBadge: {
+        fontSize: TYPOGRAPHY.SIZE_SM,
+        fontWeight: 'bold',
+        color: '#FFD700',
+        letterSpacing: 1,
+        marginBottom: 4,
     },
     discountText: {
         fontSize: TYPOGRAPHY.SIZE_XL,
         fontWeight: 'bold',
-        color: '#FFD700',
+        color: '#fff',
         marginBottom: 4,
-        textAlign: 'center',
     },
     discountSubtext: {
         fontSize: TYPOGRAPHY.SIZE_MD,
+        color: 'rgba(255, 255, 255, 0.9)',
+    },
+    featuresContainer: {
+        marginBottom: DIMENSIONS.MARGIN_XL,
+    },
+    featureCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        padding: DIMENSIONS.PADDING_MD,
+        borderRadius: 12,
+        marginBottom: DIMENSIONS.MARGIN_SM,
+        borderWidth: 1,
+        borderColor: 'rgba(77, 208, 225, 0.2)',
+    },
+    featureIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: 'rgba(77, 208, 225, 0.15)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: DIMENSIONS.MARGIN_MD,
+    },
+    featureTextContainer: {
+        flex: 1,
+    },
+    featureTitle: {
+        fontSize: TYPOGRAPHY.SIZE_MD,
+        fontWeight: '600',
         color: '#fff',
-        textAlign: 'center',
+        marginBottom: 2,
+    },
+    featureDescription: {
+        fontSize: TYPOGRAPHY.SIZE_SM,
+        color: 'rgba(255, 255, 255, 0.7)',
     },
     packagesContainer: {
-        width: '100%',
-        gap: DIMENSIONS.GAP_MD,
+        marginBottom: DIMENSIONS.MARGIN_XL,
     },
     packageButton: {
-        backgroundColor: '#1a1a1a',
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 2,
+        borderColor: '#4DD0E1',
+        shadowColor: '#4DD0E1',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    packageGradient: {
         padding: DIMENSIONS.PADDING_XL,
-        borderRadius: 12,
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#333',
+    },
+    bestValueBadge: {
+        backgroundColor: '#4DD0E1',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginBottom: DIMENSIONS.MARGIN_SM,
+    },
+    bestValueText: {
+        fontSize: TYPOGRAPHY.SIZE_XS,
+        fontWeight: 'bold',
+        color: '#001a33',
+        letterSpacing: 1,
     },
     packageTitle: {
         fontSize: TYPOGRAPHY.SIZE_LG,
         fontWeight: '600',
         color: '#fff',
-        marginBottom: 4,
+        marginBottom: DIMENSIONS.MARGIN_SM,
+    },
+    priceContainer: {
+        alignItems: 'center',
+        marginBottom: DIMENSIONS.MARGIN_XS,
     },
     packagePrice: {
-        fontSize: TYPOGRAPHY.SIZE_XXL,
+        fontSize: 36,
         fontWeight: 'bold',
-        color: COLORS.PRIMARY,
+        color: '#4DD0E1',
     },
     originalPrice: {
         fontSize: TYPOGRAPHY.SIZE_SM,
-        color: '#666',
+        color: 'rgba(255, 255, 255, 0.5)',
         textDecorationLine: 'line-through',
-        marginTop: 2,
+        marginTop: 4,
+    },
+    packageSubtitle: {
+        fontSize: TYPOGRAPHY.SIZE_SM,
+        color: 'rgba(255, 255, 255, 0.8)',
+        fontWeight: '500',
     },
     footer: {
-        marginTop: DIMENSIONS.MARGIN_XL,
-        gap: DIMENSIONS.GAP_MD,
         alignItems: 'center',
+        gap: DIMENSIONS.GAP_MD,
+        paddingTop: DIMENSIONS.PADDING_MD,
     },
     footerText: {
-        color: '#666',
+        color: 'rgba(255, 255, 255, 0.7)',
         fontSize: TYPOGRAPHY.SIZE_MD,
         textDecorationLine: 'underline',
+        fontWeight: '500',
+    },
+    termsText: {
+        color: 'rgba(255, 255, 255, 0.5)',
+        fontSize: TYPOGRAPHY.SIZE_XS,
+        textAlign: 'center',
+        marginTop: DIMENSIONS.MARGIN_SM,
     },
 });

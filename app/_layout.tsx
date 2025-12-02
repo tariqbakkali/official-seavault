@@ -99,8 +99,14 @@ function RootLayout() {
   const isAuthenticated = !!currentUserID;
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace('/(auth)' as any);
+    if (!isLoading) {
+      if (isAuthenticated) {
+        // Navigate to tabs when user is authenticated
+        router.replace('/(tabs)' as any);
+      } else {
+        // Navigate to auth when user is not authenticated
+        router.replace('/(auth)' as any);
+      }
     }
   }, [isAuthenticated, isLoading]);
 

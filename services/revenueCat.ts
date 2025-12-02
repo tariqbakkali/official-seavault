@@ -59,7 +59,7 @@ export const purchasePackage = async (pack: PurchasesPackage) => {
 export const checkSubscriptionStatus = async () => {
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    return customerInfo.entitlements.active['pro'] !== undefined; // Adjust 'pro' to your entitlement identifier
+    return customerInfo.entitlements.active['Pro'] !== undefined;
   } catch (e) {
     console.error('Error checking subscription status', e);
     return false;

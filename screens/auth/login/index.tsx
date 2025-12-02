@@ -57,6 +57,7 @@ export default function LoginScreen() {
       const { GoogleSignin } = require('@react-native-google-signin/google-signin');
       GoogleSignin.configure({
         webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+        iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '', // Required for iOS
         offlineAccess: true,
         scopes: ['profile', 'email'],
       });
@@ -141,9 +142,17 @@ export default function LoginScreen() {
         console.log('[OAuth] ✅ Authentication successful!');
 
         // Profile will be created automatically by handle_new_user trigger
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        await createProfileForCurrentUser({});
-        await fetchUserData();
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          await createProfileForCurrentUser({});
+          await fetchUserData();
+        } catch (profileError) {
+          console.error('[OAuth] ⚠️ Profile creation/fetch error (non-fatal):', profileError);
+          // Don't throw - authentication was successful, profile issues are non-fatal
+        } finally {
+          // Always reset loading state after profile operations complete or fail
+          setLoading(false);
+        }
       } else {
         console.log('[OAuth] ⚠️ User cancelled flow');
       }
@@ -206,6 +215,7 @@ export default function LoginScreen() {
           const { error, data } = await supabase.auth.signInWithIdToken({
             provider: 'apple',
             token: credential.identityToken,
+            nonce: credential.nonce,
           });
 
           if (error) throw error;
@@ -213,9 +223,17 @@ export default function LoginScreen() {
           console.log('[OAuth] ✅ Authentication successful!');
 
           // Profile will be created automatically by handle_new_user trigger
-          await new Promise((resolve) => setTimeout(resolve, 200));
-          await createProfileForCurrentUser({});
-          await fetchUserData();
+          try {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            await createProfileForCurrentUser({});
+            await fetchUserData();
+          } catch (profileError) {
+            console.error('[OAuth] ⚠️ Profile creation/fetch error (non-fatal):', profileError);
+            // Don't throw - authentication was successful, profile issues are non-fatal
+          } finally {
+            // Always reset loading state after profile operations complete or fail
+            setLoading(false);
+          }
         } else {
           throw new Error('No identity token provided');
         }

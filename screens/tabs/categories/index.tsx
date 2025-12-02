@@ -152,39 +152,72 @@ export default function CategoriesTab() {
 
   const [searchQuery, setSearchQuery] = React.useState('');
 
-  const filteredCategories = React.useMemo(() => {
-    if (!searchQuery) return categories;
-    return categories.filter(c =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [categories, searchQuery]);
+  const filteredData = React.useMemo(() => {
+    if (!searchQuery) {
+      // No search query - return categories with stats
+      return categories.map(c => ({ ...c, type: 'category' }));
+    }
+    
+    const query = searchQuery.toLowerCase();
+    const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
+    
+    // Search categories
+    const matchingCategories = categories
+      .filter(category => category.name.toLowerCase().includes(query))
+      .map(c => ({ ...c, type: 'category' }));
+    
+    // Search creatures
+    const matchingCreatures = creaturesArray
+      .filter((creature: any) =>
+        creature.name.toLowerCase().includes(query) ||
+        creature.scientific_name?.toLowerCase().includes(query)
+      )
+      .map((c: any) => ({ ...c, type: 'creature' }));
+    
+    // Combine results: categories first, then creatures
+    return [...matchingCategories, ...matchingCreatures];
+  }, [categories, searchQuery, allCreatures]);
 
-  const renderCategory = ({ item }: { item: CategoryWithStats }) => (
-    <TouchableOpacity
-      style={styles.categoryCard}
-      onPress={() => router.push(`/categories/${item.id}`)}
-    >
-      <ImageWithFallback
-        uri={item.image_url}
-        style={styles.categoryImage}
-        containerStyle={styles.imageContainer}
-        showOfflineIndicator={true}
-      />
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
-        style={styles.categoryOverlay}
+  const renderItem = ({ item }: { item: any }) => {
+    const isCreature = item.type === 'creature';
+    
+    return (
+      <TouchableOpacity
+        style={styles.categoryCard}
+        onPress={() => router.push(isCreature ? `/creatures/${item.id}` : `/categories/${item.id}`)}
       >
-        <View style={styles.categoryContent}>
-          <Text style={styles.categoryName}>{item.name}</Text>
-        </View>
-      </LinearGradient>
-      <View style={styles.completionBadge}>
-        <Text style={styles.completionText}>
-          {item.seen}/{item.total}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+        <ImageWithFallback
+          uri={item.image_url}
+          style={styles.categoryImage}
+          containerStyle={styles.imageContainer}
+          showOfflineIndicator={true}
+        />
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.8)']}
+          style={styles.categoryOverlay}
+        >
+          <View style={styles.categoryContent}>
+            <Text style={styles.categoryName}>{item.name}</Text>
+            {isCreature && item.scientific_name && (
+              <Text style={styles.scientificName}>{item.scientific_name}</Text>
+            )}
+          </View>
+        </LinearGradient>
+        {!isCreature && (
+          <View style={styles.completionBadge}>
+            <Text style={styles.completionText}>
+              {item.seen}/{item.total}
+            </Text>
+          </View>
+        )}
+        {isCreature && (
+          <View style={styles.creatureBadge}>
+            <Text style={styles.creatureBadgeText}>Creature</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return <LoadingScreen variant="fullscreen" />;
@@ -217,9 +250,9 @@ export default function CategoriesTab() {
       </View>
 
       <FlatList
-        data={filteredCategories}
+        data={filteredData}
         keyExtractor={(item) => item.id}
-        renderItem={renderCategory}
+        renderItem={renderItem}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -322,5 +355,25 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_PRIMARY,
     fontSize: TYPOGRAPHY.SIZE_MD,
     height: 40,
+  },
+  scientificName: {
+    fontSize: TYPOGRAPHY.SIZE_SM,
+    color: COLORS.TEXT_SECONDARY,
+    fontStyle: 'italic',
+    marginTop: DIMENSIONS.SPACE_XS,
+  },
+  creatureBadge: {
+    position: 'absolute',
+    top: DIMENSIONS.SPACE_MD,
+    left: DIMENSIONS.SPACE_MD,
+    backgroundColor: COLORS.PRIMARY,
+    paddingHorizontal: DIMENSIONS.SPACE_SM,
+    paddingVertical: DIMENSIONS.SPACE_XS,
+    borderRadius: DIMENSIONS.RADIUS_MD,
+  },
+  creatureBadgeText: {
+    color: '#fff',
+    fontSize: TYPOGRAPHY.SIZE_XS,
+    fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
   },
 });
