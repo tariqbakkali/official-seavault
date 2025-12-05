@@ -74,6 +74,8 @@ export default function HomeScreen() {
       const categoriesArray = Object.values(categoriesObj) as Category[];
       const sightingsArray = Object.values(sightingsObj) as Sighting[];
 
+      console.log(`[HomeScreen] loadData called - ${sightingsArray.length} sightings found`);
+
       const profileData = userProfile
         ? Object.values(userProfile)[0]
         : undefined;
@@ -106,6 +108,7 @@ export default function HomeScreen() {
           userAchievementsArray,
           allCreatures ? Object.values(allCreatures) : []
         );
+        console.log(`[HomeScreen] Calculated stats - uniqueCreatures: ${stats.uniqueCreatures}`);
         setUserStats(stats);
       }
 

@@ -104,12 +104,53 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const handleAppsFlyerDeepLink = () => {
         onAppsFlyerDeepLink((deepLinkData) => {
-            console.log('AppsFlyer deep link data:', deepLinkData);
+            console.log('AppsFlyer deep link data:', JSON.stringify(deepLinkData, null, 2));
             
-            // Extract referral code from deep link data
-            const code = deepLinkData?.deep_link_value || deepLinkData?.code;
+            // Prioritize explicit code parameters from the link data
+            let code = deepLinkData?.params?.code || 
+                      deepLinkData?.data?.code ||
+                      deepLinkData?.code;
+
+            // If no explicit code param, check deep_link_value but validate it
+            if (!code && deepLinkData?.deep_link_value) {
+                const value = deepLinkData.deep_link_value.toString();
+                
+                // IGNORE generic schemes or likely URLs that aren't codes
+                // "seavault://ref" is the deep_link_value for some campaigns but NOT the code itself
+                if (
+                    value === 'seavault://ref' ||
+                    value.startsWith('seavault://') || 
+                    value.startsWith('http') ||
+                    value.includes('/')
+                ) {
+                    console.log('Ignoring generic deep link value:', value);
+                } else {
+                    code = value;
+                }
+            }
             
+            // Also check for 'code' in the query params of the deep link value url if it exists
+            if (!code && deepLinkData?.deep_link_value) {
+                try {
+                     // Try to parse as URL to see if it has ?code=...
+                     const url = deepLinkData.deep_link_value.toString();
+                     if (url.includes('code=')) {
+                        const match = url.match(/[?&]code=([^&]+)/);
+                        if (match && match[1]) {
+                            code = match[1];
+                        }
+                     }
+                } catch (e) {
+                    // ignore parse error
+                }
+            }
+            
+            console.log('AppsFlyer extracted code (raw):', code);
+
             if (code) {
+                // Sanitize code: remove quotes if present, trim whitespace
+                code = code.toString().replace(/['"]+/g, '').trim();
+                console.log('AppsFlyer extracted code (sanitized):', code);
                 setReferralCode(code);
                 setShouldNavigateToPaywall(true);
             }
@@ -118,11 +159,17 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const handleDeepLinking = () => {
         const handleUrl = (event: { url: string }) => {
+            console.log('Deep Link URL:', event.url);
             const { queryParams } = Linking.parse(event.url);
+            console.log('Deep Link Query Params:', queryParams);
+
             // Check for 'code' parameter as per new workflow
-            const code = queryParams?.code as string;
+            let code = queryParams?.code as string;
             
             if (code) {
+                // Sanitize code
+                code = code.toString().replace(/['"]+/g, '').trim();
+                console.log('Deep Link extracted code (sanitized):', code);
                 setReferralCode(code);
                 setShouldNavigateToPaywall(true);
             }

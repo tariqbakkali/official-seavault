@@ -1,17 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
   RefreshControl,
   Alert,
-  ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Settings, LogOut, Crown } from 'lucide-react-native';
+import { hasCompletedOnboarding, resetOnboarding } from '@/utils/onboardingStorage';
+import { Settings, LogOut, Crown, RefreshCcw, HelpCircle, Globe } from 'lucide-react-native';
+
 import Purchases from 'react-native-purchases';
 import { ImageWithFallback } from '@/components';
 import { useSyncedData } from '@/hooks/useSyncedData';
@@ -32,12 +35,13 @@ interface MenuItem {
   chevron?: boolean;
 }
 
+
 export default function ProfileScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [userStats, setUserStats] = React.useState<any>(null);
   const [achievementsWithStatus, setAchievementsWithStatus] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [signingOut, setSigningOut] = React.useState(false); // <-- NEW STATE
+  const [signingOut, setSigningOut] = React.useState(false);
 
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -147,6 +151,53 @@ export default function ProfileScreen() {
     loadData();
   }, [loadData]);
 
+  // RESYNC ACCOUNT
+  const handleResync = async () => {
+    setLoading(true);
+    try {
+      // Don't clear first - just fetch fresh data
+      console.log('[ProfileScreen] Starting resync...');
+      await forceSyncAll();
+      
+      // Wait a moment for observables to propagate
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Reload data to refresh UI
+      console.log('[ProfileScreen] Reloading data after sync...');
+      await loadData();
+      
+      Alert.alert('Success', 'Account synchronized successfully.');
+    } catch (error) {
+      console.error('Error syncing:', error);
+      Alert.alert('Error', 'Failed to synchronize account.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // REPLAY ONBOARDING
+  const handleReplayOnboarding = async () => {
+    Alert.alert(
+      'Replay Onboarding',
+      'This will show the welcome screens again. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Show Onboarding',
+          onPress: async () => {
+            try {
+              await resetOnboarding();
+              router.replace('/onboarding');
+            } catch (error) {
+              console.error('Error resetting onboarding:', error);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+
   // ⛔ SIGNOUT WITH LOADING
   const handleSignOut = () => {
     Alert.alert(
@@ -160,15 +211,15 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               setSigningOut(true);
-
+              
+              // Note: Legend State syncs data automatically in the background
+              // No need to force sync here - it slows down logout significantly
+              
               // Clear local data
               clearUserSync();
 
               // Sign out - this will trigger onAuthStateChange which handles navigation
               await supabase.auth.signOut();
-
-              // No need to call router.replace - auth state change will handle it
-              // No need to reset signingOut - component will unmount
             } catch (error) {
               console.error('Error signing out:', error);
               Alert.alert('Error', 'Failed to sign out. Please try again.');
@@ -178,6 +229,23 @@ export default function ProfileScreen() {
         },
       ]
     );
+  };
+
+  // Open Explore website
+  const handleExplore = async () => {
+    try {
+      const url = 'https://explore.seavault.co.uk';
+      const supported = await Linking.canOpenURL(url);
+      
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Unable to open the website');
+      }
+    } catch (error) {
+      console.error('Error opening explore website:', error);
+      Alert.alert('Error', 'Failed to open the website');
+    }
   };
 
   const handleManageSubscription = async () => {
@@ -192,37 +260,37 @@ export default function ProfileScreen() {
   const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
   const totalCount = allAchievements ? Object.values(allAchievements).length : 0;
 
-  // Conditionally build menu items based on subscription status
+  // Conditionally build menu items
   const menuItems: MenuItem[] = [
-    // Show loading, "Go Pro", or "Manage Subscription" based on status
-    isPurchaseLoading
-      ? {
-          icon: <ActivityIndicator size="small" color="#999" />,
-          title: 'Checking subscription...',
-          subtitle: 'Please wait',
-          onPress: () => {},
-          chevron: false,
-        }
-      : isPro
-      ? {
-          icon: <Crown size={24} color="#FFD700" />,
-          title: 'Manage Subscription',
-          subtitle: 'View your plan details',
-          onPress: handleManageSubscription,
-          chevron: true,
-        }
-      : {
-          icon: <Crown size={24} color="#FFD700" />,
-          title: 'Go Pro',
-          subtitle: 'Unlock all features',
-          onPress: () => router.push('/modal/paywall'),
-          chevron: true,
-        },
+    // ... existing items
     {
       icon: <Settings size={24} color="#fff" />,
       title: 'Account Settings',
       subtitle: 'Manage your account preferences',
       onPress: () => router.push(ROUTES.PROFILE.EDIT),
+      chevron: true,
+    },
+    // NEW: Resync
+    {
+      icon: <RefreshCcw size={24} color="#fff" />,
+      title: 'Resync Account',
+      subtitle: 'Fix display issues or missing data',
+      onPress: handleResync,
+    },
+    // // NEW: Replay Onboarding
+    // {
+    //   icon: <HelpCircle size={24} color="#fff" />,
+    //   title: 'Replay Onboarding',
+    //   subtitle: 'View the welcome tutorial again',
+    //   onPress: handleReplayOnboarding,
+    //   chevron: true,
+    // },
+    // NEW: Explore
+    {
+      icon: <Globe size={24} color="#fff" />,
+      title: 'Explore',
+      subtitle: 'Discover new creatures and locations',
+      onPress: handleExplore,
       chevron: true,
     },
     {

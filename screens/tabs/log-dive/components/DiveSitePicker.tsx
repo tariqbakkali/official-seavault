@@ -26,7 +26,6 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
   onMapGestureEnd,
 }) => {
   const mapRef = useRef<MapboxClusteredMapViewRef>(null);
-  const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
@@ -37,6 +36,7 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
+        
         if (status === 'granted') {
           setPermissionGranted(true);
           const location = await Location.getCurrentPositionAsync({
@@ -48,38 +48,11 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
           });
         }
       } catch (error) {
-        console.warn('Error getting location:', error);
+        console.warn('[DiveSitePicker] Error getting location:', error);
         // Don't set map error here, as location is optional
       }
     })();
   }, []);
-
-  // Simulate map loading and handle timeout
-  useEffect(() => {
-    let isMounted = true;
-    setIsLoadingMap(true);
-    setMapError(null);
-
-    const timer = setTimeout(() => {
-      if (isMounted) {
-        setIsLoadingMap(false);
-      }
-    }, 1000); // 1 second loading simulation
-
-    // Safety timeout
-    const safetyTimer = setTimeout(() => {
-      if (isMounted && isLoadingMap) {
-        setIsLoadingMap(false);
-        // Don't necessarily show error, just stop loading
-      }
-    }, 10000);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-      clearTimeout(safetyTimer);
-    };
-  }, [mapKey]);
 
   const handleRetry = () => {
     setMapKey(prev => prev + 1);
@@ -87,24 +60,25 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
 
   // Helper function to calculate initial region based on all dive sites
   const calculateInitialRegionForDenseArea = (sites: any[]) => {
-    if (sites.length === 0) {
-      // Default to user location if available, otherwise global view
-      if (userLocation) {
-        return {
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          latitudeDelta: 0.5,
-          longitudeDelta: 0.5,
-        };
-      }
+    // ALWAYS prioritize user location when available (regardless of dive sites)
+    if (userLocation) {
       return {
-        latitude: 0,
-        longitude: 0,
-        latitudeDelta: 100,
-        longitudeDelta: 100,
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        latitudeDelta: 5.0,  // Zoomed out view (~500km range)
+        longitudeDelta: 5.0,
       };
     }
 
+    // If no user location, calculate from dive sites
+    if (sites.length === 0) {
+      return {
+        latitude: 54,  // Central Europe
+        longitude: 15,
+        latitudeDelta: 40,  // Wide view
+        longitudeDelta: 40,
+      };
+    }
     let minLat = 90;
     let maxLat = -90;
     let minLng = 180;
@@ -228,7 +202,7 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
 
       return (
         <MapboxClusteredMapView
-          key={`clustered-${mapKey}`}
+          key={`clustered-${mapKey}-${userLocation ? 'loc' : 'no-loc'}-${selectedDiveSiteId || 'none'}`}
           ref={mapRef}
           style={styles.map}
           data={validSites}
@@ -326,11 +300,6 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
         </View>
 
         <View style={styles.mapContainer}>
-          {isLoadingMap && (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-            </View>
-          )}
           {renderMapContent()}
         </View>
       </View>

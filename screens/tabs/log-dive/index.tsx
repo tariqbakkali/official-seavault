@@ -77,8 +77,9 @@ const LogDiveScreen = () => {
     }, 100); // Small delay to ensure proper cleanup
   };
 
-  // Show loading screen during initial load or data fetching
-  if (showInitialLoading || isLoading.diveSites) {
+  // Show loading screen only during initial load (500ms)
+  // Don't wait for data to load - show form even if categories are empty
+  if (showInitialLoading) {
     return (
       <View
         style={[

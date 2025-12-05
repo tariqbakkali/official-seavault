@@ -8,6 +8,8 @@ import {
     FlatList,
     ViewToken,
     ActivityIndicator,
+    Image,
+    ImageBackground,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -23,15 +25,17 @@ interface OnboardingSlide {
     description: string;
     icon: React.ReactNode;
     gradient: readonly [string, string, ...string[]];
+    backgroundImage?: string;
 }
 
 const slides: OnboardingSlide[] = [
     {
         id: '1',
-        title: 'Welcome to SeaVault',
-        description: 'Your personal underwater adventure companion',
+        title: 'SeaVault',
+        description: 'Your lifetime digital logbook to record all of your underwater adventures',
         icon: <Compass size={80} color="#fff" />,
         gradient: ['#0f2027', '#203a43', '#2c5364'] as const,
+        backgroundImage: 'https://cdn.pixabay.com/photo/2017/08/09/09/26/red-sea-2613882_1280.jpg',
     },
     {
         id: '2',
@@ -39,27 +43,23 @@ const slides: OnboardingSlide[] = [
         description: 'Easily record every dive with location, depth, and marine life',
         icon: <Waves size={80} color="#fff" />,
         gradient: ['#1e3c72', '#2a5298', '#7597de'] as const,
+        backgroundImage: 'https://cdn.pixabay.com/photo/2024/08/02/09/01/barracuda-8939250_1280.jpg',
     },
     {
         id: '3',
-        title: 'Digital Logbook',
-        description: 'Keep a lifetime record of all your underwater adventures',
-        icon: <BookOpen size={80} color="#fff" />,
-        gradient: ['#134e5e', '#71b280'] as const,
-    },
-    {
-        id: '4',
         title: 'Track Marine Life',
         description: 'Collect and identify thousands of ocean creatures',
         icon: <Fish size={80} color="#fff" />,
         gradient: ['#0575e6', '#021b79'] as const,
+        backgroundImage: 'https://cdn.pixabay.com/photo/2019/08/08/11/33/stingray-4392776_1280.jpg',
     },
     {
-        id: '5',
+        id: '4',
         title: 'Offline Support',
         description: 'Access your dives and creatures anywhere, even without internet',
         icon: <Wifi size={80} color="#fff" />,
         gradient: ['#1a2980', '#26d0ce'] as const,
+        backgroundImage: 'https://cdn.pixabay.com/photo/2014/11/28/22/40/diver-549369_1280.jpg',
     },
 ];
 
@@ -113,14 +113,41 @@ export default function OnboardingScreen() {
         }
     };
 
-    const renderSlide = ({ item }: { item: OnboardingSlide }) => {
+    const renderSlide = ({ item, index }: { item: OnboardingSlide; index: number }) => {
+        const content = (
+            <View style={styles.content}>
+                {index === 0 ? (
+                    // Show logo on first slide
+                    <Image
+                        source={require('@/assets/images/icon.png')}
+                        style={styles.logo}
+                        resizeMode="contain"
+                    />
+                ) : (
+                    <View style={styles.iconContainer}>{item.icon}</View>
+                )}
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.description}>{item.description}</Text>
+            </View>
+        );
+
+        if (item.backgroundImage) {
+            return (
+                <ImageBackground
+                    source={{ uri: item.backgroundImage }}
+                    style={styles.slide}
+                    resizeMode="cover"
+                >
+                    {/* Dark overlay for better text readability */}
+                    <View style={styles.overlay} />
+                    {content}
+                </ImageBackground>
+            );
+        }
+
         return (
             <LinearGradient colors={item.gradient} style={styles.slide}>
-                <View style={styles.content}>
-                    <View style={styles.iconContainer}>{item.icon}</View>
-                    <Text style={styles.title}>{item.title}</Text>
-                    <Text style={styles.description}>{item.description}</Text>
-                </View>
+                {content}
             </LinearGradient>
         );
     };
@@ -228,13 +255,30 @@ const styles = StyleSheet.create({
         color: '#fff',
         textAlign: 'center',
         marginBottom: DIMENSIONS.SPACE_LG,
+        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 10,
+        letterSpacing: 0.5,
     },
     description: {
         fontSize: TYPOGRAPHY.SIZE_LG,
-        color: 'rgba(255, 255, 255, 0.8)',
+        color: '#fff',
         textAlign: 'center',
-        lineHeight: 24,
+        lineHeight: 28,
         paddingHorizontal: DIMENSIONS.PADDING_LG,
+        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 8,
+        fontWeight: '500',
+    },
+    logo: {
+        width: 120,
+        height: 120,
+        marginBottom: DIMENSIONS.SPACE_XXL,
+    },
+    overlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
     pagination: {
         position: 'absolute',

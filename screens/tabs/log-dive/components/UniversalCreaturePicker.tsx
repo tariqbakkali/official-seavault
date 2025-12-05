@@ -176,13 +176,17 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
       // Apply pagination to the combined results
       const endIndex = (currentPage + 1) * PAGE_SIZE;
       const paginatedData = combined.slice(0, endIndex);
+      
+      // Update hasMore based on whether we've shown all data
+      setHasMore(paginatedData.length < combined.length);
 
       return paginatedData;
     }
 
     if (currentView === 'categories') {
       const categories = catalog?.categories || [];
-      // No search query, just return categories
+      // No search query, just return categories (no pagination needed)
+      setHasMore(false); // Categories don't paginate
       return categories.map((c: any) => ({ ...c, type: 'category' }));
     } else {
       // Creatures View (inside a category)
@@ -207,6 +211,9 @@ const UniversalCreaturePicker: React.FC<UniversalCreaturePickerProps> = ({
       // Apply pagination
       const endIndex = (currentPage + 1) * PAGE_SIZE;
       const paginatedCreatures = creatures.slice(0, endIndex);
+      
+      // Update hasMore based on whether we've shown all creatures
+      setHasMore(paginatedCreatures.length < creatures.length);
 
       return paginatedCreatures;
     }

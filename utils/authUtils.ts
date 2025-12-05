@@ -15,7 +15,8 @@ export const getAuthRedirectUrl = (): string => {
   
   // For production, use the standard deep link scheme with two slashes
   if (!isDevelopment) {
-    return `SeaVault://${ROUTES.AUTH.RESET_PASSWORD.substring(1)}`;
+    // Simplify the path to ensure it matches the deep link configuration
+    return `SeaVault://reset-password`;
   }
   
   // For development, we need to construct the URL with the local IP and port
@@ -30,7 +31,7 @@ export const getAuthRedirectUrl = (): string => {
   
   // Construct the redirect URL for development
   // This follows the Expo deep linking pattern for development
-  return `exp://${ipAddress}:${portNumber}/--/${ROUTES.AUTH.RESET_PASSWORD.substring(1)}`;
+  return `exp://${ipAddress}:${portNumber}/--/reset-password`;
 };
 
 /**

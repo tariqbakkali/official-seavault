@@ -3,6 +3,7 @@ import { supabase } from '../services/supabase';
 import { setCurrentUserID } from '../stores/syncedObservables';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkPendingImageUploads } from '../services/imageSyncService'; // Import checkPendingImageUploads
+import { checkAndRunMigrations } from './appMigration'; // Import migration utility
 
 /**
  * Application initializer for local-first functionality
@@ -11,6 +12,9 @@ import { checkPendingImageUploads } from '../services/imageSyncService'; // Impo
 
 export const initializeApp = async () => {
   try {
+    // Check and run migrations first (clears stale catalog data on version change)
+    await checkAndRunMigrations();
+    
     // Configure Legend-State
     // configureLegendState();
     
