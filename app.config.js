@@ -4,7 +4,7 @@ export default ({ config }) => {
   const appJsonConfig = {
     name: 'SeaVault',
     slug: 'SeaVault',
-    version: '1.0.6',
+    version: '1.1.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
 
@@ -14,36 +14,13 @@ export default ({ config }) => {
       resizeMode: 'contain',
     },
     scheme: 'seavault',
-    ios: {
-      associatedDomains: ['applinks:seavault.app', 'applinks:www.seavault.app'],
-    },
-    android: {
-      intentFilters: [
-        {
-          action: 'VIEW',
-          autoVerify: true,
-          data: [
-            {
-              scheme: 'https',
-              host: 'seavault.app',
-              pathPrefix: '/upgrade',
-            },
-            {
-              scheme: 'https',
-              host: 'www.seavault.app',
-              pathPrefix: '/upgrade',
-            },
-          ],
-          category: ['BROWSABLE', 'DEFAULT'],
-        },
-      ],
-    },
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'co.uk.seavault.app',
-      buildNumber: '1.0.6',
+      associatedDomains: ['applinks:seavault.onelink.me'],
+      buildNumber: '1.1.0',
       config: {
         googleMapsApiKey:
           process.env.GOOGLE_MAPS_API_KEY ||
@@ -52,6 +29,7 @@ export default ({ config }) => {
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        NSUserTrackingUsageDescription: 'This app uses tracking to provide personalized dive shop offers and measure ad performance.',
         CFBundleURLTypes: [
           {
             CFBundleURLSchemes: [
@@ -62,11 +40,25 @@ export default ({ config }) => {
       },
     },
     android: {
+      package: 'com.seavault.app',
+      intentFilters: [
+        {
+          action: 'VIEW',
+          autoVerify: true,
+          data: [
+            {
+              scheme: 'https',
+              host: 'seavault.onelink.me',
+              pathPrefix: '/',
+            }
+          ],
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+      ],
       adaptiveIcon: {
         foregroundImage: './assets/images/adaptive-icon.png',
         backgroundColor: '#1B87E1',
       },
-      package: 'com.seavault.app',
       permissions: [
         'android.permission.ACCESS_FINE_LOCATION',
         'android.permission.ACCESS_COARSE_LOCATION',
@@ -122,6 +114,14 @@ export default ({ config }) => {
       'expo-secure-store',
       '@react-native-google-signin/google-signin',
       'expo-apple-authentication',
+      [
+        'react-native-appsflyer',
+        {
+          devKey: process.env.EXPO_PUBLIC_APPSFLYER_DEV_KEY || 'HrD2iEQKVAGU2xraYSKkh5',
+          appId: process.env.EXPO_PUBLIC_APPSFLYER_APP_ID || 'id6743347532',
+          isDebug: true,
+        },
+      ],
       // 'sentry-expo',
     ],
     experiments: {

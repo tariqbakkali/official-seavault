@@ -118,6 +118,36 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['user_achievements']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['user_achievements']['Insert']>;
       };
+      dive_shops: {
+        Row: {
+          id: number;
+          name: string;
+          padi_link: string | null;
+          address: string | null;
+          country: string | null;
+          referral_code: string;
+          offering_id: string | null;
+          ios_link: string | null;
+          android_link: string | null;
+          created_at: string;
+          discount_percent: number;
+          lifetime: boolean;
+          is_active: boolean;
+          total_redeemed: number;
+        };
+        Insert: Omit<Database['public']['Tables']['dive_shops']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['dive_shops']['Insert']>;
+      };
+      shop_referrals: {
+        Row: {
+          id: number;
+          shop_id: number;
+          user_id: string;
+          redeemed_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['shop_referrals']['Row'], 'id' | 'redeemed_at'>;
+        Update: Partial<Database['public']['Tables']['shop_referrals']['Insert']>;
+      };
     };
   };
 }

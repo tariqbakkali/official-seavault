@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform, Animated, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform, Animated, ScrollView, Dimensions, Share, TextInput } from 'react-native';
 import Purchases, { PurchasesPackage } from 'react-native-purchases';
 import { getOfferings, purchasePackage } from '@/services/revenueCat';
 import { useShop } from '@/contexts/ShopContext';
 import { COLORS, TYPOGRAPHY, DIMENSIONS } from '@/constants';
-import { X, Waves, Fish, TrendingUp, Shield, Headphones, Sparkles } from 'lucide-react-native';
+import { Waves, Fish, TrendingUp, Shield, Headphones, Sparkles, Check, Share as ShareIcon } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { getCurrentUserID } from '@/stores/syncedObservables';
 
 interface PaywallProps {
     onClose: () => void;
@@ -64,7 +65,10 @@ const AnimatedBubble = ({ delay }: { delay: number }) => {
 export default function Paywall({ onClose }: PaywallProps) {
     const [packages, setPackages] = useState<PurchasesPackage[]>([]);
     const [loading, setLoading] = useState(true);
-    const { shop, error, redeemReferral } = useShop();
+    const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+    const [inputCode, setInputCode] = useState('');
+    const [showInput, setShowInput] = useState(false);
+    const { shop, error, redeemReferral, setReferralCode } = useShop();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(50)).current;
 
@@ -83,11 +87,15 @@ export default function Paywall({ onClose }: PaywallProps) {
                 useNativeDriver: true,
             }),
         ]).start();
-    }, []);
+    }, [shop]);
 
     const loadOfferings = async () => {
         try {
-            const currentOffering = await getOfferings();
+            // If a shop referral is active, use its specific offering_id
+            // Otherwise load the default offering
+            const offeringId = shop?.offering_id || undefined;
+            const currentOffering = await getOfferings(offeringId);
+            
             if (currentOffering) {
                 setPackages(currentOffering.availablePackages);
             }
@@ -103,16 +111,26 @@ export default function Paywall({ onClose }: PaywallProps) {
         try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             setLoading(true);
-            const customerInfo = await purchasePackage(pack);
+            
+            // Get current user ID
+            const userId = getCurrentUserID();
+            if (!userId) {
+                Alert.alert('Error', 'You must be logged in to purchase.');
+                return;
+            }
+            
+            const customerInfo = await purchasePackage(pack, userId);
             if (customerInfo?.entitlements.active['Pro']) {
-                const result = await redeemReferral();
+                // Redeem referral in background
+                redeemReferral().catch(err => console.error('Referral redemption failed:', err));
+                
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                if (result.success) {
-                    Alert.alert('Success', 'You are now a Pro member! ' + result.message);
-                } else {
-                    Alert.alert('Success', 'You are now a Pro member!');
-                }
-                onClose();
+                setPurchaseSuccess(true);
+                
+                // Auto-close modal after showing success message
+                setTimeout(() => {
+                    onClose();
+                }, 2000);
             }
         } catch (error) {
             console.error('Purchase failed', error);
@@ -155,9 +173,33 @@ export default function Paywall({ onClose }: PaywallProps) {
         }
     };
 
-    const handleClose = () => {
+    const handleManualCodeSubmit = async () => {
+        if (!inputCode.trim()) return;
+        
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        onClose();
+        setLoading(true);
+        try {
+            await setReferralCode(inputCode.trim());
+            setShowInput(false);
+            setInputCode('');
+            // The useEffect on [shop] will trigger reloadOfferings if the code is valid
+        } catch (e) {
+            Alert.alert('Error', 'Invalid code');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
+    const handleShare = async () => {
+        try {
+            await Share.share({
+                message: 'I just became a SeaVault Pro member! 🦈 Check out the app to log your dives and explore marine life.',
+            });
+        } catch (error) {
+            console.error('Error sharing:', error);
+        }
     };
 
     const features = [
@@ -183,6 +225,38 @@ export default function Paywall({ onClose }: PaywallProps) {
         );
     }
 
+    if (purchaseSuccess) {
+        return (
+            <LinearGradient
+                colors={['#001a33', '#003d5c', '#006b8f']}
+                style={styles.container}
+            >
+                {[...Array(8)].map((_, i) => (
+                    <AnimatedBubble key={i} delay={i * 500} />
+                ))}
+
+                <View style={styles.successContainer}>
+                    <View style={styles.successIconContainer}>
+                        <Check color="#fff" size={48} />
+                    </View>
+                    <Text style={styles.successTitle}>Welcome to Pro!</Text>
+                    <Text style={styles.successSubtitle}>
+                        You've successfully unlocked all premium features.
+                    </Text>
+
+                    <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+                        <ShareIcon color="#001a33" size={20} style={{ marginRight: 8 }} />
+                        <Text style={styles.shareButtonText}>Share the News</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.continueButton} onPress={onClose}>
+                        <Text style={styles.continueButtonText}>Continue to App</Text>
+                    </TouchableOpacity>
+                </View>
+            </LinearGradient>
+        );
+    }
+
     return (
         <LinearGradient
             colors={['#001a33', '#003d5c', '#006b8f']}
@@ -193,11 +267,7 @@ export default function Paywall({ onClose }: PaywallProps) {
                 <AnimatedBubble key={i} delay={i * 500} />
             ))}
 
-            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-                <View style={styles.closeButtonInner}>
-                    <X color="#fff" size={24} />
-                </View>
-            </TouchableOpacity>
+
 
             <ScrollView
                 style={styles.scrollView}
@@ -312,8 +382,37 @@ export default function Paywall({ onClose }: PaywallProps) {
 
                         {Platform.OS === 'ios' && (
                             <TouchableOpacity onPress={handleRedeemCode}>
-                                <Text style={styles.footerText}>Redeem Offer Code</Text>
+                                <Text style={styles.footerText}>Redeem App Store Code</Text>
                             </TouchableOpacity>
+                        )}
+
+                        {/* Manual Referral Code Entry */}
+                        {!shop && (
+                            <View style={styles.referralInputContainer}>
+                                {showInput ? (
+                                    <View style={styles.inputWrapper}>
+                                        <TextInput
+                                            style={styles.input}
+                                            placeholder="Enter Referral Code"
+                                            placeholderTextColor="rgba(255,255,255,0.5)"
+                                            value={inputCode}
+                                            onChangeText={setInputCode}
+                                            autoCapitalize="characters"
+                                            autoCorrect={false}
+                                        />
+                                        <TouchableOpacity 
+                                            style={styles.applyButton}
+                                            onPress={handleManualCodeSubmit}
+                                        >
+                                            <Text style={styles.applyButtonText}>Apply</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    <TouchableOpacity onPress={() => setShowInput(true)}>
+                                        <Text style={styles.footerText}>Have a Dive Shop Code?</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
                         )}
 
                         <Text style={styles.termsText}>
@@ -537,10 +636,110 @@ const styles = StyleSheet.create({
         textDecorationLine: 'underline',
         fontWeight: '500',
     },
+    referralInputContainer: {
+        width: '100%',
+        alignItems: 'center',
+        marginTop: DIMENSIONS.MARGIN_SM,
+    },
+    inputWrapper: {
+        flexDirection: 'row',
+        width: '100%',
+        gap: DIMENSIONS.GAP_SM,
+    },
+    input: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 12,
+        padding: 12,
+        color: '#fff',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    applyButton: {
+        backgroundColor: '#4DD0E1',
+        paddingHorizontal: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 12,
+    },
+    applyButtonText: {
+        color: '#001a33',
+        fontWeight: 'bold',
+    },
     termsText: {
         color: 'rgba(255, 255, 255, 0.5)',
         fontSize: TYPOGRAPHY.SIZE_XS,
         textAlign: 'center',
         marginTop: DIMENSIONS.MARGIN_SM,
+    },
+    successContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: DIMENSIONS.PADDING_XL,
+    },
+    successIconContainer: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: '#4DD0E1',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: DIMENSIONS.MARGIN_XL,
+        shadowColor: '#4DD0E1',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    successTitle: {
+        fontSize: 36,
+        fontWeight: 'bold',
+        color: '#fff',
+        marginBottom: DIMENSIONS.MARGIN_MD,
+        textAlign: 'center',
+    },
+    successSubtitle: {
+        fontSize: TYPOGRAPHY.SIZE_LG,
+        color: 'rgba(255, 255, 255, 0.8)',
+        textAlign: 'center',
+        marginBottom: 48,
+        lineHeight: 28,
+    },
+    shareButton: {
+        flexDirection: 'row',
+        backgroundColor: '#4DD0E1',
+        paddingVertical: 16,
+        paddingHorizontal: 32,
+        borderRadius: 30,
+        alignItems: 'center',
+        marginBottom: DIMENSIONS.MARGIN_MD,
+        width: '100%',
+        justifyContent: 'center',
+        shadowColor: '#4DD0E1',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    shareButtonText: {
+        color: '#001a33',
+        fontSize: TYPOGRAPHY.SIZE_LG,
+        fontWeight: 'bold',
+    },
+    continueButton: {
+        paddingVertical: 16,
+        paddingHorizontal: 32,
+        borderRadius: 30,
+        alignItems: 'center',
+        width: '100%',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    continueButtonText: {
+        color: '#fff',
+        fontSize: TYPOGRAPHY.SIZE_LG,
+        fontWeight: '600',
     },
 });

@@ -48,6 +48,11 @@ export const initializeUserSession = async (userId: string) => {
     // Set current user ID
     setCurrentUserID(userId);
     
+    // Configure RevenueCat with user ID
+    const { loginUser } = await import('../services/revenueCat');
+    await loginUser(userId);
+    console.log('[AppInitializer] RevenueCat configured with user ID');
+    
     // Initialize user-specific data sync
     await initializeUserSync(userId);
     
@@ -62,6 +67,11 @@ export const initializeUserSession = async (userId: string) => {
  */
 export const cleanupUserSession = async () => {
   try {
+    // Logout from RevenueCat
+    const { logoutUser } = await import('../services/revenueCat');
+    await logoutUser();
+    console.log('[AppInitializer] RevenueCat user logged out');
+    
     // Clear user ID
     setCurrentUserID(null);
     

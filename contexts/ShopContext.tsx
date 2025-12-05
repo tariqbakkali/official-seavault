@@ -1,19 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/services/supabase';
-import { setShopIdAttribute } from '@/services/revenueCat';
+import { setShopIdAttribute, initRevenueCat, isRevenueCatConfigured } from '@/services/revenueCat';
+import { initAppsFlyer, onAppsFlyerDeepLink, getDeviceIDFA } from '@/services/appsFlyer';
+import Purchases from 'react-native-purchases';
 import * as Linking from 'expo-linking';
+import { router } from 'expo-router';
+import { usePurchase } from '@/contexts/PurchaseContext';
 
-interface Shop {
-    id: number;
-    name: string;
-    referral_code: string;
-    discount_percent: number;
-    lifetime: boolean;
-    is_active: boolean;
-    ios_link?: string;
-    android_link?: string;
-}
+import { Database } from '@/types/database';
+
+type Shop = Database['public']['Tables']['dive_shops']['Row'];
 
 interface ShopContextType {
     referralCode: string | null;
@@ -31,10 +28,28 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [shop, setShop] = useState<Shop | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [shouldNavigateToPaywall, setShouldNavigateToPaywall] = useState(false);
+    
+    const { isPro, isLoading: isPurchaseLoading } = usePurchase();
 
     useEffect(() => {
-        loadReferralCode();
+        const init = async () => {
+            await initRevenueCat();
+            // Initialize AppsFlyer
+            try {
+                await initAppsFlyer();
+                console.log('AppsFlyer initialized');
+                // Get and log device ID for testing
+                const deviceId = await getDeviceIDFA();
+                console.log('✅ AppsFlyer Device ID:', deviceId);
+            } catch (error) {
+                console.error('AppsFlyer init failed:', error);
+            }
+            loadReferralCode();
+        };
+        init();
         handleDeepLinking();
+        handleAppsFlyerDeepLink();
     }, []);
 
     useEffect(() => {
@@ -45,11 +60,71 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, [referralCode]);
 
+    // Handle navigation to paywall when shop is loaded and user is not Pro
+    useEffect(() => {
+        const checkAuthAndNavigate = async () => {
+            if (shouldNavigateToPaywall && shop && !isPurchaseLoading) {
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (!session?.user) {
+                    console.log('User not logged in, skipping paywall navigation');
+                    setShouldNavigateToPaywall(false);
+                    return;
+                }
+
+                if (!isPro) {
+                    console.log('Navigating to paywall for referral:', referralCode);
+                    setTimeout(() => {
+                        router.push('/modal/paywall');
+                    }, 500);
+                } else {
+                    console.log('User is already Pro, skipping paywall navigation');
+                }
+                setShouldNavigateToPaywall(false);
+            }
+        };
+        
+        checkAuthAndNavigate();
+    }, [shouldNavigateToPaywall, shop, isPurchaseLoading, isPro]);
+
+    useEffect(() => {
+        // Listen for auth changes to handle deferred referral redemption
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_IN' && session?.user && referralCode) {
+                console.log('User signed in, re-applying referral code:', referralCode);
+                // Re-fetch shop to apply attributes to the new user
+                await fetchShop(referralCode);
+            }
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [referralCode]);
+
+    const handleAppsFlyerDeepLink = () => {
+        onAppsFlyerDeepLink((deepLinkData) => {
+            console.log('AppsFlyer deep link data:', deepLinkData);
+            
+            // Extract referral code from deep link data
+            const code = deepLinkData?.deep_link_value || deepLinkData?.code;
+            
+            if (code) {
+                setReferralCode(code);
+                setShouldNavigateToPaywall(true);
+            }
+        });
+    };
+
     const handleDeepLinking = () => {
         const handleUrl = (event: { url: string }) => {
             const { queryParams } = Linking.parse(event.url);
-            if (queryParams?.ref) {
-                setReferralCode(queryParams.ref as string);
+            // Check for 'code' parameter as per new workflow
+            const code = queryParams?.code as string;
+            
+            if (code) {
+                setReferralCode(code);
+                setShouldNavigateToPaywall(true);
             }
         };
 
@@ -92,20 +167,36 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchShop = async (code: string) => {
         try {
             setError(null);
+            
+            console.log('🔍 Fetching shop with code:', code);
+            console.log('🔍 Code length:', code.length);
+            console.log('🔍 Code trimmed:', code.trim());
+            
             const { data, error } = await supabase
                 .from('dive_shops')
                 .select('*')
-                .eq('referral_code', code)
-                .single();
+                .eq('referral_code', code.trim())
+                .maybeSingle();
+
+            console.log('🔍 Supabase response:', { data, error });
 
             if (error) {
                 console.error('Error fetching shop:', error);
+                setError('An error occurred while validating the code.');
+                setShop(null);
+                return;
+            }
+
+            if (!data) {
+                console.log('❌ Shop not found for code:', code);
                 setError('Invalid referral code. Please check and try again.');
                 setShop(null);
                 return;
             }
 
             const shopData = data as unknown as Shop;
+            console.log('✅ Shop found:', shopData.name, 'Offering:', shopData.offering_id);
+
 
             if (!shopData.is_active) {
                 setError('This referral code is no longer active.');
@@ -116,6 +207,29 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setShop(shopData);
             setError(null);
 
+            // Set RevenueCat attributes for tracking and offering switching
+            if (shopData?.referral_code) {
+                const isConfigured = await isRevenueCatConfigured();
+                if (isConfigured) {
+                    await Purchases.setAttributes({ referral_code: shopData.referral_code });
+                    
+                    // Only log in as referral user if NO user is currently logged in
+                    // This prevents overwriting the real user's identity
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session?.user) {
+                        try {
+                            await Purchases.logIn(`ref_${shopData.referral_code}`);
+                        } catch (e) {
+                            console.error('Error logging in to RevenueCat with referral code', e);
+                        }
+                    } else {
+                        console.log('User logged in, skipping referral user login but attributes set');
+                    }
+                } else {
+                    console.warn('RevenueCat not configured, skipping attributes/login');
+                }
+            }
+            
             if (shopData?.id) {
                 await setShopIdAttribute(shopData.id.toString());
             }

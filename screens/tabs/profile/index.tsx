@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Settings, LogOut, Crown } from 'lucide-react-native';
+import Purchases from 'react-native-purchases';
 import { ImageWithFallback } from '@/components';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
@@ -20,6 +22,7 @@ import StatsSection from './components/StatsSection';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll, clearUserSync } from '@/utils/syncUtils';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import { usePurchase } from '@/contexts/PurchaseContext';
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -38,6 +41,7 @@ export default function ProfileScreen() {
 
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { isPro, isLoading: isPurchaseLoading } = usePurchase();
 
   const {
     creatures: allCreatures,
@@ -176,17 +180,44 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleManageSubscription = async () => {
+    try {
+      await Purchases.showManageSubscriptions();
+    } catch (error) {
+      console.error('Error opening subscription management:', error);
+      Alert.alert('Error', 'Unable to open subscription management. Please try again.');
+    }
+  };
+
   const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
   const totalCount = allAchievements ? Object.values(allAchievements).length : 0;
 
+  // Conditionally build menu items based on subscription status
   const menuItems: MenuItem[] = [
-    {
-      icon: <Crown size={24} color="#FFD700" />,
-      title: 'Go Pro',
-      subtitle: 'Unlock all features',
-      onPress: () => router.push('/modal/paywall'),
-      chevron: true,
-    },
+    // Show loading, "Go Pro", or "Manage Subscription" based on status
+    isPurchaseLoading
+      ? {
+          icon: <ActivityIndicator size="small" color="#999" />,
+          title: 'Checking subscription...',
+          subtitle: 'Please wait',
+          onPress: () => {},
+          chevron: false,
+        }
+      : isPro
+      ? {
+          icon: <Crown size={24} color="#FFD700" />,
+          title: 'Manage Subscription',
+          subtitle: 'View your plan details',
+          onPress: handleManageSubscription,
+          chevron: true,
+        }
+      : {
+          icon: <Crown size={24} color="#FFD700" />,
+          title: 'Go Pro',
+          subtitle: 'Unlock all features',
+          onPress: () => router.push('/modal/paywall'),
+          chevron: true,
+        },
     {
       icon: <Settings size={24} color="#fff" />,
       title: 'Account Settings',
