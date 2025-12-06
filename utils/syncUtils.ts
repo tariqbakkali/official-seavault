@@ -104,29 +104,108 @@ export const forceSyncAll = async () => {
     const userId = currentUserID$.get();
     
     // Fetch catalog data (public, no user filter needed)
-    const [categoriesRes, creaturesRes, achievementsRes, diveSitesRes] = await Promise.all([
+    // Creatures need pagination due to Supabase 1000-row limit
+    console.log('[forceSyncAll] Fetching creatures with pagination...');
+    let allCreatures: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+    
+    while (hasMore) {
+      console.log(`[forceSyncAll] Fetching creatures page ${page} (offset ${page * pageSize})...`);
+      const { data, error } = await supabase
+        .from('creatures')
+        .select('*')
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+      
+      console.log(`[forceSyncAll] Page ${page} response received. Error: ${error ? error.message : 'none'}, Data length: ${data ? data.length : 'null'}`);
+      
+      if (error) {
+        console.error('[forceSyncAll] Error fetching creatures page', page, error);
+        break;
+      }
+      
+      if (data && data.length > 0) {
+        allCreatures = allCreatures.concat(data);
+        console.log(`[forceSyncAll] Fetched page ${page + 1}: ${data.length} creatures (total: ${allCreatures.length})`);
+        hasMore = data.length === pageSize; // Continue if we got a full page
+        page++;
+      } else {
+        hasMore = false;
+      }
+    }
+    
+    const creaturesRes = { data: allCreatures, error: null };
+    
+    // Dive sites also need pagination
+    console.log('[forceSyncAll] Fetching dive sites with pagination...');
+    let allDiveSites: any[] = [];
+    page = 0;
+    hasMore = true;
+    
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('dive_sites')
+        .select('*')
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+      
+      if (error) {
+        console.error('[forceSyncAll] Error fetching dive sites page', page, error);
+        break;
+      }
+      
+      if (data && data.length > 0) {
+        allDiveSites = allDiveSites.concat(data);
+        console.log(`[forceSyncAll] Fetched dive sites page ${page + 1}: ${data.length} sites (total: ${allDiveSites.length})`);
+        hasMore = data.length === pageSize;
+        page++;
+      } else {
+        hasMore = false;
+      }
+    }
+    
+    const diveSitesRes = { data: allDiveSites, error: null };
+    
+    // Fetch other catalog data normally (they're under 1000 rows)
+    const [categoriesRes, achievementsRes] = await Promise.all([
       supabase.from('categories').select('*'),
-      supabase.from('creatures').select('*'),
       supabase.from('achievements').select('*'),
-      supabase.from('dive_sites').select('*'),
     ]);
     
     // Update catalog observables
     if (categoriesRes.data) {
       const categoriesObj = Object.fromEntries(categoriesRes.data.map((c: any) => [c.id, c]));
       categories$.set(categoriesObj);
+      console.log(`[forceSyncAll] Synced ${categoriesRes.data.length} categories`);
     }
+    if (categoriesRes.error) {
+      console.error('[forceSyncAll] Categories error:', categoriesRes.error);
+    }
+    
     if (creaturesRes.data) {
       const creaturesObj = Object.fromEntries(creaturesRes.data.map((c: any) => [c.id, c]));
       creatures$.set(creaturesObj);
+      console.log(`[forceSyncAll] Synced ${creaturesRes.data.length} creatures`);
+      
+      // Log creatures by category for debugging
+      const creaturesByCategory: Record<string, number> = {};
+      creaturesRes.data.forEach((c: any) => {
+        creaturesByCategory[c.category_id] = (creaturesByCategory[c.category_id] || 0) + 1;
+      });
+      console.log('[forceSyncAll] Creatures by category:', creaturesByCategory);
+    }
+    if (creaturesRes.error) {
+      console.error('[forceSyncAll] Creatures error:', creaturesRes.error);
     }
     if (achievementsRes.data) {
       const achievementsObj = Object.fromEntries(achievementsRes.data.map((a: any) => [a.id, a]));
       achievements$.set(achievementsObj);
+      console.log(`[forceSyncAll] Synced ${achievementsRes.data.length} achievements`);
     }
     if (diveSitesRes.data) {
       const diveSitesObj = Object.fromEntries(diveSitesRes.data.map((d: any) => [d.id, d]));
       diveSites$.set(diveSitesObj);
+      console.log(`[forceSyncAll] Synced ${diveSitesRes.data.length} dive sites`);
     }
     
     // Fetch user-specific data if logged in
@@ -174,6 +253,56 @@ export const forceSyncAll = async () => {
         const allUserAchievementsObj = Object.fromEntries(allUserAchievementsRes.data.map((ua: any) => [ua.id, ua]));
         allUsersAchievements$.set(allUserAchievementsObj);
       }
+      
+      // TODO: Re-enable achievement sync after debugging
+      // Sync achievements - lock/unlock based on current criteria
+      // if (sightingsRes.data && creaturesRes.data && achievementsRes.data && userAchievementsRes.data) {
+      //   console.log('[forceSyncAll] Syncing achievements based on current criteria...');
+      //   const { syncAchievements } = await import('@/services/statsService');
+      //   
+      //   const { toUnlock, toLock } = await syncAchievements(
+      //     userId,
+      //     { achievements: achievementsRes.data },
+      //     creaturesRes.data,
+      //     sightingsRes.data,
+      //     userAchievementsRes.data
+      //   );
+      //   
+      //   // Unlock new achievements
+      //   for (const achievementId of toUnlock) {
+      //     console.log(`[forceSyncAll] Unlocking achievement: ${achievementId}`);
+      //     await supabase
+      //       .from('user_achievements')
+      //       .insert({
+      //         user_id: userId,
+      //         achievement_id: achievementId,
+      //         unlocked_at: new Date().toISOString(),
+      //       } as any);
+      //   }
+      //   
+      //   // Lock achievements that no longer meet criteria
+      //   for (const achievementId of toLock) {
+      //     console.log(`[forceSyncAll] Locking achievement (no longer meets criteria): ${achievementId}`);
+      //     await supabase
+      //       .from('user_achievements')
+      //       .delete()
+      //       .eq('user_id', userId)
+      //       .eq('achievement_id', achievementId);
+      //   }
+      //   
+      //   // Re-fetch user achievements after syncing
+      //   if (toUnlock.length > 0 || toLock.length > 0) {
+      //     const { data: updatedAchievements } = await supabase
+      //       .from('user_achievements')
+      //       .select('*')
+      //       .eq('user_id', userId);
+      //     if (updatedAchievements) {
+      //       const updatedAchievementsObj = Object.fromEntries(updatedAchievements.map((ua: any) => [ua.id, ua]));
+      //       userAchievements$.set(updatedAchievementsObj);
+      //       console.log(`[forceSyncAll] Achievement sync complete: ${toUnlock.length} unlocked, ${toLock.length} locked`);
+      //     }
+      //   }
+      // }
     }
     
     console.log('[forceSyncAll] Sync completed successfully');

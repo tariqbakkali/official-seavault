@@ -34,6 +34,7 @@ export const categories$ = observable(customSynced({
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all catalog data
+  select: (select: any) => select.limit(10000), // Fetch up to 10,000 rows
 }));
 
 export const creatures$ = observable(customSynced({
@@ -44,6 +45,7 @@ export const creatures$ = observable(customSynced({
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all catalog data
+  select: (select: any) => select.limit(10000), // Fetch up to 10,000 rows
 }));
 
 export const achievements$ = observable(customSynced({
@@ -74,21 +76,11 @@ export const userAchievements$ = observable(customSynced({
 export const diveSites$ = observable(customSynced({
   supabase,
   collection: 'dive_sites',
-  actions: ['read', 'update'],
+  actions: ['read'], // Read-only catalog data
   persist: { name: 'dive_sites' },
   changesSince: 'last-sync',
-  update: async (input: any) => {
-    const { data, error } = await supabase
-      .from('dive_sites')
-      .upsert(input)
-      .select()
-      .single();
-      if (error) {
-        throw new Error(`Failed to update dive site: ${error.message}`);
-      } 
-  return { data, error: null };
-  },
-  realtime: false, // Disable realtime for dive sites to reduce constant updates
+  fieldCreatedAt: 'created_at',
+  realtime: true,
 }));
 
 // Synced observables for user-specific data
@@ -351,12 +343,21 @@ export const createDiveSite = (diveSiteData: Omit<DiveSite, 'id' | 'created_at'>
   }
   
   const id = uuidv4();
-  
-  (diveSites$ as any)[id].set({
+  const newDiveSite = {
     ...diveSiteData,
     id,
     created_at: new Date().toISOString(),
-  } as DiveSite);
+  } as DiveSite;
+  
+  try {
+    console.log('[createDiveSite] Creating dive site:', newDiveSite.name);
+    (diveSites$ as any)[id].set(newDiveSite);
+    console.log('[createDiveSite] Dive site created locally, will sync to Supabase');
+    return newDiveSite;
+  } catch (error) {
+    console.error('[createDiveSite] Error creating dive site:', error);
+    throw error;
+  }
 };
 
 export const removeWishlistItem = (wishlistId: string) => {

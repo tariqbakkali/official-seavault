@@ -42,9 +42,10 @@ export interface Database {
           latitude: number | null;
           longitude: number | null;
           osm_id: string | null;
+          created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['dive_sites']['Row'], 'id'>;
+        Insert: Omit<Database['public']['Tables']['dive_sites']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['dive_sites']['Insert']>;
       };
       profiles: {

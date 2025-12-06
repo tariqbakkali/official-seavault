@@ -198,7 +198,7 @@ export default function ProfileScreen() {
   };
 
 
-  // ⛔ SIGNOUT WITH LOADING
+  // ⛔ SIGNOUT WITH LOADING & SYNC CHECK
   const handleSignOut = () => {
     Alert.alert(
       'Sign Out',
@@ -209,26 +209,59 @@ export default function ProfileScreen() {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
-            try {
-              setSigningOut(true);
-              
-              // Note: Legend State syncs data automatically in the background
-              // No need to force sync here - it slows down logout significantly
-              
-              // Clear local data
-              clearUserSync();
-
-              // Sign out - this will trigger onAuthStateChange which handles navigation
-              await supabase.auth.signOut();
-            } catch (error) {
-              console.error('Error signing out:', error);
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
-              setSigningOut(false);
-            }
+            handleSafeLogout();
           },
         },
       ]
     );
+  };
+
+  const handleSafeLogout = async (force: boolean = false) => {
+    try {
+      setSigningOut(true);
+      
+      if (!force) {
+        // Attempt to sync before logging out
+        try {
+          console.log('[ProfileScreen] Attempting sync before logout...');
+          await forceSyncAll();
+          // Small delay to ensure any pushed changes are acknowledged
+          await new Promise(resolve => setTimeout(resolve, 500)); 
+          console.log('[ProfileScreen] Sync successful, proceeding to logout');
+        } catch (syncError) {
+          console.error('[ProfileScreen] Sync failed during logout:', syncError);
+          setSigningOut(false);
+          
+          Alert.alert(
+            'Sync Warning',
+            'We couldn\'t sync your latest data to the cloud. Logging out now may result in losing recent changes (like sightings or achievements).\n\nPlease check your internet connection.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Logout Anyway', 
+                style: 'destructive', 
+                onPress: () => handleSafeLogout(true) 
+              },
+              { 
+                text: 'Try Again', 
+                onPress: () => handleSafeLogout(false) 
+              }
+            ]
+          );
+          return;
+        }
+      }
+
+      // Clear local data
+      clearUserSync();
+
+      // Sign out - this will trigger onAuthStateChange which handles navigation
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
+      setSigningOut(false);
+    }
   };
 
   // Open Explore website

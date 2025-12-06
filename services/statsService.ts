@@ -1,4 +1,4 @@
-import { Creature, Category, UserAchievement, Achievement } from '@/types/database';
+import { Creature, Category, UserAchievement, Achievement, Sighting } from '@/types/database';
 
 export interface UserStats {
   totalPoints: number;
@@ -122,13 +122,17 @@ export const calculateUserStats = (
       allCreatures.map((creature: Creature) => [creature.id, creature])
     );
 
+    // Create sets of normalized creature names and classes for exact matching
     const sightedCreatureNames = new Set<string>();
     const sightedCreatureClasses = new Set<string>();
     seenCreatureIds.forEach(creatureId => {
       const creature = creaturesMapForDynamic.get(creatureId);
-      if (creature) {
-        sightedCreatureNames.add(creature.name);
-        sightedCreatureClasses.add(creature.class);
+      if (creature && creature.name) {
+        // Store normalized (lowercase) names for case-insensitive exact matching
+        sightedCreatureNames.add(creature.name.toLowerCase());
+        if (creature.class) {
+          sightedCreatureClasses.add(creature.class);
+        }
       }
     });
 
@@ -148,16 +152,21 @@ export const calculateUserStats = (
         total = 1;
         switch (achievement.code) {
           case 'whale_watcher':
-            progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('whale')) ? 1 : 0;
+            // Check if user has sighted ANY creature with "whale" in the name (case-insensitive)
+            progress = Array.from(sightedCreatureNames).some(name => name.includes('whale')) ? 1 : 0;
             break;
           case 'dolphin_friend':
-            progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('dolphin')) ? 1 : 0;
+            // Check if user has sighted ANY creature with "dolphin" in the name (case-insensitive)
+            progress = Array.from(sightedCreatureNames).some(name => name.includes('dolphin')) ? 1 : 0;
             break;
           case 'manta_mania':
-            progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('manta ray')) ? 1 : 0;
+            // Check if user has sighted ANY creature with "manta" in the name (case-insensitive)
+            // Note: Using "manta" instead of "manta ray" to catch variations like "Manta Ray", "Giant Manta", etc.
+            progress = Array.from(sightedCreatureNames).some(name => name.includes('manta')) ? 1 : 0;
             break;
           case 'shark_whisperer':
-            progress = Array.from(sightedCreatureNames).some(name => name.toLowerCase().includes('shark')) ? 1 : 0;
+            // Check if user has sighted ANY creature with "shark" in the name (case-insensitive)
+            progress = Array.from(sightedCreatureNames).some(name => name.includes('shark')) ? 1 : 0;
             break;
           case 'elusive_spotter':
             progress = sightedCreatureClasses.has('Rare') ? 1 : 0;
@@ -170,8 +179,20 @@ export const calculateUserStats = (
       const isAlreadyUnlocked = userAchievements ? userAchievements.some(ua => ua.achievement_id === achievement.id) : false;
       const isCurrentlyMeetingCriteria = (total > 0 && progress >= total);
 
-      if (isAlreadyUnlocked || isCurrentlyMeetingCriteria) {
+      // DYNAMIC LOCKING: Only count as unlocked if user CURRENTLY meets criteria
+      // This means achievements can be locked if creatures are deleted or criteria change
+      if (isCurrentlyMeetingCriteria) {
         dynamicallyUnlockedAchievementsCount++;
+        
+        // If user meets criteria but hasn't unlocked yet, unlock it
+        if (!isAlreadyUnlocked) {
+          console.log(`[statsService] User should unlock achievement: ${achievement.code}`);
+          // Note: Actual unlocking happens in the UI/sync layer
+        }
+      } else if (isAlreadyUnlocked) {
+        // User previously unlocked but no longer meets criteria - LOCK IT
+        console.log(`[statsService] User no longer meets criteria for achievement: ${achievement.code} - will be locked`);
+        // Note: Actual locking (deletion from user_achievements) should happen in sync layer
       }
     });
   }
@@ -220,12 +241,94 @@ export const calculateUserStats = (
   
   
   return {
-    totalPoints,
     uniqueCreatures,
     overallCompletion,
     categoryStats,
-    categoryNames,
     achievementsUnlocked,
+    totalPoints,
+    categoryNames,
     recentAchievements
   };
 };
+
+/**
+ * Syncs user achievements with database based on current criteria
+ * Unlocks new achievements and LOCKS (deletes) achievements where user no longer meets criteria
+ */
+export async function syncAchievements(
+  userId: string,
+  catalog: { achievements?: Achievement[] },
+  allCreatures: Creature[],
+  userSightings: Sighting[],
+  userAchievements: UserAchievement[]
+): Promise<{ toUnlock: string[], toLock: string[] }> {
+  const toUnlock: string[] = [];
+  const toLock: string[] = [];
+  
+  if (!catalog.achievements || !allCreatures) {
+    return { toUnlock, toLock };
+  }
+
+  const seenCreatureIds = new Set(userSightings.map(s => s.creature_id));
+  const creaturesMap = new Map(allCreatures.map(c => [c.id, c]));
+  
+  const sightedCreatureNames = new Set<string>();
+  const sightedCreatureClasses = new Set<string>();
+  seenCreatureIds.forEach(creatureId => {
+    const creature = creaturesMap.get(creatureId);
+    if (creature && creature.name) {
+      sightedCreatureNames.add(creature.name.toLowerCase());
+      if (creature.class) {
+        sightedCreatureClasses.add(creature.class);
+      }
+    }
+  });
+
+  const uniqueCreatures = seenCreatureIds.size;
+
+  catalog.achievements.forEach((achievement: Achievement) => {
+    let progress = 0;
+    let total = 0;
+
+    // Calculate progress (same logic as calculateUserStats)
+    if (achievement.category === 'collection' || achievement.category === 'beginner') {
+      progress = uniqueCreatures;
+      if (achievement.code === 'first_catch') {
+        total = 1;
+      } else {
+        const match = achievement.description?.match(/Log (\d+) different species/);
+        total = match ? parseInt(match[1], 10) : 0;
+      }
+    } else if (achievement.category === 'rare') {
+      total = 1;
+      switch (achievement.code) {
+        case 'whale_watcher':
+          progress = Array.from(sightedCreatureNames).some(name => name.includes('whale')) ? 1 : 0;
+          break;
+        case 'dolphin_friend':
+          progress = Array.from(sightedCreatureNames).some(name => name.includes('dolphin')) ? 1 : 0;
+          break;
+        case 'manta_mania':
+          progress = Array.from(sightedCreatureNames).some(name => name.includes('manta')) ? 1 : 0;
+          break;
+        case 'shark_whisperer':
+          progress = Array.from(sightedCreatureNames).some(name => name.includes('shark')) ? 1 : 0;
+          break;
+        case 'elusive_spotter':
+          progress = sightedCreatureClasses.has('Rare') ? 1 : 0;
+          break;
+      }
+    }
+
+    const isAlreadyUnlocked = userAchievements.some(ua => ua.achievement_id === achievement.id);
+    const isCurrentlyMeetingCriteria = (total > 0 && progress >= total);
+
+    if (isCurrentlyMeetingCriteria && !isAlreadyUnlocked) {
+      toUnlock.push(achievement.id);
+    } else if (!isCurrentlyMeetingCriteria && isAlreadyUnlocked) {
+      toLock.push(achievement.id);
+    }
+  });
+
+  return { toUnlock, toLock };
+}

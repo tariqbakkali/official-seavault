@@ -1,5 +1,4 @@
 import { Platform } from 'react-native';
-import * as TrackingTransparency from 'expo-tracking-transparency';
 
 // Conditional import to avoid errors in Expo Go
 let appsFlyer: any = null;
@@ -15,7 +14,7 @@ const APPSFLYER_CONFIG = {
   appId: process.env.EXPO_PUBLIC_APPSFLYER_APP_ID || 'id6743347532', // iOS App ID from App Store Connect
   onInstallConversionDataListener: true,
   onDeepLinkListener: true,
-  timeToWaitForATTUserAuthorization: 10,
+  timeToWaitForATTUserAuthorization: 0, // Don't wait for ATT permission
 };
 
 export const initAppsFlyer = async () => {
@@ -24,20 +23,9 @@ export const initAppsFlyer = async () => {
     return Promise.resolve({ status: 'skipped', reason: 'SDK not available' });
   }
 
-  // Request tracking permission on iOS 14+
-  if (Platform.OS === 'ios') {
-    try {
-      const { status } = await TrackingTransparency.requestTrackingPermissionsAsync();
-      console.log('ATT Permission Status:', status);
-      if (status === 'granted') {
-        console.log('✅ User granted tracking permission - IDFA available');
-      } else {
-        console.log('⚠️ User denied tracking permission - using AppsFlyer ID');
-      }
-    } catch (error) {
-      console.warn('ATT request failed:', error);
-    }
-  }
+  // Initialize AppsFlyer without requesting tracking permission
+  // Deep linking will work without ATT permission
+  console.log('Initializing AppsFlyer for deep linking (no tracking permission)');
 
   return new Promise((resolve, reject) => {
     appsFlyer.initSdk(
