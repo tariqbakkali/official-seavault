@@ -25,14 +25,18 @@ export const calculateUserStats = (
   catalog: {
     creatures: Creature[];
     categories: Category[];
-    achievements: Achievement[]; // Updated type
+    achievements: Achievement[];
   },
-  userAchievements?: UserAchievement[], // Updated type
+  userAchievements?: UserAchievement[],
   allCreatures?: Creature[]
 ): UserStats => {
+  console.log('[StatsDebug] calculateUserStats called');
+  console.log(`[StatsDebug] Sightings count: ${userData.sightings?.length}`);
+  console.log(`[StatsDebug] Catalog creatures loaded: ${catalog?.creatures?.length}`);
+
   
   // Handle case where catalog is not yet loaded
-  if (!catalog || !catalog.creatures || !catalog.categories) {
+  if (!catalog || !catalog.categories) {
     return {
       totalPoints: 0,
       uniqueCreatures: 0,
@@ -48,21 +52,37 @@ export const calculateUserStats = (
   let totalPoints = 0;
   const seenCreatureIds = new Set<string>();
   
-  // Create a map of creature ID to creature for quick lookup
+  // Create a map of creature ID to creature for quick lookup from the loaded catalog
   const creatureMap = new Map<string, Creature>();
-  catalog.creatures.forEach((creature: Creature) => {
-    creatureMap.set(creature.id, creature);
-  });
+  if (catalog.creatures) {
+    catalog.creatures.forEach((creature: Creature) => {
+      creatureMap.set(creature.id, creature);
+    });
+  }
   
-  // Calculate points from sightings
+  // Create a map of creatureId -> categoryId to helper with stats
+  const creatureCategoryMap = new Map<string, string>();
+  if (catalog.creatures) {
+    catalog.creatures.forEach(c => creatureCategoryMap.set(c.id, c.category_id));
+  }
+
+  // Calculate points from sightings and populate maps/sets
   if (userData.sightings && Array.isArray(userData.sightings)) {
     userData.sightings.forEach((sighting: any) => {
       // Make sure sighting has a creature_id
       if (sighting && sighting.creature_id) {
-        const creature = creatureMap.get(sighting.creature_id);
+        // Try to find creature in catalog, or use joined data
+        const creature = creatureMap.get(sighting.creature_id) || sighting.creatures;
+        
         if (creature) {
+          // console.log(`[StatsDebug] Found creature for sighting: ${sighting.creature_id} -> ${creature.name} (${creature.points} pts)`);
           totalPoints += creature.points || 0;
           seenCreatureIds.add(sighting.creature_id);
+          
+          // If we have category info in the joined data or map, ensure it's in our category map
+          if (creature.category_id) {
+             creatureCategoryMap.set(sighting.creature_id, creature.category_id);
+          }
         }
       }
     });
@@ -84,36 +104,49 @@ export const calculateUserStats = (
   });
   
   // Count total creatures per category and calculate category points
-  catalog.creatures.forEach((creature: Creature) => {
-    if (categoryStats[creature.category_id]) {
-      categoryStats[creature.category_id].total += 1;
-      // Add creature points to category total if the creature has been seen
-      if (seenCreatureIds.has(creature.id)) {
-        categoryStats[creature.category_id].points += creature.points || 0;
+  // Note: If catalog.creatures is empty (lazy loaded), totals will be 0 initially unless we have counts
+  // For now we rely on catalog.creatures for TOTALS. 
+  // TODO: Use category.creatures_count if available for totals.
+  if (catalog.creatures) {
+    catalog.creatures.forEach((creature: Creature) => {
+      if (categoryStats[creature.category_id]) {
+        categoryStats[creature.category_id].total += 1;
+        // Add creature points to category total if the creature has been seen
+        if (seenCreatureIds.has(creature.id)) {
+          categoryStats[creature.category_id].points += creature.points || 0;
+        }
       }
-    }
-  });
+    });
+  }
   
-  // Count seen creatures per category
+  // Count seen creatures per category using the enhanced map
   seenCreatureIds.forEach((creatureId: string) => {
-    const creature = creatureMap.get(creatureId);
-    if (creature && categoryStats[creature.category_id]) {
-      categoryStats[creature.category_id].seen += 1;
+    const categoryId = creatureCategoryMap.get(creatureId);
+    if (categoryId && categoryStats[categoryId]) {
+      categoryStats[categoryId].seen += 1;
     }
   });
   
   // Calculate completion percentages
   Object.keys(categoryStats).forEach((categoryId: string) => {
     const stats = categoryStats[categoryId];
+    // Use creature count from category if available (embedded count) as fallback for total
+    // But here we don't have it easily accessible in this loop unless we map it.
+    
     if (stats.total > 0) {
       stats.completion = Math.round((stats.seen / stats.total) * 100);
     }
   });
   
   // Calculate overall completion
-  const totalCreatures = catalog.creatures.length;
+  const totalCreatures = catalog.creatures ? catalog.creatures.length : 0;
   const uniqueCreatures = seenCreatureIds.size;
   const overallCompletion = totalCreatures > 0 ? Math.round((uniqueCreatures / totalCreatures) * 100) : 0;
+  
+  console.log(`[StatsDebug] Unique creatures: ${uniqueCreatures}, Total points: ${totalPoints}`);
+  // console.log('[StatsDebug] Category names:', JSON.stringify(categoryNames));
+  console.log('[StatsDebug] Category stats summary:', Object.keys(categoryStats).map(id => `${categoryNames[id]}: ${categoryStats[id].seen}/${categoryStats[id].total}`));
+
   
   // Calculate achievements unlocked dynamically
   let dynamicallyUnlockedAchievementsCount = 0;

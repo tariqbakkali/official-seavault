@@ -4,6 +4,9 @@ import { Database } from '../types/database';
 import { v4 as uuidv4 } from 'uuid';
 import { customSynced } from '@/services/legendStateConfig';
 import { checkAndAwardSightingAchievements } from '@/services/achievementService';
+import { syncObservable } from '@legendapp/state/sync';
+import { observablePersistAsyncStorage } from '@legendapp/state/persist-plugins/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Types for our observables
 export type Creature = Database['public']['Tables']['creatures']['Row'];
@@ -30,29 +33,61 @@ export const categories$ = observable(customSynced({
   supabase,
   collection: 'categories',
   actions: ['read'],
-  persist: { name: 'categories' },
+  persist: { name: 'categories_v6' },
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
+
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all catalog data
-  select: (select: any) => select.limit(10000), // Fetch up to 10,000 rows
+  select: (select: any) => select.select('*, creatures(count)'), // Fetch creature count
 }));
 
+// export const creatures$ = observable<Record<string, Creature>>({});
 export const creatures$ = observable(customSynced({
   supabase,
   collection: 'creatures',
   actions: ['read'],
-  persist: { name: 'creatures' },
+  persist: { name: 'creatures_v6' },
+  delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
-  realtime: true, // Enable realtime for all catalog data
-  select: (select: any) => select.limit(10000), // Fetch up to 10,000 rows
+  realtime: false, // Catalog doesn't change often
 }));
+
+// Manually persist creatures since we're loading them lazily
+// Manually persist creatures since we're loading them lazily
+// syncObservable(creatures$, {
+//   persist: {
+//     name: 'creatures',
+//     plugin: observablePersistAsyncStorage({ AsyncStorage }),
+//   }
+// });
+
+// Helper to fetch creatures for a specific category
+// Helper to fetch creatures for a specific category
+export const fetchCreaturesForCategory = async (categoryId: string) => {
+  // Deprecated: creatures$ now syncs all creatures automatically
+  // Trigger sync if needed
+  creatures$.get();
+  return;
+};
 
 export const achievements$ = observable(customSynced({
   supabase,
   collection: 'achievements',
   actions: ['read'],
-  persist: { name: 'achievements' },
+  persist: { name: 'achievements_v6' },
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
+
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all catalog data
@@ -67,22 +102,53 @@ export const userAchievements$ = observable(customSynced({
     return select.eq('user_id', userId);
   },
   actions: ['read', 'create'],
-  persist: { name: 'user_achievements' },
-  changesSince: 'last-sync',
+  persist: { name: 'user_achievements_v6' },
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
+
+  // changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true,
 }));
+
+// export const diveSites$ = observable(customSynced({
+//   supabase,
+//   collection: 'dive_sites',
+//   actions: ['read'], // Read-only catalog data
+//   persist: { name: 'dive_sites' },
+//   changesSince: 'last-sync',
+//   fieldCreatedAt: 'created_at',
+//   realtime: true,
+// }));
+
 
 export const diveSites$ = observable(customSynced({
   supabase,
   collection: 'dive_sites',
-  actions: ['read'], // Read-only catalog data
-  persist: { name: 'dive_sites' },
-  changesSince: 'last-sync',
-  fieldCreatedAt: 'created_at',
-  realtime: true,
-}));
+  actions: ['read', 'update'],
+  persist: { name: 'dive_sites_v6' },
+  // changesSince: 'last-sync',
+  update: async (input: any) => {
+    const { data, error } = await supabase
+      .from('dive_sites')
+      .upsert(input)
+      .select()
+      .single();
+    
+    if (error) {
+      throw new Error(`Failed to update dive site: ${error.message}`);
+    } 
+    return { data, error: null };
+  },
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
 
+  realtime: true, // Disable realtime for dive sites to reduce constant updates
+}));
 // Synced observables for user-specific data
 // These will be initialized with user ID filter when user logs in
 
@@ -96,8 +162,13 @@ export const currentUserSightings$ = observable(customSynced({
     return select.eq('user_id', userId);
   },
   actions: ['read', 'create', 'update', 'delete'],
-  persist: { name: 'sightings', retrySync: true },
-  changesSince: 'last-sync',
+  persist: { name: 'sightings_v6', retrySync: true },
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
+
+  // changesSince: 'last-sync',
   update: async (input: any) => {
     // Custom Supabase upsert function for sightings
     const { data, error } = await supabase
@@ -112,7 +183,8 @@ export const currentUserSightings$ = observable(customSynced({
     return { data, error: null };
   },
   fieldCreatedAt: 'created_at',
-  realtime: true, // Enable realtime for all, filtering will be done by Supabase
+  realtime: false, // DEBUG: Disabled to fix initial sync issue
+  select: (select: any) => select.select('*, creatures(category_id, points)'),
 }));
 
 // All users sightings observable - for leaderboard and community features
@@ -120,10 +192,16 @@ export const allUsersSightings$ = observable(customSynced({
   supabase,
   collection: 'sightings',
   actions: ['read', 'create', 'update', 'delete'],
-  persist: { name: 'all_sightings' },
-  changesSince: 'last-sync',
+  persist: { name: 'all_sightings_v6' },
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
+
+  // changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
-  realtime: true,
+  realtime: false, // DEBUG: Disabled to fix initial sync issue
+  select: (select: any) => select.select('*, creatures(category_id, points)'),
 }));
 
 // All users achievements observable - for leaderboard and community features
@@ -131,7 +209,12 @@ export const allUsersAchievements$ = observable(customSynced({
   supabase,
   collection: 'user_achievements',
   actions: ['read'],
-  persist: { name: 'all_user_achievements' },
+  persist: { name: 'all_user_achievements_v6' },
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
+
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all user achievements
@@ -175,7 +258,7 @@ export const wishlists$ = observable(customSynced({
     
     return { data, error: null };
   },
-  persist: { name: 'wishlists', retrySync: true },
+  persist: { name: 'wishlists_v6', retrySync: true },
   retry:{infinite: true},
   // changesSince: 'last-sync',
   // fieldCreatedAt: 'created_at',
@@ -195,8 +278,13 @@ export const currentUserProfile$ = observable(customSynced({
     return result;
   },
   actions: ['read', 'update'],
-  persist: { name: 'currentUserProfile', retrySync: true },
-  changesSince: 'last-sync',
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
+
+  persist: { name: 'currentUserProfile_v6', retrySync: true },
+  // changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all, filtering will be done by Supabase
 }))
@@ -208,8 +296,13 @@ export const allUsersProfiles$ = observable(customSynced({
   supabase,
   collection: 'profiles',
   actions: ['read'],
-  persist: { name: 'allUsersProfiles' },
+  persist: { name: 'all_profiles_v6' },
   changesSince: 'last-sync',
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
+
   fieldCreatedAt: 'created_at',
   realtime: false, // Disable realtime to reduce load
   retry: {
@@ -347,6 +440,7 @@ export const createDiveSite = (diveSiteData: Omit<DiveSite, 'id' | 'created_at'>
     ...diveSiteData,
     id,
     created_at: new Date().toISOString(),
+    deleted: false,
   } as DiveSite;
   
   try {

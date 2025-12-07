@@ -26,6 +26,8 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll, clearUserSync } from '@/utils/syncUtils';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { usePurchase } from '@/contexts/PurchaseContext';
+import { useSelector } from '@legendapp/state/react';
+import { creatures$, categories$, currentUserSightings$, wishlists$, currentUserProfile$, achievements$, userAchievements$ } from '@/stores/syncedObservables';
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -38,9 +40,7 @@ interface MenuItem {
 
 export default function ProfileScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
-  const [userStats, setUserStats] = React.useState<any>(null);
-  const [achievementsWithStatus, setAchievementsWithStatus] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(false);
   const [signingOut, setSigningOut] = React.useState(false);
 
   const insets = useSafeAreaInsets();
@@ -48,93 +48,83 @@ export default function ProfileScreen() {
   const { isPro, isLoading: isPurchaseLoading } = usePurchase();
 
   const {
-    creatures: allCreatures,
-    categories: allCategories,
-    currentUserSightings: allSightings,
-    wishlists: allWishlists,
-    profile: userProfile,
-    achievements: allAchievements,
-    userAchievements: allUserAchievements,
-    creatures: allCreaturesData
+    isLoading: isSyncLoading,
   } = useSyncedData();
 
-  const loadData = React.useCallback(() => {
-    try {
-      setLoading(true);
+  // Reactive User Stats
+  const userStats = useSelector(() => {
+    const rawUserData = {
+      sightings: Object.values(currentUserSightings$.get() || {}),
+      wishlists: Object.values(wishlists$.get() || {}),
+      profile: Object.values(currentUserProfile$.get() || {})[0],
+    };
+    const rawCatalog = {
+      creatures: Object.values(creatures$.get() || {}),
+      categories: Object.values(categories$.get() || {}),
+      achievements: Object.values(achievements$.get() || {}),
+    };
+    const userAchievementsArray = Object.values(userAchievements$.get() || []);
 
-      const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
-      const categoriesArray = allCategories ? Object.values(allCategories) : [];
-      const sightingsArray = allSightings ? Object.values(allSightings) : [];
-      const wishlistsArray = allWishlists ? Object.values(allWishlists) : [];
-      const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
+    if (rawCatalog.creatures.length > 0 && rawCatalog.categories.length > 0) {
+      return calculateUserStats(
+        rawUserData as any,
+        rawCatalog as any,
+        userAchievementsArray as any,
+        rawCatalog.creatures as any
+      );
+    }
+    return null;
+  });
 
-      const userData = {
-        sightings: sightingsArray,
-        wishlists: wishlistsArray,
-        profile: profileData
-      };
+  // Reactive Achievements with Status
+  const achievementsWithStatus = useSelector(() => {
+    const userAchievementsArray = Object.values(userAchievements$.get() || []);
+    const sightingsArray = Object.values(currentUserSightings$.get() || []);
+    const allAchievementsArray = Object.values(achievements$.get() || []);
 
-      const catalog = {
-        creatures: creaturesArray,
-        categories: categoriesArray,
-        achievements: allAchievements ? Object.values(allAchievements) : []
-      };
+    const unlockedIds = new Set(userAchievementsArray.map((i: any) => i.achievement_id));
+    const uniqueCreatures = new Set(sightingsArray.map((s: any) => s.creature_id)).size;
+    
+    return allAchievementsArray.map((achievement: any) => {
+      let progress = 0;
+      let total = 0;
 
-      const userAchievementsArray = allUserAchievements ? Object.values(allUserAchievements) : [];
-
-      if (creaturesArray.length > 0 && categoriesArray.length > 0) {
-        const stats = calculateUserStats(
-          userData,
-          catalog,
-          userAchievementsArray,
-          allCreaturesData ? Object.values(allCreaturesData) : []
-        );
-        setUserStats(stats);
+      if (achievement.category === 'collection') {
+        progress = uniqueCreatures;
+        const match = achievement.description?.match(/Log (\d+) different species/);
+        total = match ? parseInt(match[1], 10) : 0;
       }
 
-      const unlockedIds = new Set(userAchievementsArray.map((i: any) => i.achievement_id));
-      const uniqueCreatures = new Set(sightingsArray.map((s: any) => s.creature_id)).size;
+      return {
+        ...achievement,
+        unlocked: unlockedIds.has(achievement.id),
+        progress,
+        total
+      };
+    });
+  });
 
-      const achievementsWithStatus = (allAchievements ? Object.values(allAchievements) : [])
-        .map((achievement: any) => {
-          let progress = 0;
-          let total = 0;
+  const profileData = useSelector(() => {
+    const profile = currentUserProfile$.get();
+    return profile ? Object.values(profile)[0] : undefined;
+  });
+  
+  // Need to use useSelector to get total achievements count reactively too
+  const totalCount = useSelector(() => {
+     const all = achievements$.get();
+     return all ? Object.values(all).length : 0;
+  });
 
-          if (achievement.category === 'collection') {
-            progress = uniqueCreatures;
-            const match = achievement.description?.match(/Log (\d+) different species/);
-            total = match ? parseInt(match[1], 10) : 0;
-          }
-
-          return {
-            ...achievement,
-            unlocked: unlockedIds.has(achievement.id),
-            progress,
-            total
-          };
-        });
-
-      setAchievementsWithStatus(achievementsWithStatus);
-    } catch (error) {
-      console.error('Error loading profile data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    allCreatures,
-    allCategories,
-    allSightings,
-    allWishlists,
-    userProfile,
-    allAchievements,
-    allUserAchievements
-  ]);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      loadData();
-    }, [loadData])
-  );
+  // Initial Data Load
+  useEffect(() => {
+    // Just ensure we are fetching user data, but rely on selectors for rendering
+    // We can assume useSyncedData (if used) or manual fetch calls do this.
+    // The previous code called loadData() which set loading(true) then false.
+    // Since we are now reactive, we don't strictly need a "loading" state for the *calculation*, 
+    // but we might want it for the *fetch*.
+    // However, selectors update optimistically.
+    setLoading(false);
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -147,9 +137,7 @@ export default function ProfileScreen() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+
 
   // RESYNC ACCOUNT
   const handleResync = async () => {
@@ -164,7 +152,8 @@ export default function ProfileScreen() {
       
       // Reload data to refresh UI
       console.log('[ProfileScreen] Reloading data after sync...');
-      await loadData();
+      // No need to manually loadData, selectors will update
+
       
       Alert.alert('Success', 'Account synchronized successfully.');
     } catch (error) {
@@ -290,8 +279,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const profileData = userProfile ? Object.values(userProfile)[0] : undefined;
-  const totalCount = allAchievements ? Object.values(allAchievements).length : 0;
+
 
   // Conditionally build menu items
   const menuItems: MenuItem[] = [

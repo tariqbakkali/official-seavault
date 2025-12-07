@@ -35,6 +35,7 @@ export default function DiscoveredScreen() {
   const loadData = React.useCallback(() => {
     try {
       setLoading(true);
+      console.log('[DiscoveredDebug] loadData called');
       // Extract data from observables
       const creaturesArray = allCreatures ? Object.values(allCreatures).filter(
         (c: any) => c && typeof c === 'object' && c.id && typeof c.id === 'string'
@@ -76,6 +77,7 @@ export default function DiscoveredScreen() {
           new Date(b.firstSighting.date).getTime() - new Date(a.firstSighting.date).getTime()
         );
       
+      console.log(`[DiscoveredDebug] Discovered creatures count: ${discovered.length}`);
       setDiscoveredCreatures(discovered);
     } catch (error) {
       console.error('Error loading discovered creatures:', error);

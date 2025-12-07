@@ -1,4 +1,5 @@
 import { when } from '@legendapp/state';
+import { fetchAllCreatures } from '../services/creatureSyncService';
 import { 
   categories$, 
   creatures$, 
@@ -19,11 +20,8 @@ import {
   getAllUsersProfiles,
   achievements$, // Import achievements$ observable
   userAchievements$, // Import userAchievements$ observable
-  currentUserID$,
-  allUsersAchievements$,
 } from '../stores/syncedObservables';
 import { images$ } from '../stores/imageState'; // Add this import
-import { supabase } from '../services/supabase';
 
 /**
  * Utility functions for data synchronization in the local-first app
@@ -96,219 +94,46 @@ export const waitForDataLoad = async () => {
   }
 };
 
-// Force sync all data - actually fetch from Supabase
+// Force sync all data - removing the refresh calls as they may not exist
 export const forceSyncAll = async () => {
   try {
-    console.log('[forceSyncAll] Starting fresh sync from Supabase...');
+    // Starting force sync of all observables
     
-    const userId = currentUserID$.get();
+    // Instead of refresh, we can re-get the data to trigger sync
+    // Syncing categories
+    categories$.get();
     
-    // Fetch catalog data (public, no user filter needed)
-    // Creatures need pagination due to Supabase 1000-row limit
-    console.log('[forceSyncAll] Fetching creatures with pagination...');
-    let allCreatures: any[] = [];
-    let page = 0;
-    const pageSize = 1000;
-    let hasMore = true;
+    // Syncing creatures
+    console.log('[SyncDebug] Calling fetchAllCreatures manually');
+    fetchAllCreatures();
     
-    while (hasMore) {
-      console.log(`[forceSyncAll] Fetching creatures page ${page} (offset ${page * pageSize})...`);
-      const { data, error } = await supabase
-        .from('creatures')
-        .select('*')
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-      
-      console.log(`[forceSyncAll] Page ${page} response received. Error: ${error ? error.message : 'none'}, Data length: ${data ? data.length : 'null'}`);
-      
-      if (error) {
-        console.error('[forceSyncAll] Error fetching creatures page', page, error);
-        break;
-      }
-      
-      if (data && data.length > 0) {
-        allCreatures = allCreatures.concat(data);
-        console.log(`[forceSyncAll] Fetched page ${page + 1}: ${data.length} creatures (total: ${allCreatures.length})`);
-        hasMore = data.length === pageSize; // Continue if we got a full page
-        page++;
-      } else {
-        hasMore = false;
-      }
-    }
+    // Syncing dive sites
+    diveSites$.get();
     
-    const creaturesRes = { data: allCreatures, error: null };
+    // Syncing current user sightings
+    currentUserSightings$.get();
     
-    // Dive sites also need pagination
-    console.log('[forceSyncAll] Fetching dive sites with pagination...');
-    let allDiveSites: any[] = [];
-    page = 0;
-    hasMore = true;
+    // Syncing all users sightings
+    allUsersSightings$.get();
     
-    while (hasMore) {
-      const { data, error } = await supabase
-        .from('dive_sites')
-        .select('*')
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-      
-      if (error) {
-        console.error('[forceSyncAll] Error fetching dive sites page', page, error);
-        break;
-      }
-      
-      if (data && data.length > 0) {
-        allDiveSites = allDiveSites.concat(data);
-        console.log(`[forceSyncAll] Fetched dive sites page ${page + 1}: ${data.length} sites (total: ${allDiveSites.length})`);
-        hasMore = data.length === pageSize;
-        page++;
-      } else {
-        hasMore = false;
-      }
-    }
+    // Syncing wishlists
+    wishlists$.get();
     
-    const diveSitesRes = { data: allDiveSites, error: null };
+    // Syncing profile
+    currentUserProfile$.get();
     
-    // Fetch other catalog data normally (they're under 1000 rows)
-    const [categoriesRes, achievementsRes] = await Promise.all([
-      supabase.from('categories').select('*'),
-      supabase.from('achievements').select('*'),
-    ]);
+    // Syncing profiles
+    allUsersProfiles$.get(); // Force sync profiles observable
     
-    // Update catalog observables
-    if (categoriesRes.data) {
-      const categoriesObj = Object.fromEntries(categoriesRes.data.map((c: any) => [c.id, c]));
-      categories$.set(categoriesObj);
-      console.log(`[forceSyncAll] Synced ${categoriesRes.data.length} categories`);
-    }
-    if (categoriesRes.error) {
-      console.error('[forceSyncAll] Categories error:', categoriesRes.error);
-    }
+    // Syncing achievements
+    achievements$.get(); // Force sync achievements observable
     
-    if (creaturesRes.data) {
-      const creaturesObj = Object.fromEntries(creaturesRes.data.map((c: any) => [c.id, c]));
-      creatures$.set(creaturesObj);
-      console.log(`[forceSyncAll] Synced ${creaturesRes.data.length} creatures`);
-      
-      // Log creatures by category for debugging
-      const creaturesByCategory: Record<string, number> = {};
-      creaturesRes.data.forEach((c: any) => {
-        creaturesByCategory[c.category_id] = (creaturesByCategory[c.category_id] || 0) + 1;
-      });
-      console.log('[forceSyncAll] Creatures by category:', creaturesByCategory);
-    }
-    if (creaturesRes.error) {
-      console.error('[forceSyncAll] Creatures error:', creaturesRes.error);
-    }
-    if (achievementsRes.data) {
-      const achievementsObj = Object.fromEntries(achievementsRes.data.map((a: any) => [a.id, a]));
-      achievements$.set(achievementsObj);
-      console.log(`[forceSyncAll] Synced ${achievementsRes.data.length} achievements`);
-    }
-    if (diveSitesRes.data) {
-      const diveSitesObj = Object.fromEntries(diveSitesRes.data.map((d: any) => [d.id, d]));
-      diveSites$.set(diveSitesObj);
-      console.log(`[forceSyncAll] Synced ${diveSitesRes.data.length} dive sites`);
-    }
-    
-    // Fetch user-specific data if logged in
-    if (userId) {
-      const [sightingsRes, wishlistsRes, profileRes, userAchievementsRes, allSightingsRes, allProfilesRes, allUserAchievementsRes] = await Promise.all([
-        supabase.from('sightings').select('*').eq('user_id', userId),
-        supabase.from('wishlists').select('*').eq('user_id', userId),
-        supabase.from('profiles').select('*').eq('id', userId),
-        supabase.from('user_achievements').select('*').eq('user_id', userId),
-        supabase.from('sightings').select('*'),
-        supabase.from('profiles').select('*'),
-        supabase.from('user_achievements').select('*'),
-      ]);
-      
-      // Update user-specific observables
-      if (sightingsRes.data) {
-        const sightingsObj = Object.fromEntries(sightingsRes.data.map((s: any) => [s.id, s]));
-        currentUserSightings$.set(sightingsObj);
-        console.log(`[forceSyncAll] Fetched ${sightingsRes.data.length} sightings for user`);
-      }
-      if (wishlistsRes.data) {
-        const wishlistsObj = Object.fromEntries(wishlistsRes.data.map((w: any) => [w.id, w]));
-        wishlists$.set(wishlistsObj);
-      }
-      if (profileRes.data && profileRes.data.length > 0) {
-        const profileData: any = profileRes.data[0];
-        const profileObj = { [profileData.id]: profileData };
-        currentUserProfile$.set(profileObj);
-      }
-      if (userAchievementsRes.data) {
-        const userAchievementsObj = Object.fromEntries(userAchievementsRes.data.map((ua: any) => [ua.id, ua]));
-        userAchievements$.set(userAchievementsObj);
-      }
-      
-      // Update all users data
-      if (allSightingsRes.data) {
-        const allSightingsObj = Object.fromEntries(allSightingsRes.data.map((s: any) => [s.id, s]));
-        allUsersSightings$.set(allSightingsObj);
-      }
-      if (allProfilesRes.data) {
-        const allProfilesObj = Object.fromEntries(allProfilesRes.data.map((p: any) => [p.id, p]));
-        allUsersProfiles$.set(allProfilesObj);
-      }
-      if (allUserAchievementsRes.data) {
-        const allUserAchievementsObj = Object.fromEntries(allUserAchievementsRes.data.map((ua: any) => [ua.id, ua]));
-        allUsersAchievements$.set(allUserAchievementsObj);
-      }
-      
-      // TODO: Re-enable achievement sync after debugging
-      // Sync achievements - lock/unlock based on current criteria
-      // if (sightingsRes.data && creaturesRes.data && achievementsRes.data && userAchievementsRes.data) {
-      //   console.log('[forceSyncAll] Syncing achievements based on current criteria...');
-      //   const { syncAchievements } = await import('@/services/statsService');
-      //   
-      //   const { toUnlock, toLock } = await syncAchievements(
-      //     userId,
-      //     { achievements: achievementsRes.data },
-      //     creaturesRes.data,
-      //     sightingsRes.data,
-      //     userAchievementsRes.data
-      //   );
-      //   
-      //   // Unlock new achievements
-      //   for (const achievementId of toUnlock) {
-      //     console.log(`[forceSyncAll] Unlocking achievement: ${achievementId}`);
-      //     await supabase
-      //       .from('user_achievements')
-      //       .insert({
-      //         user_id: userId,
-      //         achievement_id: achievementId,
-      //         unlocked_at: new Date().toISOString(),
-      //       } as any);
-      //   }
-      //   
-      //   // Lock achievements that no longer meet criteria
-      //   for (const achievementId of toLock) {
-      //     console.log(`[forceSyncAll] Locking achievement (no longer meets criteria): ${achievementId}`);
-      //     await supabase
-      //       .from('user_achievements')
-      //       .delete()
-      //       .eq('user_id', userId)
-      //       .eq('achievement_id', achievementId);
-      //   }
-      //   
-      //   // Re-fetch user achievements after syncing
-      //   if (toUnlock.length > 0 || toLock.length > 0) {
-      //     const { data: updatedAchievements } = await supabase
-      //       .from('user_achievements')
-      //       .select('*')
-      //       .eq('user_id', userId);
-      //     if (updatedAchievements) {
-      //       const updatedAchievementsObj = Object.fromEntries(updatedAchievements.map((ua: any) => [ua.id, ua]));
-      //       userAchievements$.set(updatedAchievementsObj);
-      //       console.log(`[forceSyncAll] Achievement sync complete: ${toUnlock.length} unlocked, ${toLock.length} locked`);
-      //     }
-      //   }
-      // }
-    }
-    
-    console.log('[forceSyncAll] Sync completed successfully');
+    // Syncing user achievements
+    userAchievements$.get(); // Force sync user achievements observable
+
+    // Completed force sync of all observables
   } catch (error) {
     console.error('[forceSyncAll] Error during forced sync:', error);
-    throw error;
   }
 };
 

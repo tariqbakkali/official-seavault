@@ -22,10 +22,12 @@ import { forceSyncAll } from '@/utils/syncUtils';
 import NetInfo from '@react-native-community/netinfo';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 
+// Update interface to include embedded count and fascination
 interface CategoryWithStats extends Category {
   seen: number;
   total: number;
   completion: number;
+  creatures?: { count: number }[]; // Embedded count from query
 }
 
 export default function CategoriesTab() {
@@ -206,9 +208,15 @@ export default function CategoriesTab() {
         {!isCreature && (
           <View style={styles.completionBadge}>
             <Text style={styles.completionText}>
-              {item.seen}/{item.total}
+              {item.seen}/{item.creatures && item.creatures[0] ? item.creatures[0].count : item.total}
             </Text>
           </View>
+        )}
+        {/* Fascination Text for Categories */}
+        {item.fascination && !isCreature && (
+             <View style={styles.fascinationContainer}>
+                <Text numberOfLines={2} style={styles.fascinationText}>{item.fascination}</Text>
+             </View>
         )}
         {isCreature && (
           <View style={styles.creatureBadge}>
@@ -375,5 +383,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: TYPOGRAPHY.SIZE_XS,
     fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
+  },
+  fascinationContainer: {
+    position: 'absolute',
+    top: DIMENSIONS.SPACE_MD,
+    left: DIMENSIONS.SPACE_MD,
+    right: 80, // Space for completion badge
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: DIMENSIONS.SPACE_XS,
+    borderRadius: DIMENSIONS.RADIUS_SM,
+    borderLeftWidth: 2,
+    borderLeftColor: COLORS.SECONDARY,
+  },
+  fascinationText: {
+    color: '#ddd',
+    fontSize: TYPOGRAPHY.SIZE_XS,
+    fontStyle: 'italic',
   },
 });

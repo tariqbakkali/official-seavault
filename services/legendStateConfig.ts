@@ -15,12 +15,12 @@ import { v4 as uuidv4 } from 'uuid';
       infinite: true,
     },
     supabase,
-    changesSince: 'last-sync',
+    // changesSince: 'last-sync', // REMOVED default to allow per-observable opt-out
     fieldCreatedAt: 'created_at',
     fieldUpdatedAt: 'updated_at', // Use updated_at if possible, else revert to created_at
-    fieldDeleted: 'deleted',      // Required for soft deletes in last-sync mode
+    // fieldDeleted: 'deleted',      // Required for soft deletes in last-sync mode
     generateId: () => uuidv4(),
-    // onError: (error) => {
-    //   console.error('Synced error:', error);
-    // },
+    onError: (error) => {
+      console.error('[LegendState Sync Error]:', error);
+    },
   });

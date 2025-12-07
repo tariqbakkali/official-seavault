@@ -17,7 +17,12 @@ export const getLeaderboardData = (
   allUserAchievements: UserAchievement[], // Added user achievements
   allAchievements: Achievement[] // Added achievements
 ): LeaderboardEntry[] => {
-  const userStats: Record<string, { points: number; creatures: Set<string>; profile: Profile }> = {};
+  console.log('[LeaderboardDebug] Calculating leaderboard...');
+  console.log(`[LeaderboardDebug] Profiles: ${Object.keys(allProfiles).length}`);
+  console.log(`[LeaderboardDebug] Sightings: ${allSightings.length}`);
+  console.log(`[LeaderboardDebug] Creatures: ${allCreatures.length}`);
+
+  const userStats: Record<string, { points: number; creatures: Set<string>; profile: Profile | null }> = {};
 
   // Initialize user stats with profile data
   Object.values(allProfiles).forEach(profile => {
@@ -37,11 +42,27 @@ export const getLeaderboardData = (
   // Calculate points and discovered creatures from sightings
   allSightings.forEach(sighting => {
     const creature = creatureMap.get(sighting.creature_id);
-    if (creature && userStats[sighting.user_id]) {
+    if (!userStats[sighting.user_id]) {
+       userStats[sighting.user_id] = {
+         points: 0,
+         creatures: new Set<string>(),
+         profile: null
+       };
+    }
+
+    if (creature) {
       userStats[sighting.user_id].points += creature.points || 0;
       userStats[sighting.user_id].creatures.add(sighting.creature_id);
+    } else {
+      console.log(`[LeaderboardDebug] Sighting ${sighting.id} ignored: Creature ${sighting.creature_id} not found in map.`);
     }
   });
+
+  // Log top stats for debugging
+  const statsKeys = Object.keys(userStats);
+  if (statsKeys.length > 0) {
+     console.log(`[LeaderboardDebug] User ${statsKeys[0]} points: ${userStats[statsKeys[0]].points}, creatures: ${userStats[statsKeys[0]].creatures.size}`);
+  }
 
   // Convert achievements array to a map for quick lookup
   const achievementMap = new Map<string, Achievement>();
@@ -52,20 +73,29 @@ export const getLeaderboardData = (
   // Calculate points from achievements
   allUserAchievements.forEach(userAchievement => {
     const achievement = achievementMap.get(userAchievement.achievement_id);
-    if (achievement && userStats[userAchievement.user_id]) {
+    
+    if (!userStats[userAchievement.user_id]) {
+       userStats[userAchievement.user_id] = {
+         points: 0,
+         creatures: new Set<string>(),
+         profile: null
+       };
+    }
+
+    if (achievement) {
       userStats[userAchievement.user_id].points += achievement.points || 0;
     }
   });
 
   // Convert to leaderboard entries and sort
-  const leaderboard: LeaderboardEntry[] = Object.values(userStats)
-    .map(stats => ({
-      user_id: stats.profile.id,
-      name: stats.profile.full_name || 'Anonymous',
-      avatar: stats.profile.avatar_url,
+  const leaderboard: LeaderboardEntry[] = Object.entries(userStats)
+    .map(([userId, stats]) => ({
+      user_id: userId,
+      name: stats.profile?.full_name || 'Anonymous Explorer',
+      avatar: stats.profile?.avatar_url || null,
       creatures: stats.creatures.size,
       points: stats.points,
-      created_at: stats.profile.created_at,
+      created_at: stats.profile?.created_at || new Date().toISOString(),
     }))
     .sort((a, b) => {
       // Sort by points first (descending), then by creatures discovered (descending)

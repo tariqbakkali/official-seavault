@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
 import WikimediaImage from '@/components/WikimediaImage';
 import { useSyncedData } from '@/hooks/useSyncedData';
+import { fetchCreaturesForCategory, creatures$ } from '@/stores/syncedObservables'; // Import lazy sync helper
+import { useSelector } from '@legendapp/state/react';
 import { ROUTES, COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { Plus } from 'lucide-react-native';
@@ -22,53 +24,71 @@ interface Creature {
   scientific_name: string | null;
   image_url: string | null;
   points: number;
+  category_id: string; // Added for filtering
 }
 
 export default function CategoryDetailScreen() {
   const { id } = useLocalSearchParams();
   const [category, setCategory] = useState<any>(null);
-  const [creatures, setCreatures] = useState<Creature[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
   
-  const { categories, creatures: allCreatures, isLoading } = useSyncedData();
+  const { categories, isLoading } = useSyncedData();
 
-  const loadData = async () => {
-    try {
-      // Get all categories to find the current one
-      const categoriesArray = categories ? Object.values(categories) : [];
+  const [isFetchingCreatures, setIsFetchingCreatures] = useState(true); // Start loading immediately
+  
+  // Derived creatures list - ensures reactivity when store updates via useSelector
+  const creatures = useSelector(() => {
+    const all = creatures$.get();
+    if (!all || !id) return [];
+    return Object.values(all).filter(
+      (creature: any) => creature.category_id === id
+    );
+  });
+
+  // Find current category
+  useEffect(() => {
+    if (categories && id) {
+      const categoriesArray = Object.values(categories);
       const currentCategory = categoriesArray.find((cat: any) => cat.id === id);
       setCategory(currentCategory);
-
-      // Get creatures for this category
-      if (id) {
-        const creaturesArray = allCreatures ? Object.values(allCreatures) as any[] : [];
-        const categoryCreatures = creaturesArray.filter(
-          (creature: any) => creature.category_id === id
-        );
-        
-        setCreatures(categoryCreatures);
-      }
-    } catch (error) {
-      console.error('Error loading category data:', error);
     }
-  };
+  }, [categories, id]);
+
+  // Lazy load creatures on mount
+  useEffect(() => {
+    let isMounted = true;
+    const loadCreatures = async () => {
+      if (id) {
+        setIsFetchingCreatures(true);
+        try {
+          await fetchCreaturesForCategory(id as string);
+        } catch (error) {
+          console.error('Error fetching creatures:', error);
+        } finally {
+          if (isMounted) {
+            setIsFetchingCreatures(false);
+          }
+        }
+      }
+    };
+    
+    loadCreatures();
+    
+    return () => { isMounted = false; };
+  }, [id]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await loadData();
+      if (id) {
+        await fetchCreaturesForCategory(id as string);
+      }
     } catch (error) {
       console.error('Error during refresh:', error);
     }
     setRefreshing(false);
   };
-
-  useEffect(() => {
-    if (!isLoading.categories && !isLoading.creatures) {
-      loadData();
-    }
-  }, [id, categories, allCreatures, isLoading.categories, isLoading.creatures]);
 
   const handleLogDive = () => {
     // Navigate to log dive screen with category pre-selected
@@ -114,7 +134,13 @@ export default function CategoryDetailScreen() {
     </TouchableOpacity>
   );
 
-  if (isLoading.categories || isLoading.creatures) {
+  // Show loading if categories are initializing OR if we are explicitly fetching creatures
+  // But allow showing cached creatures immediately if we have them (optimistic UI), 
+  // so maybe only block if creatures array is empty?
+  // User asked for loading state, so let's show it if we have NO creatures and are fetching.
+  const showLoading = (isLoading.categories) || (isFetchingCreatures && creatures.length === 0);
+
+  if (showLoading) {
     return (
       <View style={[styles.container, { 
         paddingTop: insets.top, 
@@ -146,6 +172,14 @@ export default function CategoryDetailScreen() {
         onBackPress={() => router.back()}
         showBackButton={true}
       />
+
+       {/* Fascination Header */}
+       {category?.fascination && (
+           <View style={styles.fascinationBox}>
+               <Text style={styles.fascinationTitle}>Fascination</Text>
+               <Text style={styles.fascinationBody}>{category.fascination}</Text>
+           </View>
+       )}
 
       {/* Log Dive Button */}
       <TouchableOpacity style={styles.logDiveButton} onPress={handleLogDive}>
@@ -254,5 +288,27 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#666',
     fontSize: TYPOGRAPHY.SIZE_LG,
+  },
+
+
+  fascinationBox: {
+      marginHorizontal: DIMENSIONS.PADDING_HORIZONTAL,
+      marginTop: DIMENSIONS.SPACE_MD,
+      padding: DIMENSIONS.SPACE_MD,
+      backgroundColor: '#222',
+      borderRadius: DIMENSIONS.RADIUS_MD,
+      borderLeftWidth: 4,
+      borderLeftColor: COLORS.SECONDARY,
+  },
+  fascinationTitle: {
+      color: COLORS.SECONDARY,
+      fontSize: TYPOGRAPHY.SIZE_SM,
+      fontWeight: 'bold',
+      marginBottom: 4,
+  },
+  fascinationBody: {
+      color: '#eee',
+      fontSize: TYPOGRAPHY.SIZE_MD,
+      lineHeight: 20,
   },
 });

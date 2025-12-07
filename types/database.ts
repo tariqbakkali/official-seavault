@@ -20,6 +20,7 @@ export interface Database {
           created_at: string;
           class: string | null;
           updated_at: string;
+          fascination: string | null;
         };
         Insert: Omit<Database['public']['Tables']['creatures']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['creatures']['Insert']>;
@@ -31,6 +32,7 @@ export interface Database {
           created_at: string;
           image_url: string | null;
           updated_at: string;
+          fascination: string | null;
         };
         Insert: Omit<Database['public']['Tables']['categories']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['categories']['Insert']>;
@@ -44,6 +46,7 @@ export interface Database {
           osm_id: string | null;
           created_at: string;
           updated_at: string;
+          deleted: boolean | null;
         };
         Insert: Omit<Database['public']['Tables']['dive_sites']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['dive_sites']['Insert']>;
