@@ -364,7 +364,7 @@ export default function Paywall({ onClose }: PaywallProps) {
                                         <Text style={styles.packagePrice}>{pack.product.priceString}</Text>
                                         {shop && (
                                             <Text style={styles.originalPrice}>
-                                                (Normally $39.99)
+                                                (Normally £39.99)
                                             </Text>
                                         )}
                                     </View>

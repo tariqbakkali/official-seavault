@@ -116,6 +116,13 @@ export default function LoginScreen() {
       // Check if device supports Google Play Services (Android only)
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
+      // Sign out first to force account picker (disable auto-sign-in)
+      try {
+        await GoogleSignin.signOut();
+      } catch (e) {
+        // Ignore sign-out errors - user might not have been signed in
+      }
+
       // Show native account picker
       const response = await GoogleSignin.signIn();
 
