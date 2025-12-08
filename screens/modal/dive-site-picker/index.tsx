@@ -9,6 +9,7 @@ import {
   FlatList,
   RefreshControl,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -18,6 +19,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import CountryFlag from '@/components/CountryFlag';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { forceSyncAll } from '@/utils/syncUtils';
+import { fetchAllDiveSites } from '@/services/diveSiteSyncService';
 
 type DiveSite = Database['public']['Tables']['dive_sites']['Row'];
 
@@ -36,6 +38,12 @@ export default function DiveSitePickerScreen() {
   const diveSiteEntryId = params.diveSiteEntryId as string;
 
   const { diveSites: allDiveSites } = useSyncedData();
+
+  // Fetch all dive sites on mount to ensure full list is available
+  React.useEffect(() => {
+    console.log('[DiveSitePicker] Fetching all dive sites on mount...');
+    fetchAllDiveSites();
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -73,6 +81,9 @@ export default function DiveSitePickerScreen() {
     const diveSitesArray = allDiveSites
       ? (Object.values(allDiveSites) as DiveSite[])
       : [];
+
+    console.log('[DiveSitePicker] Total dive sites loaded:', diveSitesArray.length);
+    console.log('[DiveSitePicker] Search query:', searchQuery);
 
     let filtered = diveSitesArray;
 
@@ -143,7 +154,7 @@ export default function DiveSitePickerScreen() {
         {
           paddingBottom: insets.bottom,
           paddingLeft: insets.left,
-          // paddingTop: insets.top,
+          paddingTop: Platform.OS === 'android' ? insets.top : 0,
           paddingRight: insets.right,
         },
       ]}

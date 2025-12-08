@@ -10,7 +10,7 @@ export const fetchAllCreatures = async () => {
   console.log('[CreatureSync] Starting full manual fetch (paginated)...');
   const allCreatures: any[] = [];
   let from = 0;
-  const step = 500;
+  const step = 1000;
   let hasMore = true;
 
   try {

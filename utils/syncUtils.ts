@@ -1,5 +1,6 @@
 import { when } from '@legendapp/state';
 import { fetchAllCreatures } from '../services/creatureSyncService';
+import { fetchAllDiveSites } from '../services/diveSiteSyncService';
 import { 
   categories$, 
   creatures$, 
@@ -108,7 +109,8 @@ export const forceSyncAll = async () => {
     fetchAllCreatures();
     
     // Syncing dive sites
-    diveSites$.get();
+    console.log('[SyncDebug] Calling fetchAllDiveSites manually');
+    fetchAllDiveSites();
     
     // Syncing current user sightings
     currentUserSightings$.get();
