@@ -7,7 +7,6 @@ import { supabase } from '../services/supabase';
  * to ensure the local catalog is complete for leaderboard calculations.
  */
 export const fetchAllCreatures = async () => {
-  console.log('[CreatureSync] Starting full manual fetch (paginated)...');
   const allCreatures: any[] = [];
   let from = 0;
   const step = 1000;
@@ -27,12 +26,10 @@ export const fetchAllCreatures = async () => {
       }
 
       if (!data || data.length === 0) {
-        console.log('[CreatureSync] No more data.');
         hasMore = false;
         break;
       }
 
-      console.log(`[CreatureSync] Fetched rows ${from} to ${from + data.length - 1} (Chunk: ${data.length}, Server Total: ${count})`);
       allCreatures.push(...data);
 
       if (data.length < step) {
@@ -44,7 +41,6 @@ export const fetchAllCreatures = async () => {
 
     // Merge into store
     if (allCreatures.length > 0) {
-      console.log(`[CreatureSync] Merging TOTAL ${allCreatures.length} creatures into store.`);
       const creatureMap: Record<string, any> = {};
       allCreatures.forEach((c: any) => {
         creatureMap[c.id] = c;

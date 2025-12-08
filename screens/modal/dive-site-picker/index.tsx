@@ -41,7 +41,6 @@ export default function DiveSitePickerScreen() {
 
   // Fetch all dive sites on mount to ensure full list is available
   React.useEffect(() => {
-    console.log('[DiveSitePicker] Fetching all dive sites on mount...');
     fetchAllDiveSites();
   }, []);
 
@@ -81,9 +80,6 @@ export default function DiveSitePickerScreen() {
     const diveSitesArray = allDiveSites
       ? (Object.values(allDiveSites) as DiveSite[])
       : [];
-
-    console.log('[DiveSitePicker] Total dive sites loaded:', diveSitesArray.length);
-    console.log('[DiveSitePicker] Search query:', searchQuery);
 
     let filtered = diveSitesArray;
 

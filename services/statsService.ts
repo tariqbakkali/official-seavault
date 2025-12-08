@@ -30,9 +30,6 @@ export const calculateUserStats = (
   userAchievements?: UserAchievement[],
   allCreatures?: Creature[]
 ): UserStats => {
-  console.log('[StatsDebug] calculateUserStats called');
-  console.log(`[StatsDebug] Sightings count: ${userData.sightings?.length}`);
-  console.log(`[StatsDebug] Catalog creatures loaded: ${catalog?.creatures?.length}`);
 
   
   // Handle case where catalog is not yet loaded
@@ -138,14 +135,11 @@ export const calculateUserStats = (
     }
   });
   
+  
   // Calculate overall completion
   const totalCreatures = catalog.creatures ? catalog.creatures.length : 0;
   const uniqueCreatures = seenCreatureIds.size;
   const overallCompletion = totalCreatures > 0 ? Math.round((uniqueCreatures / totalCreatures) * 100) : 0;
-  
-  console.log(`[StatsDebug] Unique creatures: ${uniqueCreatures}, Total points: ${totalPoints}`);
-  // console.log('[StatsDebug] Category names:', JSON.stringify(categoryNames));
-  console.log('[StatsDebug] Category stats summary:', Object.keys(categoryStats).map(id => `${categoryNames[id]}: ${categoryStats[id].seen}/${categoryStats[id].total}`));
 
   
   // Calculate achievements unlocked dynamically

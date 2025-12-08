@@ -105,11 +105,9 @@ export const forceSyncAll = async () => {
     categories$.get();
     
     // Syncing creatures
-    console.log('[SyncDebug] Calling fetchAllCreatures manually');
     fetchAllCreatures();
     
     // Syncing dive sites
-    console.log('[SyncDebug] Calling fetchAllDiveSites manually');
     fetchAllDiveSites();
     
     // Syncing current user sightings

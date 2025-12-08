@@ -7,7 +7,6 @@ import { supabase } from '../services/supabase';
  * to ensure the local catalog is complete for searching.
  */
 export const fetchAllDiveSites = async () => {
-  console.log('[DiveSiteSync] Starting full manual fetch (paginated)...');
   const allDiveSites: any[] = [];
   let from = 0;
   const step = 1000;
@@ -27,12 +26,10 @@ export const fetchAllDiveSites = async () => {
       }
 
       if (!data || data.length === 0) {
-        console.log('[DiveSiteSync] No more data.');
         hasMore = false;
         break;
       }
 
-      console.log(`[DiveSiteSync] Fetched rows ${from} to ${from + data.length - 1} (Chunk: ${data.length}, Server Total: ${count})`);
       allDiveSites.push(...data);
 
       if (data.length < step) {
@@ -44,7 +41,6 @@ export const fetchAllDiveSites = async () => {
 
     // Merge into store
     if (allDiveSites.length > 0) {
-      console.log(`[DiveSiteSync] Merging TOTAL ${allDiveSites.length} dive sites into store.`);
       const diveSiteMap: Record<string, any> = {};
       allDiveSites.forEach((d: any) => {
         diveSiteMap[d.id] = d;
