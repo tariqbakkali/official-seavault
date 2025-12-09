@@ -92,6 +92,7 @@ export default ({ config }) => {
         '',
     },
     plugins: [
+      './plugins/withRemoveAdId',
       'expo-router',
       'expo-font',
       'expo-web-browser',
