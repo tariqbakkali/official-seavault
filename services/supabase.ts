@@ -15,6 +15,29 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
+// Custom fetch with timeout for better network error handling
+const fetchWithTimeout = async (url: RequestInfo | URL, options: RequestInit = {}): Promise<Response> => {
+  const timeout = 30000; // 30 seconds
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Network request timed out. Please check your connection and try again.');
+    }
+    throw error;
+  }
+};
+
 
 // ✅ Create Supabase client with AsyncStorage for React Native
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
@@ -23,6 +46,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false, // No browser URL handling in RN
+  },
+  global: {
+    fetch: fetchWithTimeout,
   },
 });
 

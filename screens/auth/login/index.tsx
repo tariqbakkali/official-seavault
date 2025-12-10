@@ -712,7 +712,7 @@ const styles = StyleSheet.create({
     paddingVertical: DIMENSIONS.PADDING_MD,
     paddingHorizontal: DIMENSIONS.PADDING_LG,
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: '#fff', // White border for visibility against dark background
   },
   appleButtonText: {
     color: '#fff',
