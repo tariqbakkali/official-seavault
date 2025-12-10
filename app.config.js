@@ -4,7 +4,7 @@ export default ({ config }) => {
   const appJsonConfig = {
     name: 'SeaVault',
     slug: 'SeaVault',
-    version: '1.1.3',
+    version: '1.1.4',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
 
@@ -20,7 +20,7 @@ export default ({ config }) => {
       supportsTablet: true,
       bundleIdentifier: 'co.uk.seavault.app',
       associatedDomains: ['applinks:seavault.onelink.me'],
-      buildNumber: '1.1.3',
+      buildNumber: '1.1.4',
       config: {
         googleMapsApiKey:
           process.env.GOOGLE_MAPS_API_KEY ||
@@ -29,6 +29,7 @@ export default ({ config }) => {
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        NSLocationWhenInUseUsageDescription: 'SeaVault uses your location to show where you are on the map and help you find nearby dive sites.',
         CFBundleURLTypes: [
           {
             CFBundleURLSchemes: [

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform, Animated, ScrollView, Dimensions, Share, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform, Animated, ScrollView, Dimensions, Share } from 'react-native';
+import * as Linking from 'expo-linking';
 import Purchases, { PurchasesPackage } from 'react-native-purchases';
 import { getOfferings, purchasePackage } from '@/services/revenueCat';
 import { useShop } from '@/contexts/ShopContext';
@@ -66,9 +67,7 @@ export default function Paywall({ onClose }: PaywallProps) {
     const [packages, setPackages] = useState<PurchasesPackage[]>([]);
     const [loading, setLoading] = useState(true);
     const [purchaseSuccess, setPurchaseSuccess] = useState(false);
-    const [inputCode, setInputCode] = useState('');
-    const [showInput, setShowInput] = useState(false);
-    const { shop, error, redeemReferral, setReferralCode } = useShop();
+    const { shop, error, redeemReferral } = useShop();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(50)).current;
 
@@ -173,22 +172,7 @@ export default function Paywall({ onClose }: PaywallProps) {
         }
     };
 
-    const handleManualCodeSubmit = async () => {
-        if (!inputCode.trim()) return;
-        
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setLoading(true);
-        try {
-            await setReferralCode(inputCode.trim());
-            setShowInput(false);
-            setInputCode('');
-            // The useEffect on [shop] will trigger reloadOfferings if the code is valid
-        } catch (e) {
-            Alert.alert('Error', 'Invalid code');
-        } finally {
-            setLoading(false);
-        }
-    };
+
 
 
 
@@ -387,33 +371,15 @@ export default function Paywall({ onClose }: PaywallProps) {
                         )}
 
                         {/* Manual Referral Code Entry */}
-                        {!shop && (
-                            <View style={styles.referralInputContainer}>
-                                {showInput ? (
-                                    <View style={styles.inputWrapper}>
-                                        <TextInput
-                                            style={styles.input}
-                                            placeholder="Enter Referral Code"
-                                            placeholderTextColor="rgba(255,255,255,0.5)"
-                                            value={inputCode}
-                                            onChangeText={setInputCode}
-                                            autoCapitalize="characters"
-                                            autoCorrect={false}
-                                        />
-                                        <TouchableOpacity 
-                                            style={styles.applyButton}
-                                            onPress={handleManualCodeSubmit}
-                                        >
-                                            <Text style={styles.applyButtonText}>Apply</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                ) : (
-                                    <TouchableOpacity onPress={() => setShowInput(true)}>
-                                        <Text style={styles.footerText}>Have a Dive Shop Code?</Text>
-                                    </TouchableOpacity>
-                                )}
-                            </View>
-                        )}
+                        <View style={styles.legalLinksContainer}>
+                            <TouchableOpacity onPress={() => Linking.openURL('https://seavault.co.uk/privacy')}>
+                                <Text style={styles.legalLink}>Privacy Policy</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.legalLinkSeparator}>•</Text>
+                            <TouchableOpacity onPress={() => Linking.openURL('https://seavault.co.uk/terms')}>
+                                <Text style={styles.legalLink}>Terms of Use</Text>
+                            </TouchableOpacity>
+                        </View>
 
                         <Text style={styles.termsText}>
                             By purchasing, you agree to our Terms of Service
@@ -636,36 +602,7 @@ const styles = StyleSheet.create({
         textDecorationLine: 'underline',
         fontWeight: '500',
     },
-    referralInputContainer: {
-        width: '100%',
-        alignItems: 'center',
-        marginTop: DIMENSIONS.MARGIN_SM,
-    },
-    inputWrapper: {
-        flexDirection: 'row',
-        width: '100%',
-        gap: DIMENSIONS.GAP_SM,
-    },
-    input: {
-        flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 12,
-        padding: 12,
-        color: '#fff',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-    },
-    applyButton: {
-        backgroundColor: '#4DD0E1',
-        paddingHorizontal: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 12,
-    },
-    applyButtonText: {
-        color: '#001a33',
-        fontWeight: 'bold',
-    },
+
     termsText: {
         color: 'rgba(255, 255, 255, 0.5)',
         fontSize: TYPOGRAPHY.SIZE_XS,
@@ -741,5 +678,21 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: TYPOGRAPHY.SIZE_LG,
         fontWeight: '600',
+    },
+    legalLinksContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: DIMENSIONS.MARGIN_MD,
+        gap: DIMENSIONS.GAP_SM,
+    },
+    legalLink: {
+        color: 'rgba(255, 255, 255, 0.6)',
+        fontSize: TYPOGRAPHY.SIZE_SM,
+        textDecorationLine: 'underline',
+    },
+    legalLinkSeparator: {
+        color: 'rgba(255, 255, 255, 0.4)',
+        fontSize: TYPOGRAPHY.SIZE_SM,
     },
 });
