@@ -54,8 +54,6 @@ function RootLayout() {
       try {
         await initializeApp();
 
-        await initializeApp();
-
         const onboardingCompleted = await hasCompletedOnboarding();
         const { data: { session } } = await supabase.auth.getSession();
         const userId = session?.user?.id || null;
@@ -84,17 +82,23 @@ function RootLayout() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const userId = session?.user?.id || null;
 
+      // Update user ID state first so navigation knows we're authenticated
+      setCurrentUserID(userId);
+      setCurrentUserIDState(userId);
+
       if (userId) {
+        // Reset onboarding state - user has logged in
+        setShowOnboarding(false);
         await initializeUserSession(userId);
         await forceSyncAll();
+        // Re-check purchase status after login (RevenueCat is now configured with user ID)
+        // This will trigger the navigation effect with the correct isPro value
+        await checkPurchaseStatus();
       } else {
         await cleanupUserSession();
         // Reset paywall gate when user logs out
         setShowPaywallGate(false);
       }
-
-      setCurrentUserID(userId);
-      setCurrentUserIDState(userId);
     });
 
     return () => {
@@ -107,6 +111,12 @@ function RootLayout() {
   useEffect(() => {
     // Navigate after loading completes
     if (!isLoading) {
+      // Check if we should show onboarding first (for first-time users)
+      if (showOnboarding) {
+        router.replace('/onboarding' as any);
+        return;
+      }
+      
       if (isAuthenticated) {
         // Wait for purchase status to load before making decisions
         if (isPurchaseLoading) return;
@@ -122,7 +132,7 @@ function RootLayout() {
         router.replace('/(auth)' as any);
       }
     }
-  }, [isAuthenticated, isLoading, isPro, isPurchaseLoading]);
+  }, [isAuthenticated, isLoading, isPro, isPurchaseLoading, showOnboarding]);
 
   if (isLoading) {
     return (
