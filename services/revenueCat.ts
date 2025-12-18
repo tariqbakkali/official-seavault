@@ -1,7 +1,7 @@
 import Purchases, { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
-import { updateUserProfile } from '@/stores/syncedObservables';
+import { updateUserProfile, currentUserProfile$, getCurrentUserID, Profile } from '@/stores/syncedObservables';
 import { Database } from '@/types/database';
 
 const API_KEYS = {
@@ -101,11 +101,19 @@ export const syncSubscriptionToSupabase = async (customerInfo: CustomerInfo, use
     // Determine membership tier based on active entitlements
     let membershipTier = 'free';
     if (isPremium) {
-      // You can customize this based on your specific entitlements
       membershipTier = 'pro';
     }
-    
-    console.log('[RevenueCat] Syncing to Supabase - isPremium:', isPremium, 'tier:', membershipTier);
+
+    console.log('[RevenueCat] Syncing to Supabase - isPremium (RC):', isPremium);
+
+    // CRITICAL CHANGE: Only sync to Supabase if the user IS Premium data from RevenueCat.
+    // If RevenueCat says "Free" (False), we DO NOT overwrite the database.
+    // This allows admins to manually grant "Pro" in the database without the app overwriting it.
+    // Expirations/Cancellations are handled by the Webhook.
+    if (!isPremium) {
+      console.log('[RevenueCat] User is not Pro in RevenueCat. Skipping DB update to preserve manual overrides.');
+      return;
+    }
     
     // Update Supabase profile
     const { error } = await (supabase
@@ -127,7 +135,7 @@ export const syncSubscriptionToSupabase = async (customerInfo: CustomerInfo, use
       membership_tier: membershipTier,
     } as any);
     
-    console.log('[RevenueCat] Successfully synced subscription to Supabase');
+    console.log('[RevenueCat] Successfully synced verified subscription to Supabase');
   } catch (error) {
     console.error('[RevenueCat] Error syncing subscription to Supabase:', error);
     throw error;
@@ -152,8 +160,15 @@ export const purchasePackage = async (pack: PurchasesPackage, userId: string) =>
 
 export const checkSubscriptionStatus = async () => {
   try {
-    const customerInfo = await Purchases.getCustomerInfo();
-    return customerInfo.entitlements.active['Pro'] !== undefined;
+    const userId = getCurrentUserID();
+    if (!userId) return false;
+    
+    // Use Legend State observable for instant, offline-capable check
+    // The observable stores profiles as { [userId]: Profile }
+    const profiles = currentUserProfile$.get() as unknown as Record<string, Profile> | undefined;
+    const profile = profiles?.[userId];
+    console.log("[RevenueCat] Checking subscription - userId:", userId, "is_premium:", profile?.is_premium);
+    return profile?.is_premium === true;
   } catch (e) {
     console.error('Error checking subscription status', e);
     return false;

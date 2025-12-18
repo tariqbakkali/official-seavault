@@ -19,38 +19,82 @@ serve(async (req) => {
       return new Response("No event found", { status: 400 })
     }
 
-    // We only care about successful purchases
-    if (event.type !== 'INITIAL_PURCHASE' && event.type !== 'RENEWAL' && event.type !== 'NON_RENEWING_PURCHASE') {
-      return new Response("Event type ignored", { status: 200 })
+    const userId = event.app_user_id
+    const type = event.type
+    
+    // Check for test user
+    if (userId.startsWith("$RCAnonymousID:")) {
+        console.log(`Skipping anonymous user: ${userId}`);
+        return new Response("Skipped anonymous user", { status: 200 });
     }
 
-    const shopId = event.subscriber_attributes?.shop_id?.value
-    const userId = event.app_user_id
-    const amount = event.price_in_purchased_currency
-    const transactionId = event.transaction_id
-    const currency = event.currency
+    let isPremium: boolean | null = null;
+    let membershipTier: string | null = null;
 
-    if (shopId) {
-      console.log(`Processing sale for Shop ID: ${shopId}, User ID: ${userId}, Amount: ${amount} ${currency}`)
+    // Handle subscription status changes
+    if (type === 'INITIAL_PURCHASE' || type === 'RENEWAL' || type === 'UNCANCELLATION') {
+      isPremium = true;
+      membershipTier = 'pro';
+    } else if (type === 'EXPIRATION' || type === 'CANCELLATION' || type === 'PRODUCT_CHANGE') {
+      // NOTE: CANCELLATION usually means they turned off auto-renew, not that access is lost immediately.
+      // But EXPIRATION means access is lost.
+      // For simplicity in this v1, checking EXPIRATION is key. 
+      // RevenueCat recommends checking the entitlements source of truth via API, but here we are sinking events.
+      // If it's EXPIRATION, we definitely revoke.
+      if (type === 'EXPIRATION') {
+        isPremium = false;
+        membershipTier = 'free';
+      }
+      
+      // For CANCELLATION (turning off auto-renew), we might ideally want to keep them as premium until expiration.
+      // However, if the payload indicates expiration_at_ms is in the past, then we revoke.
+      // For now, let's treat EXPIRATION as the revocation event.
+    }
+
+    // Only update if we have a decided status change
+    if (isPremium !== null) {
+      console.log(`Updating profile for User ID: ${userId} to Premium: ${isPremium}, Tier: ${membershipTier}`)
 
       const { error } = await supabaseClient
-        .from('shop_sales')
-        .insert({
-          shop_id: shopId,
-          user_id: userId, // Assuming app_user_id maps to Supabase user_id
-          amount: amount,
-          revenuecat_transaction: transactionId,
-          purchased_at: new Date(event.purchased_at_ms).toISOString(),
+        .from('profiles')
+        .update({
+          is_premium: isPremium,
+          membership_tier: membershipTier,
         })
+        .eq('id', userId)
 
       if (error) {
-        console.error("Error inserting sale:", error)
-        return new Response("Error recording sale", { status: 500 })
+        console.error("Error updating profile:", error)
+        return new Response("Error updating profile", { status: 500 })
       }
+      console.log("Profile updated successfully")
+    }
 
-      console.log("Sale recorded successfully")
-    } else {
-      console.log("No shop_id found in subscriber attributes")
+    // Existing Shop Sale Logic
+    const shopId = event.subscriber_attributes?.shop_id?.value
+    if (shopId && (type === 'INITIAL_PURCHASE' || type === 'RENEWAL')) {
+        const amount = event.price_in_purchased_currency
+        const transactionId = event.transaction_id
+        const currency = event.currency
+        
+        console.log(`Processing sale for Shop ID: ${shopId}, User ID: ${userId}, Amount: ${amount} ${currency}`)
+
+        const { error: saleError } = await supabaseClient
+            .from('shop_sales')
+            .insert({
+              shop_id: shopId,
+              user_id: userId,
+              amount: amount,
+              revenuecat_transaction: transactionId,
+              purchased_at: new Date(event.purchased_at_ms).toISOString(),
+            })
+
+        if (saleError) {
+             console.error("Error inserting sale:", saleError)
+             // We don't return error here to avoid failing the whole webhook if profile update succeeded
+        } else {
+             console.log("Sale recorded successfully")
+        }
     }
 
     return new Response("Webhook processed", { status: 200 })

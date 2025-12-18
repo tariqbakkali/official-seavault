@@ -48,6 +48,10 @@ export const PurchaseProvider = ({ children }: PurchaseProviderProps) => {
       }
       
       // Sync with Supabase if user is logged in
+      // REMOVED: We no longer sync on every app load.
+      // 1. We trust the database (Legend State).
+      // 2. We don't want to overwrite manual DB grants with "False" from RC (handled by syncSubscriptionToSupabase logic now anyway, but saving the network call is better).
+      /*
       const userId = getCurrentUserID();
       if (userId) {
         try {
@@ -58,6 +62,7 @@ export const PurchaseProvider = ({ children }: PurchaseProviderProps) => {
           // Don't throw - allow the app to continue even if sync fails
         }
       }
+      */
       return hasPro;
     } catch (error) {
       console.error('[PurchaseContext] Error checking purchase status:', error);
@@ -75,13 +80,20 @@ export const PurchaseProvider = ({ children }: PurchaseProviderProps) => {
     let customerInfoUpdateListener: any;
     try {
       customerInfoUpdateListener = Purchases.addCustomerInfoUpdateListener(async (info) => {
-        const hasPro = info.entitlements.active['Pro'] !== undefined;
+        const hasProFromRC = info.entitlements.active['Pro'] !== undefined;
+        
+        // Also check the database - user could be manually granted pro status
+        const hasProFromDB = await checkSubscriptionStatus();
+        
+        // User is pro if EITHER RevenueCat says so OR database says so
+        const hasPro = hasProFromRC || hasProFromDB;
+        
         setIsPro(hasPro);
-        console.log('[PurchaseContext] Purchase status updated:', hasPro ? 'Pro' : 'Free');
+        console.log('[PurchaseContext] Purchase status updated:', hasPro ? 'Pro' : 'Free', '(RC:', hasProFromRC, ', DB:', hasProFromDB, ')');
         console.log('[PurchaseContext] DEBUG - Listener received active entitlements:', Object.keys(info.entitlements.active));
         if (info.entitlements.active['Pro']) {
           const proEntitlement = info.entitlements.active['Pro'];
-          console.log('[PurchaseContext] DEBUG - Pro entitleme details:', {
+          console.log('[PurchaseContext] DEBUG - Pro entitlement details:', {
             identifier: proEntitlement.identifier,
             isActive: proEntitlement.isActive,
             willRenew: proEntitlement.willRenew,
@@ -89,9 +101,10 @@ export const PurchaseProvider = ({ children }: PurchaseProviderProps) => {
           });
         }
         
-        // Sync with Supabase when subscription status changes
+        // Sync with Supabase when subscription status changes (only if RC says pro)
+        // We only sync if RevenueCat confirms pro status to avoid overwriting manual grants
         const userId = getCurrentUserID();
-        if (userId) {
+        if (userId && hasProFromRC) {
           try {
             await syncCustomerInfo(userId);
             console.log('[PurchaseContext] Synced updated subscription status to Supabase');
