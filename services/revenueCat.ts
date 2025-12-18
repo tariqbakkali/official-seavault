@@ -166,8 +166,39 @@ export const checkSubscriptionStatus = async () => {
     // Use Legend State observable for instant, offline-capable check
     // The observable stores profiles as { [userId]: Profile }
     const profiles = currentUserProfile$.get() as unknown as Record<string, Profile> | undefined;
-    const profile = profiles?.[userId];
-    console.log("[RevenueCat] Checking subscription - userId:", userId, "is_premium:", profile?.is_premium);
+    
+    let profile: Profile | undefined;
+    
+    if (profiles && Object.keys(profiles).length > 0) {
+      profile = profiles[userId];
+      console.log("[RevenueCat] Profiles from observable:", profiles);
+    } else {
+      console.log("[RevenueCat] Profiles observable is empty, fetching from Supabase fallback");
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (error) {
+        console.error("[RevenueCat] Error fetching profile from Supabase fallback:", error);
+      } else if (data) {
+        profile = data as Profile;
+        console.log("[RevenueCat] Profile fetched from Supabase fallback:", profile.id);
+        
+        // Proactively update the observable if we got data
+        currentUserProfile$.assign({
+          [userId]: profile
+        } as any);
+      }
+    }
+
+    console.log("[RevenueCat] Checking subscription detail:", {
+      userId,
+      is_premium: profile?.is_premium,
+      membership_tier: profile?.membership_tier,
+      email: profile?.email
+    });
     return profile?.is_premium === true;
   } catch (e) {
     console.error('Error checking subscription status', e);
