@@ -19,6 +19,9 @@ export type Achievement = Database['public']['Tables']['achievements']['Row'];
 export type UserAchievement = Database['public']['Tables']['user_achievements']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
 
+
+
+
 // User ID tracking - using an observable to make it reactive
 export const currentUserID$ = observable<string | null>(null);
 
@@ -35,7 +38,10 @@ export const categories$ = observable(customSynced({
   collection: 'categories',
   actions: ['read'],
   persist: { name: 'categories_v6' },
-
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
@@ -49,8 +55,10 @@ export const creatures$ = observable(customSynced({
   collection: 'creatures',
   actions: ['read'],
   persist: { name: 'creatures_v6' },
-  select: (select: any) => select.select('*'),
-
+  delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: false, // Catalog doesn't change often
@@ -79,8 +87,10 @@ export const achievements$ = observable(customSynced({
   collection: 'achievements',
   actions: ['read'],
   persist: { name: 'achievements_v6' },
-  select: (select: any) => select.select('*'),
-
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
@@ -97,8 +107,10 @@ export const userAchievements$ = observable(customSynced({
   },
   actions: ['read', 'create'],
   persist: { name: 'user_achievements_v6' },
-  select: (select: any) => select.select('*'),
-
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   // changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
@@ -121,7 +133,6 @@ export const diveSites$ = observable(customSynced({
   collection: 'dive_sites',
   actions: ['read', 'update'],
   persist: { name: 'dive_sites_v6' },
-  select: (select: any) => select.select('*'),
   // changesSince: 'last-sync',
   update: async (input: any) => {
     const { data, error } = await supabase
@@ -135,7 +146,10 @@ export const diveSites$ = observable(customSynced({
     } 
     return { data, error: null };
   },
-
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   realtime: true, // Disable realtime for dive sites to reduce constant updates
 }));
@@ -152,9 +166,11 @@ export const currentUserSightings$ = observable(customSynced({
     return select.eq('user_id', userId);
   },
   actions: ['read', 'create', 'update', 'delete'],
-  persist: { name: 'sightings_v7', retrySync: true },
-  select: (select: any) => select.select('*'),
-
+  persist: { name: 'sightings_v6', retrySync: true },
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   // changesSince: 'last-sync',
   update: async (input: any) => {
@@ -172,6 +188,7 @@ export const currentUserSightings$ = observable(customSynced({
   },
   fieldCreatedAt: 'created_at',
   realtime: false, // DEBUG: Disabled to fix initial sync issue
+  select: (select: any) => select.select('*, creatures(category_id, points)'),
 }));
 
 // All users sightings observable - for leaderboard and community features
@@ -179,13 +196,16 @@ export const allUsersSightings$ = observable(customSynced({
   supabase,
   collection: 'sightings',
   actions: ['read', 'create', 'update', 'delete'],
-  persist: { name: 'all_sightings_v7' },
-  select: (select: any) => select.select('*'),
-
+  persist: { name: 'all_sightings_v6' },
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   // changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: false, // DEBUG: Disabled to fix initial sync issue
+  select: (select: any) => select.select('*, creatures(category_id, points)'),
 }));
 
 // All users achievements observable - for leaderboard and community features
@@ -194,8 +214,10 @@ export const allUsersAchievements$ = observable(customSynced({
   collection: 'user_achievements',
   actions: ['read'],
   persist: { name: 'all_user_achievements_v6' },
-  select: (select: any) => select.select('*'),
-
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
@@ -241,7 +263,6 @@ export const wishlists$ = observable(customSynced({
     return { data, error: null };
   },
   persist: { name: 'wishlists_v6', retrySync: true },
-  select: (select: any) => select.select('*'),
   retry:{infinite: true},
   // changesSince: 'last-sync',
   // fieldCreatedAt: 'created_at',
@@ -261,10 +282,12 @@ export const currentUserProfile$ = observable(customSynced({
     return result;
   },
   actions: ['read', 'update'],
-
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   persist: { name: 'currentUserProfile_v6', retrySync: true },
-  select: (select: any) => select.select('*'),
   // changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all, filtering will be done by Supabase
@@ -278,9 +301,11 @@ export const allUsersProfiles$ = observable(customSynced({
   collection: 'profiles',
   actions: ['read'],
   persist: { name: 'all_profiles_v6' },
-  select: (select: any) => select.select('*'),
   changesSince: 'last-sync',
-
+    delete: async (id: string) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   fieldCreatedAt: 'created_at',
   realtime: false, // Disable realtime to reduce load

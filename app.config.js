@@ -4,7 +4,7 @@ export default ({ config }) => {
   const appJsonConfig = {
     name: 'SeaVault',
     slug: 'SeaVault',
-    version: '1.1.12',
+    version: '1.1.14',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
 
@@ -20,7 +20,7 @@ export default ({ config }) => {
       supportsTablet: true,
       bundleIdentifier: 'co.uk.seavault.app',
       associatedDomains: ['applinks:seavault.onelink.me'],
-      buildNumber: '1.1.12',
+      buildNumber: '1.1.14',
       config: {
         googleMapsApiKey:
           process.env.GOOGLE_MAPS_API_KEY ||
