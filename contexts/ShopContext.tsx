@@ -29,7 +29,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [shouldNavigateToPaywall, setShouldNavigateToPaywall] = useState(false);
-    
+
     const { isPro, isLoading: isPurchaseLoading } = usePurchase();
 
     useEffect(() => {
@@ -54,6 +54,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         if (referralCode) {
+            console.log('🔍 Fetching shop with code:', referralCode);
             fetchShop(referralCode);
         } else {
             setShop(null);
@@ -65,7 +66,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const checkAuthAndNavigate = async () => {
             if (shouldNavigateToPaywall && shop && !isPurchaseLoading) {
                 const { data: { session } } = await supabase.auth.getSession();
-                
+
                 if (!session?.user) {
                     console.log('User not logged in, skipping paywall navigation');
                     setShouldNavigateToPaywall(false);
@@ -83,7 +84,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setShouldNavigateToPaywall(false);
             }
         };
-        
+
         checkAuthAndNavigate();
     }, [shouldNavigateToPaywall, shop, isPurchaseLoading, isPro]);
 
@@ -94,6 +95,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.log('User signed in, re-applying referral code:', referralCode);
                 // Re-fetch shop to apply attributes to the new user
                 await fetchShop(referralCode);
+                setShouldNavigateToPaywall(true);
             }
         });
 
@@ -105,21 +107,21 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleAppsFlyerDeepLink = () => {
         onAppsFlyerDeepLink((deepLinkData) => {
             console.log('AppsFlyer deep link data:', JSON.stringify(deepLinkData, null, 2));
-            
+
             // Prioritize explicit code parameters from the link data
-            let code = deepLinkData?.params?.code || 
-                      deepLinkData?.data?.code ||
-                      deepLinkData?.code;
+            let code = deepLinkData?.params?.code ||
+                deepLinkData?.data?.code ||
+                deepLinkData?.code;
 
             // If no explicit code param, check deep_link_value but validate it
             if (!code && deepLinkData?.deep_link_value) {
                 const value = deepLinkData.deep_link_value.toString();
-                
+
                 // IGNORE generic schemes or likely URLs that aren't codes
                 // "seavault://ref" is the deep_link_value for some campaigns but NOT the code itself
                 if (
                     value === 'seavault://ref' ||
-                    value.startsWith('seavault://') || 
+                    value.startsWith('seavault://') ||
                     value.startsWith('http') ||
                     value.includes('/')
                 ) {
@@ -128,23 +130,23 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     code = value;
                 }
             }
-            
+
             // Also check for 'code' in the query params of the deep link value url if it exists
             if (!code && deepLinkData?.deep_link_value) {
                 try {
-                     // Try to parse as URL to see if it has ?code=...
-                     const url = deepLinkData.deep_link_value.toString();
-                     if (url.includes('code=')) {
+                    // Try to parse as URL to see if it has ?code=...
+                    const url = deepLinkData.deep_link_value.toString();
+                    if (url.includes('code=')) {
                         const match = url.match(/[?&]code=([^&]+)/);
                         if (match && match[1]) {
                             code = match[1];
                         }
-                     }
+                    }
                 } catch (e) {
                     // ignore parse error
                 }
             }
-            
+
             console.log('AppsFlyer extracted code (raw):', code);
 
             if (code) {
@@ -165,7 +167,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             // Check for 'code' parameter as per new workflow
             let code = queryParams?.code as string;
-            
+
             if (code) {
                 // Sanitize code
                 code = code.toString().replace(/['"]+/g, '').trim();
@@ -214,11 +216,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchShop = async (code: string) => {
         try {
             setError(null);
-            
+
             console.log('🔍 Fetching shop with code:', code);
             console.log('🔍 Code length:', code.length);
             console.log('🔍 Code trimmed:', code.trim());
-            
+
             const { data, error } = await supabase
                 .from('dive_shops')
                 .select('*')
@@ -259,7 +261,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const isConfigured = await isRevenueCatConfigured();
                 if (isConfigured) {
                     await Purchases.setAttributes({ referral_code: shopData.referral_code });
-                    
+
                     // Only log in as referral user if NO user is currently logged in
                     // This prevents overwriting the real user's identity
                     const { data: { session } } = await supabase.auth.getSession();
@@ -276,7 +278,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     console.warn('RevenueCat not configured, skipping attributes/login');
                 }
             }
-            
+
             if (shopData?.id) {
                 await setShopIdAttribute(shopData.id.toString());
             }

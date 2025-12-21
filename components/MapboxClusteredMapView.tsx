@@ -115,7 +115,6 @@ const MapboxClusteredMapView = forwardRef<
                 const feature = e.features[0];
                 if (feature.properties?.cluster) {
                     // Handle cluster press - zoom in
-                    console.log('Cluster pressed', feature);
                 } else {
                     // Handle marker press
                     if (onPress) {
@@ -145,7 +144,7 @@ const MapboxClusteredMapView = forwardRef<
             if (isMarkerDraggable && selectedCoordinate) {
                 setIsDragging(true);
                 setDraggedCoordinate(newCoordinate);
-                
+
                 // Immediately call the drag end handler to update coordinates
                 if (onMarkerDragEnd) {
                     onMarkerDragEnd({
@@ -154,7 +153,7 @@ const MapboxClusteredMapView = forwardRef<
                         },
                     });
                 }
-                
+
                 // Reset drag state after a short delay
                 setTimeout(() => {
                     setIsDragging(false);

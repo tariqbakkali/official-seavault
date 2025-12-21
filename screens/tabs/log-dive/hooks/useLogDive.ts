@@ -23,9 +23,12 @@ interface FormData {
   diveType: string;
   depth: string;
   diveNotes: string;
-  // Removed imageUrl from FormData as we're using creature-specific images
-  // Changed from single creatureId to array of creature sightings
   creatureSightings: CreatureSighting[];
+  // New fields
+  duration: string;
+  weather: string | null;
+  visibility: string | null;
+  current: string | null;
 }
 
 export const useLogDive = () => {
@@ -38,8 +41,12 @@ export const useLogDive = () => {
     diveType: '',
     depth: '',
     diveNotes: '',
-    // Removed imageUrl from initial state
     creatureSightings: [],
+    // New fields initial state
+    duration: '',
+    weather: null,
+    visibility: null,
+    current: null,
   });
 
   // Removed selectedImage state as it's no longer needed
@@ -54,7 +61,7 @@ export const useLogDive = () => {
   const creaturesArray = allCreatures ? Object.values(allCreatures) : [];
   const categoriesArray = allCategories ? Object.values(allCategories) : [];
 
-  const diveSitesArray = allDiveSites ? Object.values(allDiveSites) as Database['public']['Tables']['dive_sites']['Row'][] : [];
+  const diveSitesArray = allDiveSites ? Object.values(allDiveSites) as unknown as Database['public']['Tables']['dive_sites']['Row'][] : [];
   
   // Create mock catalog object to match the expected format
   const catalog = {
@@ -125,10 +132,14 @@ export const useLogDive = () => {
           dive_notes: formData.diveNotes || null,
           depth: formData.depth || null,
           creature_id: sighting.creatureId || null,
-          // Use only creature-specific image, removed main dive image
           image_url: sighting.imageUrl || null,
           time_of_day: timeOfDay || null,
           creature_notes: sighting.notes || null,
+          // New fields mapped to Sighting
+          duration: formData.duration ? parseInt(formData.duration, 10) : null,
+          weather: formData.weather,
+          visibility: formData.visibility,
+          current: formData.current,
         };
         
         return createSighting(sightingData as any); // Cast to any to avoid TypeScript issues
@@ -162,8 +173,11 @@ export const useLogDive = () => {
         diveType: '',
         depth: '',
         diveNotes: '',
-        // Removed imageUrl reset
         creatureSightings: [],
+        duration: '',
+        weather: null,
+        visibility: null,
+        current: null,
       });
       
       // Removed setSelectedImage reset

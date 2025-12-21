@@ -17,6 +17,7 @@ import DiveSitePicker from './components/DiveSitePicker';
 import DateTimePickerSection from './components/DateTimePickerSection';
 import DiveTypeDepthSection from './components/DiveTypeDepthSection';
 import DiveNotesSection from './components/DiveNotesSection';
+import DiveConditionsSection from './components/DiveConditionsSection';
 import MultipleCreatureSelector from './components/MultipleCreatureSelector';
 import { useLogDive } from './hooks/useLogDive';
 
@@ -104,9 +105,9 @@ const LogDiveScreen = () => {
   // Convert error observable to string if needed
   const errorObj = errors?.diveSites;
   const hasError = errorObj && (typeof errorObj !== 'object' || Object.keys(errorObj).length > 0);
-  
-  const errorMessage = hasError ? 
-    (typeof errorObj === 'object' ? JSON.stringify(errorObj) : String(errorObj)) : 
+
+  const errorMessage = hasError ?
+    (typeof errorObj === 'object' ? JSON.stringify(errorObj) : String(errorObj)) :
     null;
 
   if (errorMessage) {
@@ -126,8 +127,8 @@ const LogDiveScreen = () => {
           onBackPress={handleBackPress}
           showBackButton={shouldShowBackButton}
         />
-        <ErrorDisplay 
-          message={String(errorMessage)} 
+        <ErrorDisplay
+          message={String(errorMessage)}
         />
       </View>
     );
@@ -190,6 +191,17 @@ const LogDiveScreen = () => {
             onDiveNotesChange={(diveNotes) =>
               setFormData({ ...formData, diveNotes })
             }
+          />
+
+          <DiveConditionsSection
+            duration={formData.duration}
+            weather={formData.weather}
+            visibility={formData.visibility}
+            current={formData.current}
+            onDurationChange={(duration) => setFormData({ ...formData, duration })}
+            onWeatherChange={(weather) => setFormData({ ...formData, weather })}
+            onVisibilityChange={(visibility) => setFormData({ ...formData, visibility })}
+            onCurrentChange={(current) => setFormData({ ...formData, current })}
           />
 
           <MultipleCreatureSelector

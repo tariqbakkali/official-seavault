@@ -70,11 +70,6 @@ const CustomClusteredMapView = forwardRef<
         }: ClusteredMapViewProps,
         ref: React.ForwardedRef<CustomClusteredMapViewRef>
     ) => {
-        console.log('[CustomClusteredMapView] Rendered with:', {
-            dataLength: data?.length,
-            clusteringEnabled,
-            region: initialRegion
-        });
 
         // State management
         const [markers, setMarkers] = useState<any[]>([]);
@@ -252,7 +247,6 @@ const CustomClusteredMapView = forwardRef<
                 // ONLY limit markers on Android if clustering is DISABLED
                 if (Platform.OS === 'android' && !clusteringEnabled && markers.length > MAX_MARKERS_ANDROID) {
                     markersToRender = markers.slice(0, MAX_MARKERS_ANDROID);
-                    console.log(`[Android] Limiting markers from ${markers.length} to ${MAX_MARKERS_ANDROID} (Clustering Disabled)`);
                 }
             }
 

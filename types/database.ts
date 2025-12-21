@@ -1,6 +1,25 @@
 export interface Database {
   public: {
     Tables: {
+      articles: {
+        Row: {
+          id: string;
+          title: string;
+          image_url: string | null;
+          subtitle: string | null;
+          content: string | null;
+          external_link: string | null;
+          featured: boolean;
+          category: string | null;
+          display_order: number | null;
+          status: string | null; // 'draft', 'published', 'archived'
+          published_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['articles']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['articles']['Insert']>;
+      };
       creatures: {
         Row: {
           id: string;
@@ -81,6 +100,11 @@ export interface Database {
           creature_notes: string | null;
           updated_at: string;
           image_upload_status?: 'pending' | 'uploaded' | 'failed' | null;
+          // New fields
+          duration: number | null; // in minutes
+          weather: string | null;
+          visibility: string | null;
+          current: string | null;
         };
         Insert: Omit<Database['public']['Tables']['sightings']['Row'], 'created_at'>;
         Update: Partial<Database['public']['Tables']['sightings']['Insert']>;
@@ -164,6 +188,7 @@ export type Sighting = Database['public']['Tables']['sightings']['Row'];
 export type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 export type Achievement = Database['public']['Tables']['achievements']['Row'];
 export type UserAchievement = Database['public']['Tables']['user_achievements']['Row'];
+export type Article = Database['public']['Tables']['articles']['Row'];
 
 
 export interface CachedCatalog {

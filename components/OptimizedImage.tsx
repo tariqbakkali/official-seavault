@@ -23,7 +23,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  
+
   const { isOnline, syncError, clearSyncError } = useImageSync();
 
   // Load the appropriate image URI
@@ -32,7 +32,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
       try {
         setIsLoading(true);
         setHasError(false);
-        
+
         // PRIORITY 1: Always try to use local URI first (works offline and online)
         if (imageMetadata.localUri) {
           // Verify local file exists before using it
@@ -47,16 +47,16 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
             console.log('Local file check failed:', error);
           }
         }
-        
+
         // PRIORITY 2: If we're offline, don't try to download remote images
         if (!isOnline) {
           // If we're offline and don't have a local image, we can't show anything
-          console.log('Device is offline and no local image available');
+
           setHasError(true);
           setIsLoading(false);
           return;
         }
-        
+
         // PRIORITY 3: If we have a remote URL and are online, try to get cached version or download
         if (isOnline && imageMetadata.remoteUrl) {
           // Try to ensure the image is downloaded (this should use cache if available)
@@ -70,7 +70,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
           setIsLoading(false);
           return;
         }
-        
+
         // If we get here, we don't have any image to show
         setHasError(true);
         setIsLoading(false);
@@ -91,7 +91,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         setIsLoading(false);
       }
     };
-    
+
     loadImage();
   }, [imageMetadata, isOnline]);
 
@@ -125,7 +125,6 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
             style={styles.image}
             contentFit={resizeMode}
             onLoad={() => {
-              console.log('Local image loaded successfully in error state');
               setHasError(false); // If it loads, clear error
             }}
             onError={(error) => {
@@ -142,7 +141,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         </View>
       );
     }
-    
+
     // If we have a remote URL and are online, try to show it
     if (isOnline && imageMetadata.remoteUrl) {
       return (
@@ -152,7 +151,6 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
             style={styles.image}
             contentFit={resizeMode}
             onLoad={() => {
-              console.log('Remote image loaded successfully in error state');
               setHasError(false); // If it loads, clear error
             }}
             onError={(error) => {
@@ -169,7 +167,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         </View>
       );
     }
-    
+
     // True error state with no fallback - show a proper error message
     return (
       <View style={[styles.container, styles.errorContainer, style]}>
@@ -189,7 +187,6 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         style={styles.image}
         contentFit={resizeMode}
         onLoad={() => {
-          console.log('Image loaded successfully');
           setIsLoading(false);
           setHasError(false);
         }}

@@ -1,6 +1,6 @@
 import { supabase } from '@/services/supabase';
 import { UserAchievement } from '@/types/database';
-import { userAchievements$, achievements$ } from '@/stores/syncedObservables';
+import { userAchievements$, achievements$, allUsersAchievements$ } from '@/stores/syncedObservables';
 
 /**
  * Check if a user has already unlocked an achievement
@@ -42,7 +42,8 @@ export const awardAchievement = async (userId: string, achievementId: string): P
   try {
     // Award the achievement by updating the observable
     // This will trigger the sync to Supabase
-    userAchievements$[id].set(newAchievement);
+    (userAchievements$ as any)[id].set(newAchievement);
+    (allUsersAchievements$ as any)[id].set(newAchievement);
     
     return newAchievement as UserAchievement;
   } catch (error) {

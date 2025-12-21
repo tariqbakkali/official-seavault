@@ -116,7 +116,7 @@ function RootLayout() {
         router.replace('/onboarding' as any);
         return;
       }
-      
+
       if (isAuthenticated) {
         // Wait for purchase status to load before making decisions
         if (isPurchaseLoading) return;
@@ -181,7 +181,7 @@ function RootLayout() {
           }}
         />
         <Stack.Screen name="dive-sites/add" />
-        <Stack.Screen name="modal/paywall" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="modal/paywall" options={{ presentation: 'modal', headerShown: false, gestureEnabled: false }} />
       </Stack>
       {/* Purchase Gate Modal - Blocks app access for non-subscribers */}
       <Modal

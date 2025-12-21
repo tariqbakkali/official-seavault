@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { hasCompletedOnboarding, resetOnboarding } from '@/utils/onboardingStorage';
-import { Settings, LogOut, Crown, RefreshCcw, HelpCircle, Globe } from 'lucide-react-native';
+import { Settings, LogOut, Crown, RefreshCcw, HelpCircle, Globe, Clock } from 'lucide-react-native';
 
 import Purchases from 'react-native-purchases';
 import { ImageWithFallback } from '@/components';
@@ -21,6 +21,7 @@ import { useSyncedData } from '@/hooks/useSyncedData';
 import { calculateUserStats } from '@/services/statsService';
 import { ROUTES, TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { supabase } from '@/services/supabase';
+import { Profile } from '@/types/database';
 import StatsSection from './components/StatsSection';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll, clearUserSync } from '@/utils/syncUtils';
@@ -84,7 +85,7 @@ export default function ProfileScreen() {
 
     const unlockedIds = new Set(userAchievementsArray.map((i: any) => i.achievement_id));
     const uniqueCreatures = new Set(sightingsArray.map((s: any) => s.creature_id)).size;
-    
+
     return allAchievementsArray.map((achievement: any) => {
       let progress = 0;
       let total = 0;
@@ -106,13 +107,13 @@ export default function ProfileScreen() {
 
   const profileData = useSelector(() => {
     const profile = currentUserProfile$.get();
-    return profile ? Object.values(profile)[0] : undefined;
+    return profile ? (Object.values(profile) as unknown as Profile[])[0] : undefined;
   });
-  
+
   // Need to use useSelector to get total achievements count reactively too
   const totalCount = useSelector(() => {
-     const all = achievements$.get();
-     return all ? Object.values(all).length : 0;
+    const all = achievements$.get();
+    return all ? Object.values(all).length : 0;
   });
 
   // Initial Data Load
@@ -146,15 +147,15 @@ export default function ProfileScreen() {
       // Don't clear first - just fetch fresh data
       console.log('[ProfileScreen] Starting resync...');
       await forceSyncAll();
-      
+
       // Wait a moment for observables to propagate
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
       // Reload data to refresh UI
       console.log('[ProfileScreen] Reloading data after sync...');
       // No need to manually loadData, selectors will update
 
-      
+
       Alert.alert('Success', 'Account synchronized successfully.');
     } catch (error) {
       console.error('Error syncing:', error);
@@ -208,32 +209,32 @@ export default function ProfileScreen() {
   const handleSafeLogout = async (force: boolean = false) => {
     try {
       setSigningOut(true);
-      
+
       if (!force) {
         // Attempt to sync before logging out
         try {
           console.log('[ProfileScreen] Attempting sync before logout...');
           await forceSyncAll();
           // Small delay to ensure any pushed changes are acknowledged
-          await new Promise(resolve => setTimeout(resolve, 500)); 
+          await new Promise(resolve => setTimeout(resolve, 500));
           console.log('[ProfileScreen] Sync successful, proceeding to logout');
         } catch (syncError) {
           console.error('[ProfileScreen] Sync failed during logout:', syncError);
           setSigningOut(false);
-          
+
           Alert.alert(
             'Sync Warning',
             'We couldn\'t sync your latest data to the cloud. Logging out now may result in losing recent changes (like sightings or achievements).\n\nPlease check your internet connection.',
             [
               { text: 'Cancel', style: 'cancel' },
-              { 
-                text: 'Logout Anyway', 
-                style: 'destructive', 
-                onPress: () => handleSafeLogout(true) 
+              {
+                text: 'Logout Anyway',
+                style: 'destructive',
+                onPress: () => handleSafeLogout(true)
               },
-              { 
-                text: 'Try Again', 
-                onPress: () => handleSafeLogout(false) 
+              {
+                text: 'Try Again',
+                onPress: () => handleSafeLogout(false)
               }
             ]
           );
@@ -258,7 +259,7 @@ export default function ProfileScreen() {
     try {
       const url = 'https://explore.seavault.co.uk';
       const supported = await Linking.canOpenURL(url);
-      
+
       if (supported) {
         await Linking.openURL(url);
       } else {
@@ -284,6 +285,13 @@ export default function ProfileScreen() {
   // Conditionally build menu items
   const menuItems: MenuItem[] = [
     // ... existing items
+    {
+      icon: <Clock size={24} color="#fff" />,
+      title: 'Dive Logs',
+      subtitle: 'View your dive history',
+      onPress: () => router.push(ROUTES.PROFILE.DIVE_LOGS),
+      chevron: true,
+    },
     {
       icon: <Settings size={24} color="#fff" />,
       title: 'Account Settings',

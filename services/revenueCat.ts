@@ -199,6 +199,7 @@ export const checkSubscriptionStatus = async () => {
       membership_tier: profile?.membership_tier,
       email: profile?.email
     });
+    console.log("[RevenueCat] Subscription status checked:", profile?.is_premium === true);
     return profile?.is_premium === true;
   } catch (e) {
     console.error('Error checking subscription status', e);

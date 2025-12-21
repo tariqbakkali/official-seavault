@@ -22,6 +22,7 @@ import { getLeaderboardData } from '@/services/leaderboardService';
 import { forceSyncAll } from '@/utils/syncUtils';
 import { Creature, Category, Sighting, Wishlist } from '@/types/database';
 import StatCard from './components/StatCard';
+import ArticlesSection from './components/ArticlesSection';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { allUsersProfiles$, creatures$, categories$, currentUserSightings$, allUsersSightings$, achievements$, userAchievements$, wishlists$, currentUserProfile$, allUsersAchievements$, currentUserID$ } from '@/stores/syncedObservables';
 import { useSelector } from '@legendapp/state/react';
@@ -52,7 +53,7 @@ export default function HomeScreen() {
   // Reactive User Stats
   const userStats = useSelector(() => {
     const rawSightings = currentUserSightings$.get();
-    
+
     const rawUserData = {
       sightings: Object.values(rawSightings || {}),
       wishlists: [],
@@ -65,14 +66,14 @@ export default function HomeScreen() {
       achievements: Object.values(achievements$.get() || {}),
     };
     const userAchievementsArray = Object.values(userAchievements$.get() || []);
-    
+
     // Only calculate if we have basic data to prevent crash
     if (!rawUserData.profile) return null;
 
     return calculateUserStats(
-      rawUserData as any, 
-      rawCatalog as any, 
-      userAchievementsArray as any, 
+      rawUserData as any,
+      rawCatalog as any,
+      userAchievementsArray as any,
       rawCatalog.creatures as any
     );
   });
@@ -80,11 +81,20 @@ export default function HomeScreen() {
   // Reactive Leaderboard
   const leaderboard = useSelector(() => {
     const allProfiles = allUsersProfiles$.get() || {};
-    const allSightings = Object.values(allUsersSightings$.get() || []);
+    // Merge current user data into global data to ensure consistency and include local updates
+    const allSightingsMap = { ...(allUsersSightings$.get() || {}) };
+    const mySightingsMap = currentUserSightings$.get() || {};
+    Object.assign(allSightingsMap, mySightingsMap);
+
+    const allUserAchievementsMap = { ...(allUsersAchievements$.get() || {}) };
+    const myAchievementsMap = userAchievements$.get() || {};
+    Object.assign(allUserAchievementsMap, myAchievementsMap);
+
+    const allSightings = Object.values(allSightingsMap);
     const allCreatures = Object.values(creatures$.get() || {});
-    const allUserAchievements = Object.values(allUsersAchievements$?.get() || {}); // safely access if exists
+    const allUserAchievements = Object.values(allUserAchievementsMap);
     const allAchievementsData = Object.values(achievements$.get() || {});
-    
+
     const generatedLeaderboard = getLeaderboardData(
       allProfiles,
       allSightings as Sighting[],
@@ -132,14 +142,14 @@ export default function HomeScreen() {
     // For now, let's just return the top5Leaderboard which seems to be the core intended display
     // or re-implement the exact logic from before.
     // The previous logic complexly merged top 4 + current user.
-    
+
     // Simplified robust version:
     const finalBoard = top5Leaderboard.map(entry => ({
       ...entry,
       isCurrentUser: entry.user_id === currentUserId,
       actualRank: sortedLeaderboard.findIndex(e => e.user_id === entry.user_id) + 1
     }));
-    
+
     return finalBoard;
   });
 
@@ -205,7 +215,7 @@ export default function HomeScreen() {
         onMoveShouldSetResponderCapture={() => false}
         onResponderTerminationRequest={() => false}
       >
-        {/* <MapTest /> Add this to test map functionality */}
+
         <View style={styles.header}>
           <Text style={styles.usernameText}>{APP_CONFIG.NAME}</Text>
           <Text style={styles.welcomeText}>{APP_CONFIG.TAGLINE}</Text>
@@ -290,6 +300,8 @@ export default function HomeScreen() {
             </View>
           ))}
         </View>
+
+        <ArticlesSection />
       </ScrollView>
     </View>
   );
