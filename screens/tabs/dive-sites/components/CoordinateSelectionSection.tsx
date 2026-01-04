@@ -26,6 +26,7 @@ interface CoordinateSelectionSectionProps {
   selectedCoordinate: { latitude: number; longitude: number } | null;
   onMapGestureBegin?: () => void; // Add gesture control props
   onMapGestureEnd?: () => void; // Add gesture control props
+  userLocation?: { latitude: number; longitude: number } | null;
 }
 
 const CoordinateSelectionSection: React.FC<CoordinateSelectionSectionProps> = ({
@@ -38,6 +39,7 @@ const CoordinateSelectionSection: React.FC<CoordinateSelectionSectionProps> = ({
   selectedCoordinate,
   onMapGestureBegin,
   onMapGestureEnd,
+  userLocation,
 }) => {
   const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -113,8 +115,10 @@ const CoordinateSelectionSection: React.FC<CoordinateSelectionSectionProps> = ({
             : 'Press the button above to select coordinates from the map'
         }
         onMapGestureBegin={onMapGestureBegin}
-        onMapGestureEnd={endGesture}
+        onMapGestureEnd={onMapGestureEnd}
         isMarkerDraggable={true} // Enable draggable markers
+        showUserLocation={true}
+        userLocation={userLocation}
       />
     </FormSection>
   );

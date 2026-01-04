@@ -49,7 +49,7 @@ const MultipleCreatureSelector: React.FC<MultipleCreatureSelectorProps> = ({
       notes: null,
       imageUrl: null,
     }));
-    
+
     onCreatureSightingsChange([...creatureSightings, ...newSightings]);
   };
 
@@ -99,10 +99,11 @@ const MultipleCreatureSelector: React.FC<MultipleCreatureSelectorProps> = ({
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Creatures Spotted</Text>
-      
+      <Text style={styles.sectionDescription}>Log what you saw underwater. Add your own photos to each creature if you have them.</Text>
+
       <View style={styles.container}>
         {/* Add Creature Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.addButton}
           onPress={() => setShowPicker(true)}
         >
@@ -118,7 +119,7 @@ const MultipleCreatureSelector: React.FC<MultipleCreatureSelectorProps> = ({
                 <Text style={styles.creatureName}>
                   {creature?.name || 'Unknown Creature'}
                 </Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => removeCreatureSighting(index)}
                   style={styles.removeButton}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -126,7 +127,7 @@ const MultipleCreatureSelector: React.FC<MultipleCreatureSelectorProps> = ({
                   <Trash2 size={20} color={COLORS.ERROR} />
                 </TouchableOpacity>
               </View>
-              
+
               {/* Image Section */}
               <View style={styles.imageSection}>
                 <TouchableOpacity
@@ -156,6 +157,7 @@ const MultipleCreatureSelector: React.FC<MultipleCreatureSelectorProps> = ({
                 value={sighting.notes || ''}
                 onChangeText={(text) => updateCreatureSighting(index, { notes: text })}
                 multiline
+                selectionColor={COLORS.PRIMARY}
               />
             </View>
           );
@@ -184,6 +186,11 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: TYPOGRAPHY.WEIGHT_BOLD,
     color: COLORS.TEXT_PRIMARY,
+    marginBottom: DIMENSIONS.SPACE_XS,
+  },
+  sectionDescription: {
+    fontSize: TYPOGRAPHY.SIZE_SM,
+    color: COLORS.TEXT_SECONDARY,
     marginBottom: DIMENSIONS.SPACE_SM,
   },
   container: {

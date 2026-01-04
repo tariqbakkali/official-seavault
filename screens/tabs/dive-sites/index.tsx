@@ -37,18 +37,23 @@ const AddDiveSiteScreen = () => {
   });
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const { diveSites, createDiveSite } = useSyncedData();
 
   // Get current location on mount
   useEffect(() => {
+    let subscription: Location.LocationSubscription;
     const initializeLocation = async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
 
         if (status === 'granted') {
+          // Initial fix
           const location = await Location.getCurrentPositionAsync({});
           const { latitude, longitude } = location.coords;
+
+          setUserLocation({ latitude, longitude });
 
           // Set initial region to current location
           setInitialRegion({
@@ -57,6 +62,22 @@ const AddDiveSiteScreen = () => {
             latitudeDelta: 0.1,
             longitudeDelta: 0.1,
           });
+
+          // Watch for updates
+          subscription = await Location.watchPositionAsync(
+            {
+              accuracy: Location.Accuracy.Balanced,
+              timeInterval: 5000,
+              distanceInterval: 10,
+            },
+            (loc) => {
+              setUserLocation({
+                latitude: loc.coords.latitude,
+                longitude: loc.coords.longitude,
+              });
+            }
+          );
+
 
           // Set current location as default coordinates
           setLatitude(latitude.toString());
@@ -79,6 +100,12 @@ const AddDiveSiteScreen = () => {
     };
 
     initializeLocation();
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
   }, []);
 
   // Prepare valid sites for map markers
@@ -303,7 +330,7 @@ const AddDiveSiteScreen = () => {
           ) : (
             <CoordinateSelectionSection
               isSelectingCoordinates={true}
-              setIsSelectingCoordinates={() => {}}
+              setIsSelectingCoordinates={() => { }}
               validSites={validSites}
               initialRegion={initialRegion}
               handleMapPress={handleMapPress}
@@ -311,6 +338,7 @@ const AddDiveSiteScreen = () => {
               selectedCoordinate={selectedCoordinate}
               onMapGestureBegin={() => setScrollEnabled(false)}
               onMapGestureEnd={() => setScrollEnabled(true)}
+              userLocation={userLocation}
             />
           )}
 

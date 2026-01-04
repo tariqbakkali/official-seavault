@@ -43,8 +43,13 @@ export const ensureImageDownloaded = async (imageMetadata: ImageMetadata): Promi
       await FileSystem.makeDirectoryAsync(`${FileSystem.documentDirectory}downloaded-images`, { intermediates: true });
     }
     
-    // Download the image
-    const { uri } = await FileSystem.downloadAsync(imageMetadata.remoteUrl, localPath);
+    // Download the image with a timeout
+    const downloadPromise = FileSystem.downloadAsync(imageMetadata.remoteUrl, localPath);
+    const timeoutPromise = new Promise<{ uri: string }>((_, reject) => 
+        setTimeout(() => reject(new Error('Image download timeout')), 15000)
+    );
+
+    const { uri } = await Promise.race([downloadPromise, timeoutPromise]);
     
     return uri;
   } catch (error) {

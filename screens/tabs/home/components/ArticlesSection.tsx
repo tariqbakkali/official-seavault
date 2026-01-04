@@ -21,7 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.85;
+const CARD_WIDTH = width - (DIMENSIONS.PADDING_LG * 2); // Full available width
 
 export default function ArticlesSection() {
     const articles = useSelector(() => {
@@ -61,7 +61,7 @@ export default function ArticlesSection() {
             <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleRow}>
                     <BookOpen size={20} color="#FF9500" />
-                    <Text style={styles.sectionTitle}>Featured Stories</Text>
+                    <Text style={styles.sectionTitle}>Articles & Stories</Text>
                 </View>
                 <TouchableOpacity onPress={() => router.push('/articles')}>
                     <Text style={styles.seeAllButton}>See All</Text>

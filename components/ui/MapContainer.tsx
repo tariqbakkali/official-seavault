@@ -16,6 +16,8 @@ interface MapContainerProps {
   onMapGestureBegin?: () => void; // Add gesture control props
   onMapGestureEnd?: () => void;   // Add gesture control props
   isMarkerDraggable?: boolean; // Add draggable marker support
+  showUserLocation?: boolean;
+  userLocation?: { latitude: number; longitude: number } | null;
 }
 
 /**
@@ -33,7 +35,9 @@ const MapContainer: React.FC<MapContainerProps> = ({
   helperText,
   onMapGestureBegin,
   onMapGestureEnd,
-  isMarkerDraggable = false // Default to false for backward compatibility
+  isMarkerDraggable = false,
+  showUserLocation = false,
+  userLocation = null,
 }) => {
   const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -98,6 +102,8 @@ const MapContainer: React.FC<MapContainerProps> = ({
           onMapGestureBegin={onMapGestureBegin}
           onMapGestureEnd={onMapGestureEnd}
           isMarkerDraggable={isMarkerDraggable}
+          showUserLocation={showUserLocation}
+          userLocation={userLocation}
         />
       </View>
       {helperText && <Text style={styles.helperText}>{helperText}</Text>}

@@ -20,7 +20,7 @@ export const useProfile = () => {
   const [validationErrors, setValidationErrors] = React.useState<{[key: string]: string}>({});
 
   let { profile, fetchUserData, updateUserProfile } = useSyncedData();
-  const typedProfile: Profile | undefined = profile ? Object.values(profile)[0] : undefined;
+  const typedProfile = profile ? (Object.values(profile)[0] as unknown as Profile) : undefined;
 
 
   // Load profile data
@@ -129,8 +129,9 @@ export const useProfile = () => {
       // Upload new avatar if changed
       if (avatarUri && avatarUri !== (profileData?.avatar_url || null) && avatarUri.startsWith('file://')) {
         const userId = typedProfile?.id;
-        const imagePath = `avatars/${userId}/${Date.now()}.jpg`;
-        const uploadedUrl = await uploadImage(avatarUri, 'avatars', imagePath);
+        if (!userId) throw new Error("User ID missing"); // Should be caught by earlier check but safe-guarding for TS
+
+        const uploadedUrl = await uploadImage(avatarUri, 'avatars', userId);
         
         if (uploadedUrl) {
           avatarUrl = uploadedUrl;

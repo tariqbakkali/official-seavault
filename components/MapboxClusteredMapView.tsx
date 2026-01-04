@@ -14,7 +14,7 @@ import Mapbox, {
     SymbolLayer,
     CircleLayer,
     Images,
-    LocationPuck,
+    PointAnnotation,
 } from '@rnmapbox/maps';
 import { featureCollection, point } from '@turf/helpers';
 import MapLoadingState from '@/components/ui/MapLoadingState';
@@ -65,6 +65,7 @@ const MapboxClusteredMapView = forwardRef<
             isMarkerDraggable = false,
             showUserLocation = false,
             clusteringEnabled = true,
+            userLocation,
         }: ClusteredMapViewProps,
         ref: React.ForwardedRef<MapboxClusteredMapViewRef>
     ) => {
@@ -73,6 +74,15 @@ const MapboxClusteredMapView = forwardRef<
         const [isMapLoaded, setIsMapLoaded] = useState(false);
         const [isDragging, setIsDragging] = useState(false);
         const [draggedCoordinate, setDraggedCoordinate] = useState<{ latitude: number; longitude: number } | null>(null);
+
+        // Debug logging for user location
+        useEffect(() => {
+            if (showUserLocation && userLocation) {
+                console.log('[MapboxClusteredMapView] User location updated:', userLocation);
+            } else if (showUserLocation && !userLocation) {
+                console.log('[MapboxClusteredMapView] showUserLocation is true but userLocation is null');
+            }
+        }, [showUserLocation, userLocation]);
 
         // Expose setCamera function via ref
         useImperativeHandle(ref, () => ({
@@ -203,8 +213,6 @@ const MapboxClusteredMapView = forwardRef<
                         }}
                     />
 
-                    {showUserLocation && <LocationPuck />}
-
                     <ShapeSource
                         id="diveSitesSource"
                         shape={shapeSourceData}
@@ -245,15 +253,27 @@ const MapboxClusteredMapView = forwardRef<
                             }}
                         />
 
+
                         {/* Render Individual Markers */}
                         <CircleLayer
                             id="singlePoint"
                             filter={['!', ['has', 'point_count']]}
                             style={{
-                                circleColor: '#007AFF',
-                                circleRadius: 8,
-                                circleStrokeWidth: 2,
-                                circleStrokeColor: '#fff',
+                                circleColor: '#007AFF', // Blue markers for dive sites (differentiated from orange user location)
+                                circleRadius: 10,
+                                circleStrokeWidth: 3,
+                                circleStrokeColor: '#FFFFFF',
+                                circleOpacity: 1,
+                            }}
+                        />
+
+                        {/* Add a smaller white dot in the center for pin effect */}
+                        <CircleLayer
+                            id="singlePointCenter"
+                            filter={['!', ['has', 'point_count']]}
+                            style={{
+                                circleColor: '#FFFFFF',
+                                circleRadius: 3,
                             }}
                         />
                     </ShapeSource>
@@ -278,6 +298,16 @@ const MapboxClusteredMapView = forwardRef<
                             />
                         </ShapeSource>
                     )}
+
+                    {/* Custom User Location Marker (Orange) - Rendered last for proper z-index */}
+                    {showUserLocation && userLocation && (
+                        <PointAnnotation
+                            id="user-location"
+                            coordinate={[userLocation.longitude, userLocation.latitude]}
+                        >
+                            <View style={styles.userLocationMarker} />
+                        </PointAnnotation>
+                    )}
                 </MapView>
             </View>
         );
@@ -285,3 +315,21 @@ const MapboxClusteredMapView = forwardRef<
 );
 
 export default MapboxClusteredMapView;
+
+const styles = StyleSheet.create({
+    userLocationMarker: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 149, 0, 0.3)', // Semi-transparent orange halo
+        borderWidth: 2,
+        borderColor: '#FF9500', // Solid orange border
+        justifyContent: 'center',
+        alignItems: 'center',
+        // Inner dot created with shadow/overlay effect
+        shadowColor: '#FF9500',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1,
+        shadowRadius: 8,
+    },
+});

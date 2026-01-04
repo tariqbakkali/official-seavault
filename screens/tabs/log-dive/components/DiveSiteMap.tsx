@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import * as Location from 'expo-location';
 import MapboxClusteredMapView from '@/components/MapboxClusteredMapView';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { Database } from '@/types/database';
@@ -23,14 +24,43 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
   onMapGestureEnd,
 }) => {
   const gestureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   console.log('[DiveSiteMap] Rendering with:', {
     diveSitesCount: diveSites?.length,
     selectedDiveSiteId
   });
 
+  // Track user location
   useEffect(() => {
+    let subscription: Location.LocationSubscription;
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          subscription = await Location.watchPositionAsync(
+            {
+              accuracy: Location.Accuracy.Balanced,
+              timeInterval: 5000,
+              distanceInterval: 10,
+            },
+            (location) => {
+              setUserLocation({
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+              });
+            }
+          );
+        }
+      } catch (error) {
+        console.warn('[DiveSiteMap] Error getting location:', error);
+      }
+    })();
+
     return () => {
+      if (subscription) {
+        subscription.remove();
+      }
       if (gestureTimeoutRef.current) {
         clearTimeout(gestureTimeoutRef.current);
       }
@@ -164,6 +194,8 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
                   }}
                   clusteringEnabled={false}
                   onPress={() => onDiveSiteSelect(selectedSite.id)}
+                  showUserLocation={true}
+                  userLocation={userLocation}
                 />
               );
             } else {
@@ -194,6 +226,8 @@ const DiveSiteMap: React.FC<DiveSiteMapProps> = ({
                 }}
                 onMapGestureBegin={onMapGestureBegin}
                 onMapGestureEnd={onMapGestureEnd}
+                showUserLocation={true}
+                userLocation={userLocation}
               />
             );
           })()

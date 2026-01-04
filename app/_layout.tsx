@@ -52,24 +52,56 @@ function RootLayout() {
   useEffect(() => {
     const checkInitialSessionAndSync = async () => {
       try {
-        await initializeApp();
+        // Create a promise for the initialization logic
+        const initPromise = (async () => {
+          await initializeApp();
 
-        const onboardingCompleted = await hasCompletedOnboarding();
-        const { data: { session } } = await supabase.auth.getSession();
-        const userId = session?.user?.id || null;
+          const onboardingCompleted = await hasCompletedOnboarding();
+          // Add a timeout to the session check as well
+          const sessionPromise = supabase.auth.getSession();
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Session check timeout')), 5000)
+          );
 
-        if (userId) {
-          await initializeUserSession(userId);
-        }
+          let sessionData;
+          try {
+            const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
+            sessionData = result.data;
+          } catch (e) {
+            console.warn('Session check timed out or failed, assuming offline/logged out');
+            sessionData = { session: null };
+          }
 
-        setCurrentUserID(userId);
-        setCurrentUserIDState(userId);
+          const { session } = sessionData;
+          const userId = session?.user?.id || null;
 
-        if (!onboardingCompleted && !userId) {
-          setShowOnboarding(true);
-        }
+          if (userId) {
+            await initializeUserSession(userId);
+          }
 
-        await forceSyncAll();
+          setCurrentUserID(userId);
+          setCurrentUserIDState(userId);
+
+          if (!onboardingCompleted && !userId) {
+            setShowOnboarding(true);
+          }
+
+          // Don't let sync block the UI indefinitely
+          try {
+            await forceSyncAll();
+          } catch (e) {
+            console.warn('Initial sync failed', e);
+          }
+        })();
+
+        // Race against a total initialization timeout (e.g. 7 seconds)
+        // If the network is bad, we want to let the user in (viewing cached data)
+        // rather than staring at a spinner forever.
+        await Promise.race([
+          initPromise,
+          new Promise((resolve) => setTimeout(resolve, 7000))
+        ]);
+
       } catch (error) {
         console.error('Error checking initial session or syncing data:', error);
       } finally {
@@ -150,6 +182,12 @@ function RootLayout() {
       </Stack>
     );
   }
+
+  // Clear AsyncStorage once to remove old data with dive_id field
+  // TODO: Comment this out after first run
+  // useEffect(() => {
+  //   AsyncStorage.clear();
+  // }, [])
 
   return (
     <>

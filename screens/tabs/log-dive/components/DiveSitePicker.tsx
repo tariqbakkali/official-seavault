@@ -33,25 +33,39 @@ const DiveSitePicker: React.FC<DiveSitePickerProps> = ({
 
   // Request location permission and get location
   useEffect(() => {
+    let subscription: Location.LocationSubscription;
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        
+
         if (status === 'granted') {
           setPermissionGranted(true);
-          const location = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          });
-          setUserLocation({
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-          });
+
+          // Use watchPositionAsync for live updates and better reliability
+          subscription = await Location.watchPositionAsync(
+            {
+              accuracy: Location.Accuracy.Balanced,
+              timeInterval: 5000,
+              distanceInterval: 10,
+            },
+            (location) => {
+              setUserLocation({
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+              });
+            }
+          );
         }
       } catch (error) {
         console.warn('[DiveSitePicker] Error getting location:', error);
-        // Don't set map error here, as location is optional
       }
     })();
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
   }, []);
 
   const handleRetry = () => {

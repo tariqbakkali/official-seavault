@@ -6,6 +6,7 @@ import {
   diveSites$, 
   currentUserSightings$,
   allUsersSightings$,
+  // currentUserDives$ removed - using sightings only
   allUsersAchievements$,
   wishlists$, 
   currentUserProfile$,
@@ -13,6 +14,7 @@ import {
   achievements$,
   userAchievements$,
   createSighting,
+  // createDive removed - using sightings only
   createWishlistItem,
   createDiveSite,
   toggleWishlistItem, // Added toggleWishlistItem
@@ -29,6 +31,7 @@ export const useSyncedData = () => {
   const creatures = use$(creatures$);
   const diveSites = use$(diveSites$);
   const currentUserSightings = use$(currentUserSightings$);
+  // currentUserDives removed - using sightings only
   const allUsersSightings = use$(allUsersSightings$);
   const allUsersAchievements = use$(allUsersAchievements$);
   const wishlists = use$(wishlists$);
@@ -45,6 +48,7 @@ export const useSyncedData = () => {
   const creaturesSyncState = useObservable(syncState(creatures$));
   const diveSitesSyncState = useObservable(syncState(diveSites$));
   const currentUserSightingsSyncState = useObservable(syncState(currentUserSightings$));
+  // currentUserDivesSyncState removed - using sightings only
   const allUsersSightingsSyncState = useObservable(syncState(allUsersSightings$));
   const allUsersAchievementsSyncState = useObservable(syncState(allUsersAchievements$));
   const wishlistsSyncState = useObservable(syncState(wishlists$));
@@ -59,6 +63,7 @@ export const useSyncedData = () => {
     creatures: !creaturesSyncState.isLoaded,
     diveSites: !diveSitesSyncState.isLoaded,
     currentUserSightings: !currentUserSightingsSyncState.isLoaded,
+    // currentUserDives removed
     allUsersSightings: !allUsersSightingsSyncState.isLoaded,
     allUsersAchievements: !allUsersAchievementsSyncState.isLoaded,
     wishlists: !wishlistsSyncState.isLoaded,
@@ -74,6 +79,7 @@ export const useSyncedData = () => {
     creatures: creaturesSyncState.error,
     diveSites: diveSitesSyncState.error,
     currentUserSightings: currentUserSightingsSyncState.error,
+    // currentUserDives removed
     allUsersSightings: allUsersSightingsSyncState.error,
     allUsersAchievements: allUsersAchievementsSyncState.error,
     wishlists: wishlistsSyncState.error,
@@ -110,6 +116,7 @@ export const useSyncedData = () => {
     if (!currentUserSightingsSyncState.isLoaded.get()) {
       currentUserSightings$.get();
     }
+    // currentUserDives sync removed
     if (!wishlistsSyncState.isLoaded.get()) {
       wishlists$.get();
     }
@@ -133,11 +140,14 @@ export const useSyncedData = () => {
 
       if (existingProfile && Object.keys(existingProfile).length > 0) {
         // Extract the actual profile object from the observable structure
-        const profileObj = Object.values(existingProfile)[0];
-        
-        if (profileObj && profileObj.id) {
-          // If profile observable has an ID, assume user is authenticated and use that ID
-          user = { id: profileObj.id, email: profileObj.email };
+        const values = Object.values(existingProfile);
+        if (values.length > 0) {
+          const profileObj = values[0] as Database['public']['Tables']['profiles']['Row'];
+          
+          if (profileObj && typeof profileObj === 'object' && 'id' in profileObj) {
+            // If profile observable has an ID, assume user is authenticated and use that ID
+            user = { id: profileObj.id, email: profileObj.email };
+          }
         }
       } else {
         // Fallback to direct Supabase auth if profile observable is not yet populated
@@ -153,7 +163,8 @@ export const useSyncedData = () => {
       const currentProfile = currentUserProfile$.get();
       
       // Extract the actual profile object from the observable structure
-      const userProfile = currentProfile ? Object.values(currentProfile)[0] : undefined;
+      const currentProfileVal = currentProfile ? Object.values(currentProfile) : [];
+      const userProfile = currentProfileVal.length > 0 ? (currentProfileVal[0] as Database['public']['Tables']['profiles']['Row']) : undefined;
 
       if (userProfile && userProfile.id) {
         return userProfile;
@@ -173,7 +184,8 @@ export const useSyncedData = () => {
       };
       
       // Set the profile in the observable using the correct structure
-      currentUserProfile$.assign!({
+      // @ts-ignore - Legend State typing issue
+      currentUserProfile$.assign({
         [user.id]: newProfile as Database['public']['Tables']['profiles']['Row']
       });
       
@@ -250,7 +262,8 @@ export const useSyncedData = () => {
       };
     
       // Set the profile in the observable using the correct structure
-      currentUserProfile$.assign!({
+      // @ts-ignore - Legend State typing issue
+      currentUserProfile$.assign({
         [user.id]: fullProfileData
       });
     
@@ -274,6 +287,7 @@ export const useSyncedData = () => {
     creatures,
     diveSites,
     currentUserSightings,
+    // currentUserDives removed
     allUsersSightings,
     allUsersAchievements,
     wishlists,
@@ -299,6 +313,7 @@ export const useSyncedData = () => {
     
     // Mutation functions
     createSighting,
+    // createDive removed
     createWishlistItem,
     createDiveSite,
     removeWishlistItem,

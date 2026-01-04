@@ -15,7 +15,9 @@ import ErrorDisplay from '@/components/ErrorDisplay';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import DiveSitePicker from './components/DiveSitePicker';
 import DateTimePickerSection from './components/DateTimePickerSection';
-import DiveTypeDepthSection from './components/DiveTypeDepthSection';
+import DiveMetricsSection from './components/DiveMetricsSection';
+import TrainingSection from './components/TrainingSection';
+import ModeSelection from './components/ModeSelection';
 import DiveNotesSection from './components/DiveNotesSection';
 import DiveConditionsSection from './components/DiveConditionsSection';
 import MultipleCreatureSelector from './components/MultipleCreatureSelector';
@@ -158,6 +160,13 @@ const LogDiveScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
+          {/* 1. Mode Selection */}
+          <ModeSelection
+            mode={formData.diveType as 'leisure' | 'training' || 'leisure'}
+            onModeChange={(mode) => setFormData({ ...formData, diveType: mode })}
+          />
+
+          {/* 2. Dive Site Picker */}
           <DiveSitePicker
             diveSites={diveSitesArray}
             selectedDiveSiteId={formData.diveSiteId}
@@ -168,6 +177,7 @@ const LogDiveScreen = () => {
             onMapGestureEnd={enableScroll}
           />
 
+          {/* 3. Date & Time */}
           <DateTimePickerSection
             date={formData.date}
             timeOfDay={formData.timeOfDay}
@@ -177,15 +187,51 @@ const LogDiveScreen = () => {
             }
           />
 
-          <DiveTypeDepthSection
-            diveType={formData.diveType}
+          {/* 4. Dive Metrics (Deep, Time, Air) */}
+          <DiveMetricsSection
+            timeIn={formData.timeIn}
+            timeOut={formData.timeOut}
+            airIn={formData.airIn}
+            airOut={formData.airOut}
+            airUnit={formData.airUnit}
             depth={formData.depth}
-            onDiveTypeChange={(diveType) =>
-              setFormData({ ...formData, diveType })
-            }
+            onTimeInChange={(timeIn) => setFormData({ ...formData, timeIn })}
+            onTimeOutChange={(timeOut) => setFormData({ ...formData, timeOut })}
+            onAirInChange={(airIn) => setFormData({ ...formData, airIn })}
+            onAirOutChange={(airOut) => setFormData({ ...formData, airOut })}
+            onAirUnitChange={(airUnit) => setFormData({ ...formData, airUnit })}
             onDepthChange={(depth) => setFormData({ ...formData, depth })}
           />
 
+          {/* 5. Training Section (only if Training mode) */}
+          {formData.diveType === 'training' && (
+            <TrainingSection
+              courseType={formData.courseType}
+              completedSkills={formData.completedSkills}
+              onCourseTypeChange={(courseType) => setFormData({ ...formData, courseType })}
+              onSkillToggle={(skillId) => {
+                const newSkills = { ...formData.completedSkills };
+                newSkills[skillId] = !newSkills[skillId];
+                setFormData({ ...formData, completedSkills: newSkills });
+              }}
+            />
+          )}
+
+          {/* 6. Conditions (Duration, Weather, Vis, Current) */}
+          <DiveConditionsSection
+            duration={formData.duration}
+            weather={formData.weather}
+            visibility={formData.visibility}
+            current={formData.current}
+            waterway={formData.waterway}
+            onDurationChange={(duration) => setFormData({ ...formData, duration })}
+            onWeatherChange={(weather) => setFormData({ ...formData, weather })}
+            onVisibilityChange={(visibility) => setFormData({ ...formData, visibility })}
+            onCurrentChange={(current) => setFormData({ ...formData, current })}
+            onWaterwayChange={(waterway) => setFormData({ ...formData, waterway })}
+          />
+
+          {/* 7. Notes */}
           <DiveNotesSection
             diveNotes={formData.diveNotes}
             onDiveNotesChange={(diveNotes) =>
@@ -193,17 +239,7 @@ const LogDiveScreen = () => {
             }
           />
 
-          <DiveConditionsSection
-            duration={formData.duration}
-            weather={formData.weather}
-            visibility={formData.visibility}
-            current={formData.current}
-            onDurationChange={(duration) => setFormData({ ...formData, duration })}
-            onWeatherChange={(weather) => setFormData({ ...formData, weather })}
-            onVisibilityChange={(visibility) => setFormData({ ...formData, visibility })}
-            onCurrentChange={(current) => setFormData({ ...formData, current })}
-          />
-
+          {/* 8. Creatures (Sightings) */}
           <MultipleCreatureSelector
             catalog={catalog}
             selectedCategories={selectedCategories}

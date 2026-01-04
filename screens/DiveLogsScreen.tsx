@@ -10,7 +10,7 @@ import { COLORS, DIMENSIONS, TYPOGRAPHY, ROUTES } from '@/constants';
 import { Sighting, DiveSite, Creature } from '@/types/database';
 
 interface DiveLogGroup {
-    id: string; // Unique ID for the group (e.g., date + siteId + time)
+    id: string;
     date: string;
     time: string;
     siteId: string;
@@ -19,6 +19,8 @@ interface DiveLogGroup {
     maxDepth: number | null;
     sightings: Sighting[];
     previewCreatures: string[];
+    waterway: string | null;
+    diveType: string | null;
 }
 
 export default function DiveLogsScreen() {
@@ -39,60 +41,60 @@ export default function DiveLogsScreen() {
             if (c.creature_id) creatureMap.set(c.creature_id, c.name);
         });
 
-        // Group by Date + Site + Time (approximate a "Dive")
-        const groups: Record<string, DiveLogGroup> = {};
+        // Group sightings by dive session (date + time_in + dive_site_id)
+        const diveGroups = new Map<string, Sighting[]>();
 
         sightings.forEach(sighting => {
-            // Normalize ID handling
-            const siteId = sighting.dive_site_id || 'unknown';
-            const date = sighting.date;
-            // Handle time potentially missing
-            const time = sighting.time_of_day || '00:00';
+            // Create unique key for each dive session
+            const diveKey = `${sighting.date}_${sighting.time_in || '00:00'}_${sighting.dive_site_id || 'unknown'}`;
 
-            // key to group by
-            const key = `${date}_${siteId}_${time}`;
-
-            if (!groups[key]) {
-                const siteNameRaw = siteMap.get(siteId);
-                groups[key] = {
-                    id: key,
-                    date,
-                    time,
-                    siteId,
-                    siteName: siteNameRaw || 'Unknown Location',
-                    duration: sighting.duration || null,
-                    maxDepth: sighting.depth ? parseFloat(sighting.depth) : null,
-                    sightings: [],
-                    previewCreatures: []
-                };
+            if (!diveGroups.has(diveKey)) {
+                diveGroups.set(diveKey, []);
             }
-
-            // Update aggregates
-            if (!groups[key].duration && sighting.duration) {
-                groups[key].duration = sighting.duration;
-            }
-            // track max depth
-            const sDepth = sighting.depth ? parseFloat(sighting.depth) : 0;
-            if (sDepth > (groups[key].maxDepth || 0)) {
-                groups[key].maxDepth = sDepth;
-            }
-
-            // Get creature name
-            const creatureName = creatureMap.get(sighting.creature_id) || null;
-            if (creatureName && !groups[key].previewCreatures.includes(creatureName)) {
-                // Limit preview creatures to avoid clutter
-                if (groups[key].previewCreatures.length < 3) {
-                    groups[key].previewCreatures.push(creatureName);
-                }
-            }
-
-            groups[key].sightings.push(sighting);
+            diveGroups.get(diveKey)!.push(sighting);
         });
 
-        return Object.values(groups).sort((a, b) => {
-            // Sort by date desc
-            return new Date(b.date + 'T' + b.time).getTime() - new Date(a.date + 'T' + a.time).getTime();
+        // Convert groups to dive logs
+        const logs: DiveLogGroup[] = Array.from(diveGroups.entries()).map(([key, diveSightings]) => {
+            const firstSighting = diveSightings[0];
+
+            // Get preview creatures (unique names, max 3)
+            const previewCreatures = Array.from(new Set(
+                diveSightings
+                    .map(s => creatureMap.get(s.creature_id))
+                    .filter(name => name) // filter out null/undefined
+            )).slice(0, 3) as string[];
+
+            const siteName = firstSighting.dive_site_id ? (siteMap.get(firstSighting.dive_site_id) || 'Unknown Location') : 'Unknown Location';
+
+            // Use time_in from sighting
+            const time = firstSighting.time_in || '00:00';
+
+            return {
+                id: key,
+                date: firstSighting.date,
+                time: time,
+                siteId: firstSighting.dive_site_id || 'unknown',
+                siteName: siteName,
+                duration: firstSighting.duration,
+                maxDepth: firstSighting.depth ? parseFloat(firstSighting.depth) : null,
+                sightings: diveSightings,
+                previewCreatures,
+                waterway: firstSighting.waterway || null,
+                diveType: firstSighting.dive_type || null,
+            };
         });
+
+        const sortedLogs = logs.sort((a, b) => {
+            // Sort by date desc (Robust string comparison for ISO dates)
+            const dateCompare = b.date.localeCompare(a.date);
+            if (dateCompare !== 0) return dateCompare;
+
+            // If same date, sort by time desc
+            return (b.time || '').localeCompare(a.time || '');
+        });
+
+        return sortedLogs;
     });
 
     const handlePress = (log: DiveLogGroup) => {
@@ -131,9 +133,15 @@ export default function DiveLogsScreen() {
                             <Text style={styles.metricText}>{item.maxDepth}m</Text>
                         </View>
                     )}
+                    {item.diveType === 'training' && (
+                        <View style={styles.metricItem}>
+                            <View style={styles.dot} />
+                            <Text style={[styles.metricText, { color: COLORS.PRIMARY }]}>Training</Text>
+                        </View>
+                    )}
                 </View>
 
-                {item.previewCreatures.length > 0 && (
+                {(item.previewCreatures.length > 0) ? (
                     <View style={styles.highlightsContainer}>
                         <View style={styles.tagsRow}>
                             {item.previewCreatures.map((creature, idx) => (
@@ -145,6 +153,18 @@ export default function DiveLogsScreen() {
                             {item.sightings.length > item.previewCreatures.length && (
                                 <Text style={styles.moreCount}>+{item.sightings.length - item.previewCreatures.length}</Text>
                             )}
+                        </View>
+                    </View>
+                ) : (
+                    /* Show something if no creatures but it's a valid dive */
+                    <View style={styles.highlightsContainer}>
+                        <View style={styles.tagsRow}>
+                            <View style={[styles.creatureTag, { backgroundColor: '#333' }]}>
+                                <Waves size={10} color="#888" />
+                                <Text style={[styles.creatureTagText, { color: '#aaa' }]}>
+                                    {item.waterway ? (item.waterway.charAt(0).toUpperCase() + item.waterway.slice(1)) : 'No Sightings'}
+                                </Text>
+                            </View>
                         </View>
                     </View>
                 )}

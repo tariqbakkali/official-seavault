@@ -29,6 +29,15 @@ interface FormData {
   weather: string | null;
   visibility: string | null;
   current: string | null;
+  // Dive specific fields
+  timeIn: string;
+  timeOut: string;
+  airIn: string;
+  airOut: string;
+  airUnit: 'bar' | 'psi';
+  courseType: string;
+  completedSkills: Record<string, boolean>;
+  waterway: string | null;
 }
 
 export const useLogDive = () => {
@@ -47,6 +56,14 @@ export const useLogDive = () => {
     weather: null,
     visibility: null,
     current: null,
+    timeIn: '',
+    timeOut: '',
+    airIn: '',
+    airOut: '',
+    airUnit: 'bar',
+    courseType: 'open_water',
+    completedSkills: {},
+    waterway: null,
   });
 
   // Removed selectedImage state as it's no longer needed
@@ -120,29 +137,57 @@ export const useLogDive = () => {
 
   const handleSubmit = async () => {
     try {
+      // Validate dive type requirements
+      if (formData.diveType === 'leisure' && formData.creatureSightings.length === 0) {
+        showAlert('Missing Sightings', 'Leisure dives must have at least one creature sighting recorded.');
+        return;
+      }
+
       // Format time of day from the time picker
       const timeOfDay = formData.timeOfDay;
       
-      // Create sightings for all selected creatures
-      const sightingPromises = formData.creatureSightings.map(async (sighting) => {
+      let sightingsToCreate = [...formData.creatureSightings];
+      
+      // If no sightings but valid valid (training dive), create a placeholder sighting
+      if (sightingsToCreate.length === 0) {
+        sightingsToCreate.push({
+            creatureId: null,
+            notes: null,
+            imageUrl: null
+        });
+      }
+      
+      // Create sightings with all dive data embedded
+      const sightingPromises = sightingsToCreate.map(async (sighting) => {
         const sightingData = {
+          // Dive-level data (stored in each sighting)
           dive_site_id: formData.diveSiteId,
-          dive_type: formData.diveType || null,
           date: formData.date.toISOString().split('T')[0],
-          dive_notes: formData.diveNotes || null,
+          time_in: formData.timeIn || null,
+          time_out: formData.timeOut || null,
+          duration: formData.duration ? parseInt(formData.duration, 10) : null,
           depth: formData.depth || null,
+          air_in: formData.airIn ? parseInt(formData.airIn, 10) : null,
+          air_out: formData.airOut ? parseInt(formData.airOut, 10) : null,
+          air_unit: formData.airUnit,
+          dive_type: formData.diveType || null,
+          course_type: formData.courseType || null,
+          skills_completed: Object.keys(formData.completedSkills).filter(skill => formData.completedSkills[skill]),
+          dive_notes: formData.diveNotes || null,
+          weather: formData.weather || null,
+          visibility: formData.visibility || null,
+          current: formData.current || null,
+          time_of_day: timeOfDay || null,
+          instructor_id: null,
+          waterway: formData.waterway || null,
+          
+          // Sighting-specific data
           creature_id: sighting.creatureId || null,
           image_url: sighting.imageUrl || null,
-          time_of_day: timeOfDay || null,
           creature_notes: sighting.notes || null,
-          // New fields mapped to Sighting
-          duration: formData.duration ? parseInt(formData.duration, 10) : null,
-          weather: formData.weather,
-          visibility: formData.visibility,
-          current: formData.current,
         };
         
-        return createSighting(sightingData as any); // Cast to any to avoid TypeScript issues
+        return createSighting(sightingData as any); 
       });
       
       // Create all sightings
@@ -178,6 +223,14 @@ export const useLogDive = () => {
         weather: null,
         visibility: null,
         current: null,
+        timeIn: '',
+        timeOut: '',
+        airIn: '',
+        airOut: '',
+        airUnit: 'bar',
+        courseType: 'open_water',
+        completedSkills: {},
+        waterway: null,
       });
       
       // Removed setSelectedImage reset

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, LayoutAnimation, Platform, UIManager } from 'react-native';
-import { ChevronDown, ChevronUp, Clock, Cloud, Eye, Waves } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Clock, Cloud, Eye, Waves, MapPin } from 'lucide-react-native';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 
 if (
@@ -15,11 +15,20 @@ interface DiveConditionsSectionProps {
     weather: string | null;
     visibility: string | null;
     current: string | null;
+    waterway: string | null;
     onDurationChange: (duration: string) => void;
     onWeatherChange: (weather: string) => void;
     onVisibilityChange: (visibility: string) => void;
     onCurrentChange: (current: string) => void;
+    onWaterwayChange: (waterway: string) => void;
 }
+
+const WATERWAY_OPTIONS = [
+    { label: 'Ocean/Sea', value: 'ocean' },
+    { label: 'Lake/River/Quarry', value: 'lake' },
+    { label: 'Pool', value: 'pool' },
+    { label: 'Cave/Cenote', value: 'cave' }
+];
 
 const WEATHER_OPTIONS = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Rainy', 'Windy', 'Foggy'];
 const VISIBILITY_OPTIONS = ['High', 'Average', 'Low'];
@@ -30,10 +39,12 @@ export default function DiveConditionsSection({
     weather,
     visibility,
     current,
+    waterway,
     onDurationChange,
     onWeatherChange,
     onVisibilityChange,
-    onCurrentChange
+    onCurrentChange,
+    onWaterwayChange
 }: DiveConditionsSectionProps) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -42,25 +53,31 @@ export default function DiveConditionsSection({
         setIsOpen(!isOpen);
     };
 
-    const renderChips = (options: string[], selected: string | null, onSelect: (val: string) => void) => (
+    const renderChips = (options: any[], selected: string | null, onSelect: (val: string) => void) => (
         <View style={styles.chipContainer}>
-            {options.map((option) => (
-                <TouchableOpacity
-                    key={option}
-                    style={[
-                        styles.chip,
-                        selected === option && styles.chipSelected
-                    ]}
-                    onPress={() => onSelect(option)}
-                >
-                    <Text style={[
-                        styles.chipText,
-                        selected === option && styles.chipTextSelected
-                    ]}>
-                        {option}
-                    </Text>
-                </TouchableOpacity>
-            ))}
+            {options.map((option) => {
+                const label = typeof option === 'string' ? option : option.label;
+                const value = typeof option === 'string' ? option : option.value;
+                const isSelected = selected === value;
+
+                return (
+                    <TouchableOpacity
+                        key={value}
+                        style={[
+                            styles.chip,
+                            isSelected && styles.chipSelected
+                        ]}
+                        onPress={() => onSelect(value)}
+                    >
+                        <Text style={[
+                            styles.chipText,
+                            isSelected && styles.chipTextSelected
+                        ]}>
+                            {label}
+                        </Text>
+                    </TouchableOpacity>
+                );
+            })}
         </View>
     );
 
@@ -96,6 +113,15 @@ export default function DiveConditionsSection({
             {/* Collapsible Content */}
             {isOpen && (
                 <View style={styles.collapsibleContent}>
+                    {/* Waterway - New Field */}
+                    <View style={styles.section}>
+                        <View style={styles.labelRow}>
+                            <MapPin size={16} color={COLORS.TEXT_SECONDARY} />
+                            <Text style={styles.sectionLabel}>Waterway</Text>
+                        </View>
+                        {renderChips(WATERWAY_OPTIONS, waterway, onWaterwayChange)}
+                    </View>
+
                     {/* Weather */}
                     <View style={styles.section}>
                         <View style={styles.labelRow}>

@@ -88,7 +88,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          creature_id: string;
+          creature_id: string | null;
           date: string;
           dive_notes: string | null;
           image_url: string | null;
@@ -100,11 +100,20 @@ export interface Database {
           creature_notes: string | null;
           updated_at: string;
           image_upload_status?: 'pending' | 'uploaded' | 'failed' | null;
-          // New fields
+          // Dive-level fields (stored in each sighting)
           duration: number | null; // in minutes
           weather: string | null;
           visibility: string | null;
           current: string | null;
+          time_in: string | null;
+          time_out: string | null;
+          air_in: number | null;
+          air_out: number | null;
+          air_unit: 'bar' | 'psi' | null;
+          course_type: string | null;
+          skills_completed: string[] | null;
+          instructor_id: string | null;
+          waterway: string | null;
         };
         Insert: Omit<Database['public']['Tables']['sightings']['Row'], 'created_at'>;
         Update: Partial<Database['public']['Tables']['sightings']['Insert']>;
@@ -176,6 +185,34 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['shop_referrals']['Row'], 'id' | 'redeemed_at'>;
         Update: Partial<Database['public']['Tables']['shop_referrals']['Insert']>;
       };
+      dives: {
+        Row: {
+          id: string;
+          user_id: string;
+          dive_site_id: string | null;
+          date: string;
+          time_in: string | null;
+          time_out: string | null;
+          duration: number | null;
+          max_depth: number | null;
+          air_in: number | null;
+          air_out: number | null;
+          air_unit: 'bar' | 'psi' | null;
+          dive_type: 'leisure' | 'training' | null;
+          course_type: string | null;
+          skills_completed: string[] | null;
+          notes: string | null;
+          weather: string | null;
+          visibility: string | null;
+          current: string | null;
+          instructor_id: string | null;
+          waterway: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['dives']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['dives']['Insert']>;
+      };
     };
   };
 }
@@ -188,6 +225,7 @@ export type Sighting = Database['public']['Tables']['sightings']['Row'];
 export type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 export type Achievement = Database['public']['Tables']['achievements']['Row'];
 export type UserAchievement = Database['public']['Tables']['user_achievements']['Row'];
+export type Dive = Database['public']['Tables']['dives']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
 
 

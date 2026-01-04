@@ -42,11 +42,19 @@ export const isRevenueCatConfigured = async (): Promise<boolean> => {
 export const loginUser = async (userId: string) => {
   try {
     console.log('[RevenueCat] Logging in user:', userId);
-    await Purchases.logIn(userId);
+    
+    // Add a race condition to prevent indefinite hanging during login
+    const loginPromise = Purchases.logIn(userId);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('RevenueCat login timeout')), 5000)
+    );
+
+    await Promise.race([loginPromise, timeoutPromise]);
     console.log('[RevenueCat] User logged in successfully');
   } catch (error) {
     console.error('[RevenueCat] Error logging in user:', error);
-    throw error;
+    // Even if RC fails, we don't want to crash the app flow, so we catch and log
+    // throw error; // Don't throw, allow app to proceed without RC sync
   }
 };
 

@@ -32,17 +32,17 @@ export default function DiveLogDetailScreen() {
             if (c.creature_id) creatureMap.set(c.creature_id, c);
         });
 
-        // We filter sightings that match the group ID (date_siteId_time)
+        // We filter sightings that match the group ID (date_time_in_siteId)
         const matchingSightings = sightings.filter(s => {
-            // Reconstruct key logic from DiveLogsScreen
-            const key = `${s.date}_${s.dive_site_id || 'unknown'}_${s.time_of_day || '00:00'}`;
+            // Reconstruct key logic from DiveLogsScreen - must match exactly!
+            const key = `${s.date}_${s.time_in || '00:00'}_${s.dive_site_id || 'unknown'}`;
             return key === id;
         });
 
         if (matchingSightings.length === 0) return null;
 
         const first = matchingSightings[0];
-        const siteName = siteMap.get(first.dive_site_id || '') || 'Unknown Site';
+        const siteName = first.dive_site_id ? (siteMap.get(first.dive_site_id) || 'Unknown Location') : 'Unknown Location';
 
         // Aggregate data
         const weather = matchingSightings.find(s => s.weather)?.weather;
@@ -50,16 +50,17 @@ export default function DiveLogDetailScreen() {
         const current = matchingSightings.find(s => s.current)?.current;
         const duration = matchingSightings.find(s => s.duration)?.duration;
         const diveType = matchingSightings.find(s => s.dive_type)?.dive_type;
+        const waterway = matchingSightings.find(s => s.waterway)?.waterway; // Get waterway
         const diveNotes = matchingSightings.map(s => s.dive_notes).filter(n => n).join('\n\n'); // Combine notes if multiple exist
         const maxDepth = matchingSightings.reduce((max, s) => {
             const depth = parseFloat(s.depth || '0');
             return depth > max ? depth : max;
         }, 0);
 
-        // Temperature not currently supported in schema
-        // const avgTemp = matchingSightings.find(s => s.water_temp)?.water_temp;
+        // Filter out placeholder sightings (where creature_id is null)
+        const realSightings = matchingSightings.filter(s => s.creature_id);
 
-        const sightingsWithDetails = matchingSightings.map(s => {
+        const sightingsWithDetails = realSightings.map(s => {
             const creature = creatureMap.get(s.creature_id);
             return {
                 ...s,
@@ -76,13 +77,13 @@ export default function DiveLogDetailScreen() {
             siteName,
             duration,
             maxDepth: maxDepth > 0 ? maxDepth : null,
-            // temperature: avgTemp,
             weather,
             visibility,
             current,
             diveType,
+            waterway,
             diveNotes,
-            totalSightings: matchingSightings.length,
+            totalSightings: realSightings.length,
             items: sightingsWithDetails
         };
     });
@@ -106,7 +107,9 @@ export default function DiveLogDetailScreen() {
                     <Icon size={18} color={COLORS.PRIMARY} />
                 </View>
                 <View>
-                    <Text style={styles.statValue}>{value}</Text>
+                    <Text style={styles.statValue}>
+                        {typeof value === 'string' ? value.charAt(0).toUpperCase() + value.slice(1) : value}
+                    </Text>
                     <Text style={styles.statLabel}>{label}</Text>
                 </View>
             </View>
@@ -137,11 +140,11 @@ export default function DiveLogDetailScreen() {
                     <StatItem icon={Clock} value={diveLog.time} label="Time In" />
                     <StatItem icon={Clock} value={diveLog.duration ? `${diveLog.duration} min` : null} label="Duration" />
                     <StatItem icon={Anchor} value={diveLog.maxDepth ? `${diveLog.maxDepth}m` : null} label="Max Depth" />
-                    {/* Temperature removed as not in schema */}
                     <StatItem icon={Eye} value={diveLog.visibility} label="Visibility" />
                     <StatItem icon={Wind} value={diveLog.weather} label="Weather" />
                     <StatItem icon={Waves} value={diveLog.current} label="Current" />
                     <StatItem icon={Anchor} value={diveLog.diveType} label="Type" />
+                    {diveLog.waterway && <StatItem icon={Waves} value={diveLog.waterway} label="Waterway" />}
                 </View>
 
                 {diveLog.diveNotes ? (
@@ -159,41 +162,46 @@ export default function DiveLogDetailScreen() {
                 </View>
 
                 <View style={styles.sightingsList}>
-                    {diveLog.items.map((item, index) => (
-                        <View key={item.id} style={styles.sightingCard}>
-                            <View style={styles.sightingImageContainer}>
-                                <ImageWithFallback
-                                    uri={item.image_url || item.creatureImage || undefined}
-                                    style={styles.sightingImage}
-                                    fallbackColor="#2A2A2A"
-                                />
-                            </View>
-                            <View style={styles.sightingOverlay}>
-                                <View style={styles.sightingContent}>
-                                    <Text style={styles.creatureName}>{item.creatureName}</Text>
-                                    {item.creatureScientific && (
-                                        <Text style={styles.scientificName}>{item.creatureScientific}</Text>
-                                    )}
+                    {diveLog.items.length > 0 ? (
+                        diveLog.items.map((item, index) => (
+                            <View key={item.id} style={styles.sightingCard}>
+                                <View style={styles.sightingImageContainer}>
+                                    <ImageWithFallback
+                                        uri={item.image_url || item.creatureImage || undefined}
+                                        style={styles.sightingImage}
+                                        fallbackColor="#2A2A2A"
+                                    />
+                                </View>
+                                <View style={styles.sightingOverlay}>
+                                    <View style={styles.sightingContent}>
+                                        <Text style={styles.creatureName}>{item.creatureName}</Text>
+                                        {item.creatureScientific && (
+                                            <Text style={styles.scientificName}>{item.creatureScientific}</Text>
+                                        )}
 
-                                    <View style={styles.sightingMeta}>
-                                        {item.depth && (
-                                            <View style={styles.metaTag}>
-                                                <Anchor size={12} color="#ccc" />
-                                                <Text style={styles.metaText}>{item.depth}m</Text>
+                                        <View style={styles.sightingMeta}>
+                                            {item.depth && (
+                                                <View style={styles.metaTag}>
+                                                    <Anchor size={12} color="#ccc" />
+                                                    <Text style={styles.metaText}>{item.depth}m</Text>
+                                                </View>
+                                            )}
+                                        </View>
+
+                                        {item.creature_notes && (
+                                            <View style={styles.notesContainer}>
+                                                <Text style={styles.notes} numberOfLines={2}>"{item.creature_notes}"</Text>
                                             </View>
                                         )}
-                                        {/* Count logic removed as field does not exist */}
                                     </View>
-
-                                    {item.creature_notes && (
-                                        <View style={styles.notesContainer}>
-                                            <Text style={styles.notes} numberOfLines={2}>"{item.creature_notes}"</Text>
-                                        </View>
-                                    )}
                                 </View>
                             </View>
+                        ))
+                    ) : (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyText}>No creatures sighted on this dive.</Text>
                         </View>
-                    ))}
+                    )}
                 </View>
 
             </ScrollView>
@@ -377,5 +385,19 @@ const styles = StyleSheet.create({
         color: '#aaa',
         fontStyle: 'italic',
         lineHeight: 20,
+    },
+    emptyState: {
+        padding: DIMENSIONS.PADDING_XL,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 20,
+        backgroundColor: '#161616',
+        borderRadius: 12,
+    },
+    emptyText: {
+        color: '#888',
+        fontSize: TYPOGRAPHY.SIZE_MD,
+        textAlign: 'center',
+        lineHeight: 22,
     },
 });

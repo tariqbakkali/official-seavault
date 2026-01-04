@@ -13,6 +13,7 @@ export type Creature = Database['public']['Tables']['creatures']['Row'];
 export type Category = Database['public']['Tables']['categories']['Row'];
 export type DiveSite = Database['public']['Tables']['dive_sites']['Row'];
 export type Sighting = Database['public']['Tables']['sightings']['Row'];
+export type Dive = Database['public']['Tables']['dives']['Row'];
 export type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Achievement = Database['public']['Tables']['achievements']['Row'];
@@ -38,7 +39,7 @@ export const categories$ = observable(customSynced({
   collection: 'categories',
   actions: ['read'],
   persist: { name: 'categories_v6' },
-    delete: async (id: string) => {
+    delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
@@ -55,7 +56,7 @@ export const creatures$ = observable(customSynced({
   collection: 'creatures',
   actions: ['read'],
   persist: { name: 'creatures_v6' },
-  delete: async (id: string) => {
+  delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
@@ -87,7 +88,7 @@ export const achievements$ = observable(customSynced({
   collection: 'achievements',
   actions: ['read'],
   persist: { name: 'achievements_v6' },
-    delete: async (id: string) => {
+    delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
@@ -107,7 +108,7 @@ export const userAchievements$ = observable(customSynced({
   },
   actions: ['read', 'create'],
   persist: { name: 'user_achievements_v6' },
-    delete: async (id: string) => {
+    delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
@@ -146,7 +147,7 @@ export const diveSites$ = observable(customSynced({
     } 
     return { data, error: null };
   },
-    delete: async (id: string) => {
+    delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
@@ -167,7 +168,7 @@ export const currentUserSightings$ = observable(customSynced({
   },
   actions: ['read', 'create', 'update', 'delete'],
   persist: { name: 'sightings_v6', retrySync: true },
-    delete: async (id: string) => {
+    delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
@@ -197,7 +198,7 @@ export const allUsersSightings$ = observable(customSynced({
   collection: 'sightings',
   actions: ['read', 'create', 'update', 'delete'],
   persist: { name: 'all_sightings_v6' },
-    delete: async (id: string) => {
+    delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
@@ -214,7 +215,7 @@ export const allUsersAchievements$ = observable(customSynced({
   collection: 'user_achievements',
   actions: ['read'],
   persist: { name: 'all_user_achievements_v6' },
-    delete: async (id: string) => {
+    delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
@@ -270,7 +271,7 @@ export const wishlists$ = observable(customSynced({
 }));
 
 // Profile observable - user-specific
-export const currentUserProfile$ = observable(customSynced({
+export const currentUserProfile$ = observable<Record<string, Profile>>(customSynced({
   supabase,
   collection: 'profiles',
   filter: (select: any) => {
@@ -282,7 +283,7 @@ export const currentUserProfile$ = observable(customSynced({
     return result;
   },
   actions: ['read', 'update'],
-    delete: async (id: string) => {
+   delete: async (id: string) => {
     const data = ""
     return { data, error: null };
   },
@@ -291,18 +292,18 @@ export const currentUserProfile$ = observable(customSynced({
   // changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all, filtering will be done by Supabase
-}))
+}));
 
 // Flag to prevent repeated profile error logging
 let profileErrorLogged = false;
 
-export const allUsersProfiles$ = observable(customSynced({
+export const allUsersProfiles$ = observable<Record<string, Profile>>(customSynced({
   supabase,
   collection: 'profiles',
   actions: ['read'],
   persist: { name: 'all_profiles_v6' },
   changesSince: 'last-sync',
-    delete: async (id: string) => {
+    delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
@@ -325,6 +326,9 @@ export const allUsersProfiles$ = observable(customSynced({
     return;
   }
 }));
+
+// Current user dives observable
+// Removed currentUserDives$ - using sightings table only
 
 // Articles observable - synced for offline support
 export const articles$ = observable(customSynced({
@@ -354,6 +358,7 @@ export const getWishlists = () => wishlists$.get();
 export const getCurrentUserProfile = () => currentUserProfile$.get();
 export const getAllUsersProfiles = () => allUsersProfiles$.get();
 export const getAllArticles = () => articles$.get();
+// Removed getCurrentUserDives - using sightings table only
 
 // Utility functions for creating new records
 export const createSighting = async (sightingData: Omit<Sighting, 'id' | 'created_at' | 'user_id'>) => {
@@ -470,6 +475,10 @@ export const createDiveSite = (diveSiteData: Omit<DiveSite, 'id' | 'created_at'>
     throw error;
   }
 };
+
+
+
+// Removed createDive - using sightings table only
 
 export const removeWishlistItem = (wishlistId: string) => {
   // Use Legend State's delete method instead of direct deletion
