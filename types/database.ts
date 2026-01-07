@@ -110,6 +110,7 @@ export interface Database {
           air_in: number | null;
           air_out: number | null;
           air_unit: 'bar' | 'psi' | null;
+          depth_unit?: 'meters' | 'feet' | null;
           course_type: string | null;
           skills_completed: string[] | null;
           instructor_id: string | null;
@@ -198,6 +199,7 @@ export interface Database {
           air_in: number | null;
           air_out: number | null;
           air_unit: 'bar' | 'psi' | null;
+          depth_unit: 'meters' | 'feet' | null;
           dive_type: 'leisure' | 'training' | null;
           course_type: string | null;
           skills_completed: string[] | null;

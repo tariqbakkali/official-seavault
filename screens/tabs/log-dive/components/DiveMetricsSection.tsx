@@ -18,6 +18,8 @@ interface DiveMetricsSectionProps {
     onAirUnitChange: (unit: 'bar' | 'psi') => void;
     depth: string;
     onDepthChange: (value: string) => void;
+    depthUnit: 'meters' | 'feet';
+    onDepthUnitChange: (unit: 'meters' | 'feet') => void;
 }
 
 const DiveMetricsSection: React.FC<DiveMetricsSectionProps> = ({
@@ -33,6 +35,8 @@ const DiveMetricsSection: React.FC<DiveMetricsSectionProps> = ({
     onAirUnitChange,
     depth,
     onDepthChange,
+    depthUnit,
+    onDepthUnitChange,
 }) => {
     const [showTimeInPicker, setShowTimeInPicker] = useState(false);
     const [showTimeOutPicker, setShowTimeOutPicker] = useState(false);
@@ -180,19 +184,37 @@ const DiveMetricsSection: React.FC<DiveMetricsSectionProps> = ({
 
             {/* Depth Section - Prominent */}
             <View style={styles.sectionBlock}>
-                <Text style={styles.label}>Max Depth</Text>
+                <View style={styles.unitHeader}>
+                    <Text style={styles.label}>Max Depth</Text>
+                    <View style={styles.unitToggle}>
+                        <TouchableOpacity
+                            style={[styles.unitBtn, depthUnit === 'meters' && styles.unitBtnActive]}
+                            onPress={() => onDepthUnitChange('meters')}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.unitText, depthUnit === 'meters' && styles.unitTextActive]}>M</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.unitBtn, depthUnit === 'feet' && styles.unitBtnActive]}
+                            onPress={() => onDepthUnitChange('feet')}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.unitText, depthUnit === 'feet' && styles.unitTextActive]}>FT</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
                 <View style={[styles.inputWrapper, styles.prominentInput]}>
                     <Ruler size={20} color={COLORS.PRIMARY} />
                     <TextInput
                         style={[styles.input, styles.prominentText]}
                         value={depth}
                         onChangeText={onDepthChange}
-                        placeholder="0.0"
+                        placeholder={depthUnit === 'meters' ? "0.0" : "0"}
                         placeholderTextColor={COLORS.TEXT_TERTIARY}
                         keyboardType="numeric"
                         selectionColor={COLORS.PRIMARY}
                     />
-                    <Text style={styles.unitSuffix}>meters</Text>
+                    <Text style={styles.unitSuffix}>{depthUnit}</Text>
                 </View>
             </View>
 

@@ -76,3 +76,17 @@ export const formatFileSize = (bytes: number) => {
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return Math.round(bytes / Math.pow(1024, i)) + ' ' + sizes[i];
 };
+
+/**
+ * Convert meters to feet
+ */
+export const metersToFeet = (meters: number): number => {
+  return meters * 3.28084;
+};
+
+/**
+ * Convert feet to meters
+ */
+export const feetToMeters = (feet: number): number => {
+  return feet / 3.28084;
+};

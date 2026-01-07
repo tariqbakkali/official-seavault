@@ -55,6 +55,7 @@ const LogDiveScreen = () => {
     handleBackPress,
     handleDiveSiteSelect,
     handleDeselectDiveSite,
+    handleDepthUnitChange,
     handleSubmit,
     shouldShowBackButton,
     errors,
@@ -201,6 +202,8 @@ const LogDiveScreen = () => {
             onAirOutChange={(airOut) => setFormData({ ...formData, airOut })}
             onAirUnitChange={(airUnit) => setFormData({ ...formData, airUnit })}
             onDepthChange={(depth) => setFormData({ ...formData, depth })}
+            depthUnit={formData.depthUnit}
+            onDepthUnitChange={handleDepthUnitChange}
           />
 
           {/* 5. Training Section (only if Training mode) */}

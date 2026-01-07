@@ -57,18 +57,46 @@ function RootLayout() {
           await initializeApp();
 
           const onboardingCompleted = await hasCompletedOnboarding();
-          // Add a timeout to the session check as well
+          // Add a timeout to the session check
           const sessionPromise = supabase.auth.getSession();
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Session check timeout')), 5000)
+          // Don't reject, just resolve with null to indicate timeout
+          const timeoutPromise = new Promise((resolve) =>
+            setTimeout(() => resolve('timeout'), 5000)
           );
 
           let sessionData;
           try {
             const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
-            sessionData = result.data;
+
+            if (result === 'timeout') {
+              console.warn('Session check timed out - checking local storage manually');
+              // Manual fallback for offline logic
+              // Find Supabase token in AsyncStorage
+              const keys = await AsyncStorage.getAllKeys();
+              const sbKey = keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+
+              if (sbKey) {
+                const json = await AsyncStorage.getItem(sbKey);
+                if (json) {
+                  const parsed = JSON.parse(json);
+                  // Construct a minimal session object
+                  if (parsed.user) {
+                    sessionData = { session: { user: parsed.user, access_token: parsed.access_token } };
+                    console.log('Recovered session from local storage');
+                  } else {
+                    sessionData = { session: null };
+                  }
+                } else {
+                  sessionData = { session: null };
+                }
+              } else {
+                sessionData = { session: null };
+              }
+            } else {
+              sessionData = result.data;
+            }
           } catch (e) {
-            console.warn('Session check timed out or failed, assuming offline/logged out');
+            console.warn('Session check failed', e);
             sessionData = { session: null };
           }
 

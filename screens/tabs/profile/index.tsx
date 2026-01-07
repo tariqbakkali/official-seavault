@@ -211,20 +211,32 @@ export default function ProfileScreen() {
       setSigningOut(true);
 
       if (!force) {
-        // Attempt to sync before logging out
+        // Attempt sync with timeout to prevent hanging
         try {
           console.log('[ProfileScreen] Attempting sync before logout...');
-          await forceSyncAll();
+
+          // Race sync against 5s timeout
+          const syncPromise = forceSyncAll();
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Sync timeout')), 5000)
+          );
+
+          await Promise.race([syncPromise, timeoutPromise]);
+
           // Small delay to ensure any pushed changes are acknowledged
           await new Promise(resolve => setTimeout(resolve, 500));
           console.log('[ProfileScreen] Sync successful, proceeding to logout');
         } catch (syncError) {
           console.error('[ProfileScreen] Sync failed during logout:', syncError);
+
+          // Only prompt if it wasn't a timeout (which implies offline/bad network)
+          // Actually, strict timeout means we should probably just let them go or warn.
+          // Let's warn.
           setSigningOut(false);
 
           Alert.alert(
             'Sync Warning',
-            'We couldn\'t sync your latest data to the cloud. Logging out now may result in losing recent changes (like sightings or achievements).\n\nPlease check your internet connection.',
+            'We couldn\'t sync your latest data to the cloud. Logging out now may result in losing recent changes.\n\nPlease check your internet connection.',
             [
               { text: 'Cancel', style: 'cancel' },
               {
@@ -242,14 +254,27 @@ export default function ProfileScreen() {
         }
       }
 
-      // Clear local data
+      // Clear local synced data immediately
       clearUserSync();
 
-      // Sign out - this will trigger onAuthStateChange which handles navigation
-      await supabase.auth.signOut();
+      // Sign out with short timeout (3s)
+      // This ensures we don't get stuck if offline
+      console.log('[ProfileScreen] Triggering Supabase signOut...');
+      const signOutPromise = supabase.auth.signOut();
+      const signOutTimeout = new Promise((resolve) =>
+        setTimeout(() => {
+          console.log('[ProfileScreen] signOut timed out, forcing local cleanup');
+          resolve('timeout');
+        }, 3000)
+      );
+
+      await Promise.race([signOutPromise, signOutTimeout]);
+
     } catch (error) {
       console.error('Error signing out:', error);
-      Alert.alert('Error', 'Failed to sign out. Please try again.');
+      // Even if error, we want to allow exit, but maybe they cancelled?
+      // No, this is likely a crash.
+      Alert.alert('Error', 'Failed to sign out cleanly. Please restart the app if issues persist.');
       setSigningOut(false);
     }
   };

@@ -46,13 +46,6 @@ export default function DiveConditionsSection({
     onCurrentChange,
     onWaterwayChange
 }: DiveConditionsSectionProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    const toggleOpen = () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setIsOpen(!isOpen);
-    };
-
     const renderChips = (options: any[], selected: string | null, onSelect: (val: string) => void) => (
         <View style={styles.chipContainer}>
             {options.map((option) => {
@@ -100,56 +93,47 @@ export default function DiveConditionsSection({
                 />
             </View>
 
-            {/* Additional Details Header */}
-            <TouchableOpacity style={styles.header} onPress={toggleOpen}>
-                <Text style={styles.headerTitle}>Additional Details</Text>
-                {isOpen ? (
-                    <ChevronUp size={20} color={COLORS.TEXT_SECONDARY} />
-                ) : (
-                    <ChevronDown size={20} color={COLORS.TEXT_SECONDARY} />
-                )}
-            </TouchableOpacity>
+            <View style={styles.divider} />
+            <Text style={styles.headerTitle}>Additional Details</Text>
 
-            {/* Collapsible Content */}
-            {isOpen && (
-                <View style={styles.collapsibleContent}>
-                    {/* Waterway - New Field */}
-                    <View style={styles.section}>
-                        <View style={styles.labelRow}>
-                            <MapPin size={16} color={COLORS.TEXT_SECONDARY} />
-                            <Text style={styles.sectionLabel}>Waterway</Text>
-                        </View>
-                        {renderChips(WATERWAY_OPTIONS, waterway, onWaterwayChange)}
+            {/* Content (Now Always Visible) */}
+            <View style={styles.content}>
+                {/* Waterway */}
+                <View style={styles.section}>
+                    <View style={styles.labelRow}>
+                        <MapPin size={16} color={COLORS.TEXT_SECONDARY} />
+                        <Text style={styles.sectionLabel}>Waterway</Text>
                     </View>
-
-                    {/* Weather */}
-                    <View style={styles.section}>
-                        <View style={styles.labelRow}>
-                            <Cloud size={16} color={COLORS.TEXT_SECONDARY} />
-                            <Text style={styles.sectionLabel}>Weather</Text>
-                        </View>
-                        {renderChips(WEATHER_OPTIONS, weather, onWeatherChange)}
-                    </View>
-
-                    {/* Visibility */}
-                    <View style={styles.section}>
-                        <View style={styles.labelRow}>
-                            <Eye size={16} color={COLORS.TEXT_SECONDARY} />
-                            <Text style={styles.sectionLabel}>Visibility</Text>
-                        </View>
-                        {renderChips(VISIBILITY_OPTIONS, visibility, onVisibilityChange)}
-                    </View>
-
-                    {/* Current */}
-                    <View style={styles.section}>
-                        <View style={styles.labelRow}>
-                            <Waves size={16} color={COLORS.TEXT_SECONDARY} />
-                            <Text style={styles.sectionLabel}>Current</Text>
-                        </View>
-                        {renderChips(CURRENT_OPTIONS, current, onCurrentChange)}
-                    </View>
+                    {renderChips(WATERWAY_OPTIONS, waterway, onWaterwayChange)}
                 </View>
-            )}
+
+                {/* Weather */}
+                <View style={styles.section}>
+                    <View style={styles.labelRow}>
+                        <Cloud size={16} color={COLORS.TEXT_SECONDARY} />
+                        <Text style={styles.sectionLabel}>Weather</Text>
+                    </View>
+                    {renderChips(WEATHER_OPTIONS, weather, onWeatherChange)}
+                </View>
+
+                {/* Visibility */}
+                <View style={styles.section}>
+                    <View style={styles.labelRow}>
+                        <Eye size={16} color={COLORS.TEXT_SECONDARY} />
+                        <Text style={styles.sectionLabel}>Visibility</Text>
+                    </View>
+                    {renderChips(VISIBILITY_OPTIONS, visibility, onVisibilityChange)}
+                </View>
+
+                {/* Current */}
+                <View style={styles.section}>
+                    <View style={styles.labelRow}>
+                        <Waves size={16} color={COLORS.TEXT_SECONDARY} />
+                        <Text style={styles.sectionLabel}>Current</Text>
+                    </View>
+                    {renderChips(CURRENT_OPTIONS, current, onCurrentChange)}
+                </View>
+            </View>
         </View>
     );
 }
@@ -162,7 +146,7 @@ const styles = StyleSheet.create({
         marginBottom: DIMENSIONS.MARGIN_MD,
     },
     inputGroup: {
-        marginBottom: DIMENSIONS.MARGIN_MD,
+        marginBottom: DIMENSIONS.MARGIN_LG,
     },
     labelRow: {
         flexDirection: 'row',
@@ -184,22 +168,19 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#333',
     },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: DIMENSIONS.PADDING_SM,
-        borderTopWidth: 1,
-        borderTopColor: '#333',
-        marginTop: DIMENSIONS.MARGIN_XS,
+    divider: {
+        height: 1,
+        backgroundColor: '#333',
+        marginVertical: DIMENSIONS.MARGIN_MD,
     },
     headerTitle: {
         fontSize: TYPOGRAPHY.SIZE_MD,
         color: COLORS.TEXT_SECONDARY,
         fontWeight: '600',
+        marginBottom: DIMENSIONS.MARGIN_MD,
     },
-    collapsibleContent: {
-        marginTop: DIMENSIONS.MARGIN_SM,
+    content: {
+        // No specific styles needed for open content container anymore
     },
     section: {
         marginBottom: DIMENSIONS.MARGIN_LG,
