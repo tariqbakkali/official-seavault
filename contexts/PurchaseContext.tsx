@@ -36,16 +36,19 @@ export const PurchaseProvider = ({ children }: PurchaseProviderProps) => {
 
       // Debug: Get full customer info to inspect (Wrapped in try/catch for offline safety)
       try {
-        const customerInfo = await Purchases.getCustomerInfo();
-        console.log('[PurchaseContext] DEBUG - Active entitlements:', Object.keys(customerInfo.entitlements.active));
-        if (customerInfo.entitlements.active['Pro']) {
-          const proEntitlement = customerInfo.entitlements.active['Pro'];
-          console.log('[PurchaseContext] DEBUG - Pro entitlement:', {
-            identifier: proEntitlement.identifier,
-            isActive: proEntitlement.isActive,
-            willRenew: proEntitlement.willRenew,
-            expirationDate: proEntitlement.expirationDate,
-          });
+        const isOnline = require('@/stores/networkStore').getIsOnline();
+        if (isOnline) {
+          const customerInfo = await Purchases.getCustomerInfo();
+          console.log('[PurchaseContext] DEBUG - Active entitlements:', Object.keys(customerInfo.entitlements.active));
+          if (customerInfo.entitlements.active['Pro']) {
+            const proEntitlement = customerInfo.entitlements.active['Pro'];
+            console.log('[PurchaseContext] DEBUG - Pro entitlement:', {
+              identifier: proEntitlement.identifier,
+              isActive: proEntitlement.isActive,
+              willRenew: proEntitlement.willRenew,
+              expirationDate: proEntitlement.expirationDate,
+            });
+          }
         }
       } catch (ncError) {
         console.warn('[PurchaseContext] Could not fetch latest customer info (likely offline), relying on cached/local status:', ncError);

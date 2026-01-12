@@ -104,6 +104,10 @@ export const getOfferings = async (offeringId?: string): Promise<PurchasesOfferi
  */
 export const syncSubscriptionToSupabase = async (customerInfo: CustomerInfo, userId: string) => {
   try {
+    if (!isOnline$.get()) {
+      console.log('[RevenueCat] Offline, skipping subscription sync to Supabase');
+      return;
+    }
     const isPremium = customerInfo.entitlements.active['Pro'] !== undefined;
     
     // Determine membership tier based on active entitlements
@@ -166,6 +170,8 @@ export const purchasePackage = async (pack: PurchasesPackage, userId: string) =>
   }
 };
 
+import { isOnline$ } from '@/stores/networkStore';
+
 export const checkSubscriptionStatus = async () => {
   try {
     const userId = getCurrentUserID();
@@ -181,23 +187,28 @@ export const checkSubscriptionStatus = async () => {
       profile = profiles[userId];
       console.log("[RevenueCat] Profiles from observable:", profiles);
     } else {
-      console.log("[RevenueCat] Profiles observable is empty, fetching from Supabase fallback");
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-        
-      if (error) {
-        console.error("[RevenueCat] Error fetching profile from Supabase fallback:", error);
-      } else if (data) {
-        profile = data as Profile;
-        console.log("[RevenueCat] Profile fetched from Supabase fallback:", profile.id);
-        
-        // Proactively update the observable if we got data
-        currentUserProfile$.assign({
-          [userId]: profile
-        } as any);
+      // Only fetch from Supabase if online
+      if (isOnline$.get()) {
+        console.log("[RevenueCat] Profiles observable is empty, fetching from Supabase fallback");
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+          
+        if (error) {
+          console.error("[RevenueCat] Error fetching profile from Supabase fallback:", error);
+        } else if (data) {
+          profile = data as Profile;
+          console.log("[RevenueCat] Profile fetched from Supabase fallback:", profile.id);
+          
+          // Proactively update the observable if we got data
+          currentUserProfile$.assign({
+            [userId]: profile
+          } as any);
+        }
+      } else {
+        console.log("[RevenueCat] Offline and no profile data, assuming free tier");
       }
     }
 

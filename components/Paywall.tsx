@@ -18,12 +18,20 @@ export default function DynamicPaywall({ onClose }: PaywallProps) {
         const loadOffering = async () => {
             if (shop?.offering_id) {
                 try {
+                    // Check if we're online before attempting to fetch offerings
+                    const isOnline = require('@/stores/networkStore').getIsOnline();
+                    if (!isOnline) {
+                        console.log('[Paywall] Offline, skipping offering fetch');
+                        return;
+                    }
+
                     const offerings = await Purchases.getOfferings();
                     if (offerings.all[shop.offering_id]) {
                         setOffering(offerings.all[shop.offering_id]);
                     }
                 } catch (e) {
                     console.error('Failed to load specific offering', e);
+                    // Don't show alert - just log the error
                 }
             }
         };

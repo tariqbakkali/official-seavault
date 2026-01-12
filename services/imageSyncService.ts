@@ -6,13 +6,12 @@ import * as FileSystem from 'expo-file-system/legacy'; // Import FileSystem from
 import { Sighting } from '../types/database';
 import { ImageMetadata } from '../types/image.types';
 
-// Observable to track network state
-export const isOnline$ = observable(false);
+import { isOnline$ } from '@/stores/networkStore';
 
-// Initialize network state observer
-NetInfo.addEventListener(state => {
-  isOnline$.set(!!(state.isConnected && state.isInternetReachable));
-});
+// Initialize network state observer - REMOVED (Handled in networkStore)
+// NetInfo.addEventListener(state => {
+//   isOnline$.set(!!(state.isConnected && state.isInternetReachable));
+// });
 
 /**
  * Ensure an image is downloaded and stored locally for offline access

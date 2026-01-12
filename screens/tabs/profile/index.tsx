@@ -257,15 +257,18 @@ export default function ProfileScreen() {
       // Clear local synced data immediately
       clearUserSync();
 
-      // Sign out with short timeout (3s)
+      // Sign out with short timeout (1s when offline, 3s when online)
       // This ensures we don't get stuck if offline
+      const isOnline = require('@/stores/networkStore').getIsOnline();
+      const timeoutDuration = isOnline ? 3000 : 1000;
+
       console.log('[ProfileScreen] Triggering Supabase signOut...');
       const signOutPromise = supabase.auth.signOut();
       const signOutTimeout = new Promise((resolve) =>
         setTimeout(() => {
           console.log('[ProfileScreen] signOut timed out, forcing local cleanup');
           resolve('timeout');
-        }, 3000)
+        }, timeoutDuration)
       );
 
       await Promise.race([signOutPromise, signOutTimeout]);

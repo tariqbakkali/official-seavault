@@ -114,9 +114,15 @@ function RootLayout() {
             setShowOnboarding(true);
           }
 
+
           // Don't let sync block the UI indefinitely
           try {
-            await forceSyncAll();
+            const isOnline = require('@/stores/networkStore').getIsOnline();
+            if (isOnline) {
+              await forceSyncAll();
+            } else {
+              console.log('AppLayout: Offline, skipping initial sync');
+            }
           } catch (e) {
             console.warn('Initial sync failed', e);
           }
@@ -125,10 +131,16 @@ function RootLayout() {
         // Race against a total initialization timeout (e.g. 7 seconds)
         // If the network is bad, we want to let the user in (viewing cached data)
         // rather than staring at a spinner forever.
-        await Promise.race([
-          initPromise,
-          new Promise((resolve) => setTimeout(resolve, 7000))
-        ]);
+        // If offline, don't wait for timeout at all
+        const isOnline = require('@/stores/networkStore').getIsOnline();
+        if (isOnline) {
+          await Promise.race([
+            initPromise,
+            new Promise((resolve) => setTimeout(resolve, 7000))
+          ]);
+        } else {
+          await initPromise;
+        }
 
       } catch (error) {
         console.error('Error checking initial session or syncing data:', error);
@@ -136,6 +148,14 @@ function RootLayout() {
         setIsLoading(false);
       }
     };
+
+    // Listen for network changes to retry init if we started offline
+    const unsubscribeNetInfo = require('@/stores/networkStore').isOnline$.onChange((isOnline: boolean) => {
+      if (isOnline) {
+        console.log('AppLayout: Network became available, re-checking session');
+        checkInitialSessionAndSync();
+      }
+    });
 
     checkInitialSessionAndSync();
 

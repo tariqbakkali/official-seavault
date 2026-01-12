@@ -32,7 +32,12 @@ import { images$ } from '../stores/imageState'; // Add this import
 export const initializeSync = async () => {
   try {
     // Get the configured synced instance
-    onSyncPress();
+    const isOnline = require('@/stores/networkStore').getIsOnline();
+    if (isOnline) {
+      onSyncPress();
+    } else {
+      console.log('[initializeSync] Offline, skipping initial sync');
+    }
     
   } catch (error) {
     console.error('Error initializing sync:', error);
@@ -101,6 +106,13 @@ export const forceSyncAll = async () => {
     // Starting force sync of all observables
     
     // Instead of refresh, we can re-get the data to trigger sync
+    const isOnline = require('@/stores/networkStore').getIsOnline();
+    if (!isOnline) {
+      console.log('[forceSyncAll] Offline, skipping force sync to prevent errors');
+      return;
+    }
+
+    // Syncing categories
     // Syncing categories
     categories$.get();
     
@@ -141,6 +153,12 @@ export const forceSyncAll = async () => {
 export const onSyncPress = async () => {
   try {
     // Call sync on each observable to flush local changes to remote
+    const isOnline = require('@/stores/networkStore').getIsOnline();
+    if (!isOnline) {
+      console.log('[onSyncPress] Offline, skipping manual sync');
+      return;
+    }
+    
     // customSynced(categories$);  
     // customSynced(creatures$);  
     // customSynced(diveSites$);
