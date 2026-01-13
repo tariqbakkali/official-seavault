@@ -47,7 +47,8 @@ interface FormData {
   diveSiteId: string | null;
   date: Date;
   timeOfDay: string;
-  diveType: string;
+  diveMode: 'leisure' | 'training';
+  diveType: string | null;
   depth: string;
   diveNotes: string;
   creatureSightings: CreatureSighting[];
@@ -56,6 +57,8 @@ interface FormData {
   weather: string | null;
   visibility: string | null;
   current: string | null;
+  instructorName: string | null;
+  instructorId: string | null;
   // Dive specific fields
   timeIn: string;
   timeOut: string;
@@ -75,7 +78,8 @@ export const useLogDive = () => {
     diveSiteId: null,
     date: new Date(),
     timeOfDay: '',
-    diveType: '',
+    diveMode: 'leisure',
+    diveType: null,
     depth: '',
     diveNotes: '',
     creatureSightings: [],
@@ -93,6 +97,8 @@ export const useLogDive = () => {
     courseType: 'open_water',
     completedSkills: {},
     waterway: null,
+    instructorName: '',
+    instructorId: null,
   });
 
   // Removed selectedImage state as it's no longer needed
@@ -203,9 +209,15 @@ export const useLogDive = () => {
   const handleSubmit = async () => {
     try {
       // Validate dive type requirements
-      if (formData.diveType === 'leisure' && formData.creatureSightings.length === 0) {
+      if (formData.diveMode === 'leisure' && formData.creatureSightings.length === 0) {
         showAlert('Missing Sightings', 'Leisure dives must have at least one creature sighting recorded.');
         return;
+      }
+      
+      // Validate DB dive type
+      if (!formData.diveType) {
+         showAlert('Missing Type', 'Please select a dive type (Shore, Boat, etc).');
+         return;
       }
 
       // Format time of day from the time picker
@@ -241,16 +253,18 @@ export const useLogDive = () => {
           air_out: formData.airOut ? parseInt(formData.airOut, 10) : null,
           air_unit: formData.airUnit,
           depth_unit: formData.depthUnit,
-          dive_type: formData.diveType || null,
-          course_type: formData.courseType || null,
-          skills_completed: Object.keys(formData.completedSkills).filter(skill => formData.completedSkills[skill]),
+          dive_type: formData.diveType, // Now storing real DB enum
+          course_type: formData.diveMode === 'training' ? (formData.courseType || null) : null,
+          skills_completed: formData.diveMode === 'training' ? Object.keys(formData.completedSkills).filter(skill => formData.completedSkills[skill]) : [],
           dive_notes: formData.diveNotes || null,
           weather: formData.weather || null,
           visibility: formData.visibility || null,
           current: formData.current || null,
           time_of_day: timeOfDay || null,
-          instructor_id: null,
+          instructor_id: formData.instructorId || null,
+          instructor_name: formData.instructorName || null,
           waterway: formData.waterway || null,
+          dive_mode: formData.diveMode,
           
           // Sighting-specific data
           creature_id: sighting.creatureId || null,
@@ -286,7 +300,8 @@ export const useLogDive = () => {
         diveSiteId: null,
         date: new Date(),
         timeOfDay: '',
-        diveType: '',
+        diveMode: 'leisure',
+        diveType: null,
         depth: '',
         diveNotes: '',
         creatureSightings: [],
@@ -303,6 +318,8 @@ export const useLogDive = () => {
         courseType: 'open_water',
         completedSkills: {},
         waterway: null,
+        instructorName: '', // Reset to match initial state
+        instructorId: null,
       });
       
       // Removed setSelectedImage reset

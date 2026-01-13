@@ -114,7 +114,9 @@ export interface Database {
           course_type: string | null;
           skills_completed: string[] | null;
           instructor_id: string | null;
+          instructor_name: string | null;
           waterway: string | null;
+          dive_mode: 'leisure' | 'training' | null;
         };
         Insert: Omit<Database['public']['Tables']['sightings']['Row'], 'created_at'>;
         Update: Partial<Database['public']['Tables']['sightings']['Insert']>;
@@ -215,6 +217,17 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['dives']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['dives']['Insert']>;
       };
+      instructors: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['instructors']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['instructors']['Insert']>;
+      };
     };
   };
 }
@@ -229,6 +242,7 @@ export type Achievement = Database['public']['Tables']['achievements']['Row'];
 export type UserAchievement = Database['public']['Tables']['user_achievements']['Row'];
 export type Dive = Database['public']['Tables']['dives']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
+export type Instructor = Database['public']['Tables']['instructors']['Row'];
 
 
 export interface CachedCatalog {

@@ -21,11 +21,17 @@ import ModeSelection from './components/ModeSelection';
 import DiveNotesSection from './components/DiveNotesSection';
 import DiveConditionsSection from './components/DiveConditionsSection';
 import MultipleCreatureSelector from './components/MultipleCreatureSelector';
+import DiveTypeSelector from './components/DiveTypeSelector';
+import InstructorPicker from './components/InstructorPicker';
 import { useLogDive } from './hooks/useLogDive';
+import { tempSelectionStore$, clearTempInstructor } from '@/stores/tempSelectionStore';
+import { useSelector } from '@legendapp/state/react';
 
 const LogDiveScreen = () => {
   const insets = useSafeAreaInsets();
   const { selectedDiveSiteId } = useLocalSearchParams();
+  // Get temp selection from store
+  const tempSelection = useSelector(() => tempSelectionStore$.get());
 
   // State to control ScrollView scrolling
   const [scrollEnabled, setScrollEnabled] = useState(true);
@@ -67,6 +73,21 @@ const LogDiveScreen = () => {
       handleDiveSiteSelect(selectedDiveSiteId);
     }
   }, [selectedDiveSiteId]);
+
+  // Update form data if instructor was selected via store
+  React.useEffect(() => {
+    if (tempSelection.instructor) {
+      setFormData(prev => ({
+        ...prev,
+        instructorId: tempSelection.instructor!.id,
+        instructorName: tempSelection.instructor!.name,
+      }));
+      // Clear the store so it doesn't re-trigger unwantedly later (though likely fine if check changes)
+      // Actually best to clear it after consuming?
+      // Let's clear it
+      setTimeout(() => clearTempInstructor(), 100);
+    }
+  }, [tempSelection.instructor]);
 
   // Function to safely enable scroll
   const enableScroll = () => {
@@ -163,8 +184,13 @@ const LogDiveScreen = () => {
         <View style={styles.content}>
           {/* 1. Mode Selection */}
           <ModeSelection
-            mode={formData.diveType as 'leisure' | 'training' || 'leisure'}
-            onModeChange={(mode) => setFormData({ ...formData, diveType: mode })}
+            mode={formData.diveMode}
+            onModeChange={(mode) => setFormData({ ...formData, diveMode: mode })}
+          />
+
+          <DiveTypeSelector
+            selectedType={formData.diveType}
+            onSelect={(type) => setFormData({ ...formData, diveType: type })}
           />
 
           {/* 2. Dive Site Picker */}
@@ -206,8 +232,16 @@ const LogDiveScreen = () => {
             onDepthUnitChange={handleDepthUnitChange}
           />
 
+          {/* Instructor Section (Training Only) */}
+          {formData.diveMode === 'training' && (
+            <InstructorPicker
+              instructorName={formData.instructorName}
+              onClear={() => setFormData({ ...formData, instructorName: null, instructorId: null })}
+            />
+          )}
+
           {/* 5. Training Section (only if Training mode) */}
-          {formData.diveType === 'training' && (
+          {formData.diveMode === 'training' && (
             <TrainingSection
               courseType={formData.courseType}
               completedSkills={formData.completedSkills}

@@ -281,12 +281,12 @@ const DiveMetricsSection: React.FC<DiveMetricsSectionProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: DIMENSIONS.MARGIN_XL,
+        // marginBottom: DIMENSIONS.MARGIN_LG,
     },
     row: {
         flexDirection: 'row',
         gap: DIMENSIONS.GAP_MD,
-        marginBottom: DIMENSIONS.MARGIN_LG,
+        marginBottom: DIMENSIONS.MARGIN_LG
     },
     halfInput: {
         flex: 1,

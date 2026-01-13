@@ -266,6 +266,20 @@ function RootLayout() {
             contentStyle: { backgroundColor: '#000', paddingTop: Platform.OS === 'android' ? insets.top : 0 },
           }}
         />
+        <Stack.Screen
+          name="modal/time-of-day-picker"
+          options={{
+            presentation: 'modal',
+            contentStyle: { backgroundColor: '#000', paddingTop: Platform.OS === 'android' ? insets.top : 0 },
+          }}
+        />
+        <Stack.Screen
+          name="modal/instructor-picker"
+          options={{
+            presentation: 'fullScreenModal',
+            contentStyle: { backgroundColor: '#000', paddingTop: Platform.OS === 'android' ? insets.top : 0 },
+          }}
+        />
         <Stack.Screen name="dive-sites/add" />
         <Stack.Screen name="modal/paywall" options={{ presentation: 'modal', headerShown: false, gestureEnabled: false }} />
       </Stack>

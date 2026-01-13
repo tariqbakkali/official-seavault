@@ -19,6 +19,7 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Achievement = Database['public']['Tables']['achievements']['Row'];
 export type UserAchievement = Database['public']['Tables']['user_achievements']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
+export type Instructor = Database['public']['Tables']['instructors']['Row'];
 
 
 
@@ -75,7 +76,6 @@ export const creatures$ = observable(customSynced({
 // });
 
 // Helper to fetch creatures for a specific category
-// Helper to fetch creatures for a specific category
 export const fetchCreaturesForCategory = async (categoryId: string) => {
   // Deprecated: creatures$ now syncs all creatures automatically
   // Trigger sync if needed
@@ -118,16 +118,17 @@ export const userAchievements$ = observable(customSynced({
   realtime: true,
 }));
 
-// export const diveSites$ = observable(customSynced({
-//   supabase,
-//   collection: 'dive_sites',
-//   actions: ['read'], // Read-only catalog data
-//   persist: { name: 'dive_sites' },
-//   changesSince: 'last-sync',
-//   fieldCreatedAt: 'created_at',
-//   realtime: true,
-// }));
-
+// Instructors observable - synced for offline support
+export const instructors$ = observable(customSynced({
+  supabase,
+  collection: 'instructors',
+  actions: ['read'],
+  persist: { name: 'instructors_v1' },
+  select: (select: any) => select.select('*'),
+  changesSince: 'last-sync',
+  fieldCreatedAt: 'created_at',
+  realtime: true,
+}));
 
 export const diveSites$ = observable(customSynced({
   supabase,
@@ -283,7 +284,7 @@ export const currentUserProfile$ = observable<Record<string, Profile>>(customSyn
     return result;
   },
   actions: ['read', 'update'],
-   delete: async (id: string) => {
+   delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
@@ -358,6 +359,7 @@ export const getWishlists = () => wishlists$.get();
 export const getCurrentUserProfile = () => currentUserProfile$.get();
 export const getAllUsersProfiles = () => allUsersProfiles$.get();
 export const getAllArticles = () => articles$.get();
+export const getInstructors = () => instructors$.get();
 // Removed getCurrentUserDives - using sightings table only
 
 // Utility functions for creating new records

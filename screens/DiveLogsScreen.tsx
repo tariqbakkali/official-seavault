@@ -130,7 +130,7 @@ export default function DiveLogsScreen() {
                     {item.maxDepth && (
                         <View style={styles.metricItem}>
                             <View style={styles.dot} />
-                            <Text style={styles.metricText}>{item.maxDepth}m</Text>
+                            <Text style={styles.metricText}>{Math.round(item.maxDepth)}m</Text>
                         </View>
                     )}
                     {item.diveType === 'training' && (
@@ -177,7 +177,7 @@ export default function DiveLogsScreen() {
 
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
-            <ScreenHeader title="Dive Logs" showBackButton />
+            <ScreenHeader title="Dive Logs" showBackButton onBackPress={() => router.back()} />
 
             <FlatList
                 data={diveLogs}

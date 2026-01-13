@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, ScrollView, Dimensions } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from '@legendapp/state/react';
-import { Clock, MapPin, Wind, Waves, Eye, Calendar, Thermometer, ArrowLeft, Anchor } from 'lucide-react-native';
+import { Clock, MapPin, Wind, Waves, Eye, Calendar, Thermometer, ArrowLeft, Anchor, User, Gauge, GraduationCap, Droplet } from 'lucide-react-native';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { currentUserSightings$, diveSites$, creatures$ } from '@/stores/syncedObservables';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
@@ -15,6 +15,7 @@ const { width } = Dimensions.get('window');
 export default function DiveLogDetailScreen() {
     const { id } = useLocalSearchParams();
     const insets = useSafeAreaInsets();
+    const router = useRouter();
 
     const diveLog = useSelector(() => {
         if (typeof id !== 'string') return null;
@@ -50,7 +51,13 @@ export default function DiveLogDetailScreen() {
         const current = matchingSightings.find(s => s.current)?.current;
         const duration = matchingSightings.find(s => s.duration)?.duration;
         const diveType = matchingSightings.find(s => s.dive_type)?.dive_type;
+        const courseType = matchingSightings.find(s => s.course_type)?.course_type; // Get course type
         const waterway = matchingSightings.find(s => s.waterway)?.waterway; // Get waterway
+        const instructor = matchingSightings.find(s => s.instructor_name)?.instructor_name; // Get instructor name
+        const airIn = matchingSightings.find(s => s.air_in)?.air_in;
+        const airOut = matchingSightings.find(s => s.air_out)?.air_out;
+        const airUnit = matchingSightings.find(s => s.air_unit)?.air_unit || 'bar';
+        const diveMode = (matchingSightings.find(s => (s as any).dive_mode) as any)?.dive_mode; // Get dive mode
         const diveNotes = matchingSightings.map(s => s.dive_notes).filter(n => n).join('\n\n'); // Combine notes if multiple exist
         const maxDepth = matchingSightings.reduce((max, s) => {
             const depth = parseFloat(s.depth || '0');
@@ -80,7 +87,14 @@ export default function DiveLogDetailScreen() {
             weather,
             visibility,
             current,
-            diveType,
+            // Inferred Mode (use dive_mode if available, otherwise infer from courseType)
+            mode: diveMode ? (diveMode === 'training' ? 'Training' : 'Recreational') : (courseType ? 'Training' : 'Recreational'),
+            // Actual DB Type
+            diveType: diveType ? diveType.charAt(0).toUpperCase() + diveType.slice(1) : null,
+            instructor,
+            airIn,
+            airOut,
+            airUnit,
             waterway,
             diveNotes,
             totalSightings: realSightings.length,
@@ -91,7 +105,7 @@ export default function DiveLogDetailScreen() {
     if (!diveLog) {
         return (
             <View style={[styles.container, { paddingTop: insets.top }]}>
-                <ScreenHeader title="Dive Detail" showBackButton />
+                <ScreenHeader title="Dive Details" showBackButton onBackPress={() => router.back()} />
                 <View style={styles.center}>
                     <Text style={styles.errorText}>Dive log not found.</Text>
                 </View>
@@ -118,7 +132,7 @@ export default function DiveLogDetailScreen() {
 
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
-            <ScreenHeader title="Dive Details" showBackButton />
+            <ScreenHeader title="Dive Details" showBackButton onBackPress={() => router.back()} />
 
             <ScrollView contentContainerStyle={styles.content}>
 
@@ -139,11 +153,18 @@ export default function DiveLogDetailScreen() {
                 <View style={styles.statsGrid}>
                     <StatItem icon={Clock} value={diveLog.time} label="Time In" />
                     <StatItem icon={Clock} value={diveLog.duration ? `${diveLog.duration} min` : null} label="Duration" />
-                    <StatItem icon={Anchor} value={diveLog.maxDepth ? `${diveLog.maxDepth}m` : null} label="Max Depth" />
+                    <StatItem icon={Anchor} value={diveLog.maxDepth ? `${Math.round(diveLog.maxDepth)}m` : null} label="Max Depth" />
+                    <StatItem icon={Gauge} value={diveLog.airIn ? `${diveLog.airIn} ${diveLog.airUnit}` : null} label="Air Start" />
+                    <StatItem icon={Gauge} value={diveLog.airOut ? `${diveLog.airOut} ${diveLog.airUnit}` : null} label="Air End" />
+                    {diveLog.airIn && diveLog.airOut && (
+                        <StatItem icon={Droplet} value={`${diveLog.airIn - diveLog.airOut} ${diveLog.airUnit}`} label="Air Used" />
+                    )}
                     <StatItem icon={Eye} value={diveLog.visibility} label="Visibility" />
                     <StatItem icon={Wind} value={diveLog.weather} label="Weather" />
                     <StatItem icon={Waves} value={diveLog.current} label="Current" />
                     <StatItem icon={Anchor} value={diveLog.diveType} label="Type" />
+                    <StatItem icon={GraduationCap} value={diveLog.mode} label="Mode" />
+                    <StatItem icon={User} value={diveLog.instructor} label="Instructor" />
                     {diveLog.waterway && <StatItem icon={Waves} value={diveLog.waterway} label="Waterway" />}
                 </View>
 
