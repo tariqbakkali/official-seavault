@@ -103,8 +103,11 @@ function RootLayout() {
           const { session } = sessionData;
           const userId = session?.user?.id || null;
 
+
           if (userId) {
             await initializeUserSession(userId);
+            // Re-check purchase status immediately after session restore to avoid stale "false" state
+            await checkPurchaseStatus();
           }
 
           setCurrentUserID(userId);

@@ -151,8 +151,23 @@ export default function LoginScreen() {
         // Profile will be created automatically by handle_new_user trigger
         try {
           await new Promise((resolve) => setTimeout(resolve, 200));
-          await createProfileForCurrentUser({});
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          const profile = await createProfileForCurrentUser({});
           await fetchUserData();
+
+          // Check if user is already Premium in DB
+          if (profile?.is_premium) {
+             console.log('[Login] ✅ User is already Premium in DB. Skipping RevenueCat enforcement.');
+          } else {
+             try {
+                console.log('[Login] 🔄 Checking RevenueCat for purchases...');
+                const { loginUser, syncCustomerInfo } = require('@/services/revenueCat');
+                await loginUser(data.user.id);
+                await syncCustomerInfo(data.user.id);
+             } catch (rcError) {
+                console.error('[Login] ⚠️ RevenueCat sync failed (non-fatal):', rcError);
+             }
+          }
         } catch (profileError) {
           console.error('[OAuth] ⚠️ Profile creation/fetch error (non-fatal):', profileError);
           // Don't throw - authentication was successful, profile issues are non-fatal
@@ -232,8 +247,23 @@ export default function LoginScreen() {
           // Profile will be created automatically by handle_new_user trigger
           try {
             await new Promise((resolve) => setTimeout(resolve, 200));
-            await createProfileForCurrentUser({});
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            const profile = await createProfileForCurrentUser({});
             await fetchUserData();
+
+            // Check if user is already Premium in DB
+            if (profile?.is_premium) {
+               console.log('[Login] ✅ User is already Premium in DB. Skipping RevenueCat enforcement.');
+            } else {
+               try {
+                  console.log('[Login] 🔄 Checking RevenueCat for purchases...');
+                  const { loginUser, syncCustomerInfo } = require('@/services/revenueCat');
+                  await loginUser(data.user.id);
+                  await syncCustomerInfo(data.user.id);
+               } catch (rcError) {
+                  console.error('[Login] ⚠️ RevenueCat sync failed (non-fatal):', rcError);
+               }
+            }
           } catch (profileError) {
             console.error('[OAuth] ⚠️ Profile creation/fetch error (non-fatal):', profileError);
             // Don't throw - authentication was successful, profile issues are non-fatal
@@ -361,8 +391,24 @@ export default function LoginScreen() {
         if (data) {
           console.log('[LoginScreen] Signin successful');
           await new Promise((resolve) => setTimeout(resolve, 200));
-          await createProfileForCurrentUser({});
+          const profile = await createProfileForCurrentUser({});
           await fetchUserData();
+
+          // Check if user is already Premium in DB (e.g. manual grant or previous sync)
+          if (profile?.is_premium) {
+             console.log('[Login] ✅ User is already Premium in DB. Skipping RevenueCat enforcement.');
+          } else {
+             // Only sync with RevenueCat if they are NOT yet Premium in DB
+             // This attempts to see if they bought it on this device store
+             try {
+                console.log('[Login] 🔄 Checking RevenueCat for purchases...');
+                const { loginUser, syncCustomerInfo } = require('@/services/revenueCat');
+                await loginUser(data.user.id);
+                await syncCustomerInfo(data.user.id);
+             } catch (rcError) {
+                console.error('[Login] ⚠️ RevenueCat sync failed (non-fatal):', rcError);
+             }
+          }
         } else {
           showAlert('Error', 'Invalid email or password. Please try again.');
         }

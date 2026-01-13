@@ -12,10 +12,11 @@ import { router } from 'expo-router';
 import { Trophy, ArrowLeft } from 'lucide-react-native';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { getLeaderboardData } from '@/services/leaderboardService';
+import { getFriends } from '@/services/friendsService';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
 import LeaderboardEntry from './components/LeaderboardEntry';
-import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
+import { TYPOGRAPHY, DIMENSIONS, COLORS } from '@/constants';
 
 interface LeaderboardEntryType {
   user_id: string;
@@ -40,18 +41,25 @@ export default function LeaderboardModal() {
   const [leaderboardData, setLeaderboardData] = React.useState<LeaderboardUser[]>([]);
   const [currentUserRank, setCurrentUserRank] = React.useState<number | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [filterMode, setFilterMode] = React.useState<'global' | 'friends'>('global');
+  const [friendsList, setFriendsList] = React.useState<string[]>([]);
+
   const insets = useSafeAreaInsets();
   
   const { allProfiles: allProfiles, allUsersSightings, creatures: allCreatures, profile, fetchUserData, fetchCatalog, achievements: allAchievements, allUsersAchievements } = useSyncedData();
   const userProfile = profile ? Object.values(profile)[0] : undefined;
 
   // Update the fetchLeaderboard function to return the correct type
-  const fetchLeaderboard = async (limit: number = 10) => {
+  const fetchLeaderboard = async (limit: number = 50) => {
     const allProfilesData = allProfiles || {};
     const allSightingsData = allUsersSightings || {};
     const allCreaturesData = allCreatures || {};
     const allUsersAchievementsData = allUsersAchievements || {};
     const allAchievementsData = allAchievements || {};
+
+    const friendIds = filterMode === 'friends' && userProfile?.id 
+        ? [userProfile.id, ...friendsList] 
+        : undefined;
 
     // Use the updated getLeaderboardData function that includes achievements
     const leaderboardResult = getLeaderboardData(
@@ -59,7 +67,8 @@ export default function LeaderboardModal() {
       Object.values(allSightingsData),
       Object.values(allCreaturesData),
       Object.values(allUsersAchievementsData),
-      Object.values(allAchievementsData)
+      Object.values(allAchievementsData),
+      friendIds
     );
 
     return leaderboardResult.slice(0, limit);
@@ -67,18 +76,27 @@ export default function LeaderboardModal() {
 
   const loadData = async () => {
     try {
-      // Fetch data directly from the new hook
-      const [userData, catalog, leaderboardResult] = await Promise.all([
+      // Fetch user data and catalog first
+      await Promise.all([
         fetchUserData(),
-        fetchCatalog(),
-        fetchLeaderboard(50) // Fetch top 50 for full leaderboard
+        fetchCatalog()
       ]);
+
+      // If user is logged in, fetch friends list
+      let currentFriends: string[] = [];
+      if (userProfile?.id) {
+          currentFriends = await getFriends(userProfile.id);
+          setFriendsList(currentFriends);
+      }
+
+      // Now fetch leaderboard with current data
+      const leaderboardResult = await fetchLeaderboard(50);
       
       // Get current user ID
       const currentUserId = userProfile?.id;
       
       // Process leaderboard data to match the expected format for LeaderboardEntry component
-      if (leaderboardResult && currentUserId) {
+      if (leaderboardResult) {
         const processedData: LeaderboardUser[] = leaderboardResult.map((entry, index) => ({
           id: entry.user_id,
           name: entry.name || 'Unknown User',
@@ -114,7 +132,7 @@ export default function LeaderboardModal() {
 
   React.useEffect(() => {
     loadData();
-  }, [userProfile]);
+  }, [userProfile, filterMode]); // Reload when profile or filter changes
 
   const renderLeaderboardEntry = ({ item }: { item: LeaderboardUser }) => (
     <LeaderboardEntry
@@ -134,7 +152,29 @@ export default function LeaderboardModal() {
         title="Leaderboard" 
         onBackPress={() => router.back()}
         showBackButton={true}
+        showActionButton={true}
+        actionText="Friends"
+        onActionPress={() => router.push('/modal/friends')}
       />
+      
+      <View style={styles.filterContainer}>
+        <View style={styles.toggleContainer}>
+            <TouchableOpacity 
+                activeOpacity={0.7}
+                onPress={() => setFilterMode('global')} 
+                style={[styles.toggleButton, filterMode === 'global' && styles.activeToggle]}
+            >
+                <Text style={[styles.toggleText, filterMode === 'global' && styles.activeToggleText]}>Global</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+                activeOpacity={0.7}
+                onPress={() => setFilterMode('friends')} 
+                style={[styles.toggleButton, filterMode === 'friends' && styles.activeToggle]}
+            >
+                <Text style={[styles.toggleText, filterMode === 'friends' && styles.activeToggleText]}>Friends</Text>
+            </TouchableOpacity>
+        </View>
+      </View>
 
       <FlatList
         data={leaderboardData}
@@ -148,6 +188,13 @@ export default function LeaderboardModal() {
             onRefresh={handleRefresh}
             tintColor="#007AFF"
           />
+        }
+        ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                    {filterMode === 'friends' ? 'Add friends to see them here!' : 'No entries found.'}
+                </Text>
+            </View>
         }
       />
     </View>
@@ -170,8 +217,45 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: DIMENSIONS.PADDING_LG,
-    // Reduce the top padding since we have safe area insets and ScreenHeader padding
     paddingTop: DIMENSIONS.PADDING_XS,
     paddingBottom: DIMENSIONS.PADDING_LG,
   },
+  filterContainer: {
+    paddingTop: DIMENSIONS.PADDING_MD,
+    paddingHorizontal: DIMENSIONS.PADDING_LG,
+    marginBottom: DIMENSIONS.PADDING_SM,
+    alignItems: 'center',
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 20,
+    padding: 2,
+    width: 200,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 18,
+    alignItems: 'center',
+  },
+  activeToggle: {
+    backgroundColor: COLORS.PRIMARY || '#007AFF', // Fallback if COLORS.PRIMARY is missing
+  },
+  toggleText: {
+    color: '#8E8E93',
+    fontSize: TYPOGRAPHY.SIZE_SM,
+    fontWeight: '600',
+  },
+  activeToggleText: {
+    color: '#FFFFFF',
+  },
+  emptyContainer: {
+    padding: DIMENSIONS.PADDING_XL,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#666',
+    fontSize: TYPOGRAPHY.SIZE_MD,
+  }
 });

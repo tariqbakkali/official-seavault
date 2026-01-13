@@ -20,6 +20,7 @@ import {
   toggleWishlistItem, // Added toggleWishlistItem
   removeWishlistItem,
   updateUserProfile,
+  friends$,
 } from '../stores/syncedObservables';
 import { supabase } from '../services/supabase';
 import { Database } from '../types/database';
@@ -40,6 +41,7 @@ export const useSyncedData = () => {
   const allProfiles = use$(allUsersProfiles$); // Added allProfiles
   const achievements = use$(achievements$);
   const userAchievements = use$(userAchievements$);
+  const friends = use$(friends$);
 
   // Get sync states for each observable
   // For sync states, we need to use useObservable because we need the observable objects
@@ -55,7 +57,8 @@ export const useSyncedData = () => {
   const profileSyncState = useObservable(syncState(currentUserProfile$));
   const achievementsSyncState = useObservable(syncState(achievements$));
   const userAchievementsSyncState = useObservable(syncState(userAchievements$));
-  const profilesSyncState = useObservable(syncState(allUsersProfiles$)); // Added profilesSyncState
+  const profilesSyncState = useObservable(syncState(allUsersProfiles$));
+  const friendsSyncState = useObservable(syncState(friends$)); // Added profilesSyncState
 
   // Loading states
   const isLoading = {
@@ -70,7 +73,8 @@ export const useSyncedData = () => {
     profile: !profileSyncState.isLoaded,
     achievements: !achievementsSyncState.isLoaded,
     userAchievements: !userAchievementsSyncState.isLoaded,
-    allProfiles: !profilesSyncState.isLoaded, // Added allProfiles loading state
+    allProfiles: !profilesSyncState.isLoaded,
+    friends: !friendsSyncState.isLoaded, // Added allProfiles loading state
   };
 
   // Error states
@@ -86,7 +90,8 @@ export const useSyncedData = () => {
     profile: profileSyncState.error,
     achievements: achievementsSyncState.error,
     userAchievements: userAchievementsSyncState.error,
-    allProfiles: profilesSyncState.error, // Added allProfiles error state
+    allProfiles: profilesSyncState.error,
+    friends: friendsSyncState.error, // Added allProfiles error state
   };
 
   // Fetch functions for catalog data
@@ -104,6 +109,9 @@ export const useSyncedData = () => {
     }
     if (!profilesSyncState.isLoaded.get()) {
       allUsersProfiles$.get();
+    }
+    if (!friendsSyncState.isLoaded.get()) {
+      friends$.get();
     }
   };
 
@@ -295,6 +303,7 @@ export const useSyncedData = () => {
     achievements,
     userAchievements,
     allProfiles,
+    friends,
     
     // Loading states
     isLoading,

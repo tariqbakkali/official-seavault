@@ -228,6 +228,17 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['instructors']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['instructors']['Insert']>;
       };
+      friends: {
+        Row: {
+          id: string;
+          user_id: string;
+          friend_id: string;
+          status: 'pending' | 'accepted' | 'blocked';
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['friends']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['friends']['Insert']>;
+      };
     };
   };
 }
@@ -243,6 +254,7 @@ export type UserAchievement = Database['public']['Tables']['user_achievements'][
 export type Dive = Database['public']['Tables']['dives']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
 export type Instructor = Database['public']['Tables']['instructors']['Row'];
+export type Friend = Database['public']['Tables']['friends']['Row'];
 
 
 export interface CachedCatalog {

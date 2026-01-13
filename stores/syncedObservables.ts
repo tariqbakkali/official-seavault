@@ -548,4 +548,16 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
   });
 };
 
+// Friends observable - synced for offline support
+export const friends$ = observable(customSynced({
+  supabase,
+  collection: 'friends',
+  actions: ['read', 'create', 'update', 'delete'],
+  persist: { name: 'friends_v1', retrySync: true },
+  changesSince: 'last-sync',
+  realtime: true,
+  fieldCreatedAt: 'created_at',
+}));
+
 export const getSightings = getCurrentUserSightings;
+export const getAllFriends = () => friends$.get();

@@ -15,12 +15,17 @@ export const getLeaderboardData = (
   allSightings: Sighting[], // Changed from Record<string, Sighting> to Sighting[]
   allCreatures: Creature[],  // Changed from Record<string, Creature> to Creature[]
   allUserAchievements: UserAchievement[], // Added user achievements
-  allAchievements: Achievement[] // Added achievements
+  allAchievements: Achievement[], // Added achievements
+  friendIds?: string[] // Optional: Filter by specific user IDs (e.g. friends)
 ): LeaderboardEntry[] => {
   const userStats: Record<string, { points: number; creatures: Set<string>; profile: Profile | null }> = {};
 
   // Initialize user stats with profile data
   Object.values(allProfiles).forEach(profile => {
+    // If filtering by friends, only include if in friendIds
+    if (friendIds && !friendIds.includes(profile.id)) {
+      return;
+    }
     userStats[profile.id] = {
       points: 0,
       creatures: new Set<string>(),
@@ -36,6 +41,17 @@ export const getLeaderboardData = (
 
   // Calculate points and discovered creatures from sightings
   allSightings.forEach(sighting => {
+    // If filtering by friends, skip if user not in friendIds AND user not already in userStats (which respects the filter above)
+    // However, userStats only contains profiles that matched.
+    // If a user has no profile but has sightings, we might create an entry below.
+    // We should check the filter there too.
+    
+    if (friendIds && !friendIds.includes(sighting.user_id)) {
+      return;
+    }
+
+    if (!sighting.creature_id) return;
+
     const creature = creatureMap.get(sighting.creature_id);
     if (!userStats[sighting.user_id]) {
        userStats[sighting.user_id] = {
@@ -59,6 +75,10 @@ export const getLeaderboardData = (
 
   // Calculate points from achievements
   allUserAchievements.forEach(userAchievement => {
+    if (friendIds && !friendIds.includes(userAchievement.user_id)) {
+      return;
+    }
+
     const achievement = achievementMap.get(userAchievement.achievement_id);
     
     if (!userStats[userAchievement.user_id]) {
