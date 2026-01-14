@@ -254,8 +254,9 @@ export default function ProfileScreen() {
         }
       }
 
-      // Clear local synced data immediately
-      clearUserSync();
+      // Clear local synced data immediately - REMOVED
+      // We rely on _layout.tsx onAuthStateChange to handle cleanup AFTER UI updates
+      // clearUserSync();
 
       // Sign out with short timeout (1s when offline, 3s when online)
       // This ensures we don't get stuck if offline

@@ -124,13 +124,30 @@ export const PurchaseProvider = ({ children }: PurchaseProviderProps) => {
       console.warn('[PurchaseContext] Failed to add customer info listener:', error);
     }
 
+    // Listen for PROFILE updates from Legend State (Supabase sync)
+    const { currentUserProfile$ } = require('@/stores/syncedObservables');
+    let profileDispose: any = null;
+
+    try {
+      console.log('[PurchaseContext] Setting up profile observer...');
+      profileDispose = currentUserProfile$.onChange(() => {
+        console.log('[PurchaseContext] Profile observable changed, re-checking purchase status...');
+        checkPurchaseStatus(); // Re-run check when profile updates (e.g. sync finishes)
+      });
+    } catch (e) {
+      console.error('[PurchaseContext] Error observing profile:', e);
+    }
+
     return () => {
       try {
         if (customerInfoUpdateListener?.remove) {
           customerInfoUpdateListener.remove();
         }
+        if (profileDispose) {
+          profileDispose(); // Clean up Legend State listener
+        }
       } catch (error) {
-        console.warn('[PurchaseContext] Failed to remove customer info listener:', error);
+        console.warn('[PurchaseContext] Failed to remove listeners:', error);
       }
     };
   }, []);

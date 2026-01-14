@@ -52,13 +52,58 @@ export const initializeUserSession = async (userId: string) => {
     // Set current user ID
     setCurrentUserID(userId);
     
-    // Configure RevenueCat with user ID
-    const { loginUser } = await import('../services/revenueCat');
-    await loginUser(userId);
-    console.log('[AppInitializer] RevenueCat configured with user ID');
-    
-    // Initialize user-specific data sync
+    // 1. Initialize user-specific data sync FIRST to get the profile
     await initializeUserSync(userId);
+    
+    // 2. Check if user is already premium in our database
+    // We need to import the observable store to check
+    const { currentUserProfile$ } = await import('../stores/syncedObservables');
+    
+    // Give the observable a moment to hydrate from local storage if available
+    await new Promise(r => setTimeout(r, 100));
+    
+    const profiles = currentUserProfile$.get();
+    let profileData = profiles && profiles[userId] ? profiles[userId] : null;
+
+    // PARANOID CHECK: 
+    // If local cache says "Premium", we trust it (fast path).
+    // If local cache says "Free" or is missing, we DON'T trust it (stale cache risk).
+    // We force a fetch from Supabase to be absolutely sure before showing paywall.
+    const localIsPremium = profileData?.is_premium === true;
+    
+    if (localIsPremium) {
+         console.log('[AppInitializer] ✅ Local cache says Premium. Skipping RevenueCat.');
+    } else {
+         console.log('[AppInitializer] Local cache says Free/Missing. Verifying with Server (Paranoid Check)...');
+         const { data, error } = await supabase
+            .from('profiles')
+            .select('is_premium')
+            .eq('id', userId)
+            .single();
+            
+         if (data && !error) {
+             profileData = data as any;
+             console.log('[AppInitializer] Server Verification Result:', profileData?.is_premium);
+             
+             // Update observable with truth
+             currentUserProfile$.assign({
+                 [userId]: { ...profileData, id: userId } as any
+             });
+         } else {
+             console.log('[AppInitializer] Server check failed or confirmed Free. Proceeding with RevenueCat.');
+         }
+    }
+    
+    const isPremiumConfirmed = profileData?.is_premium === true;
+    
+    if (isPremiumConfirmed) {
+        console.log('[AppInitializer] ✅ User is Premium (Confirmed). Skipping RevenueCat login/sync.');
+    } else {
+        // 4. Only configure RevenueCat if NOT premium (or status unknown)
+        const { loginUser } = await import('../services/revenueCat');
+        await loginUser(userId);
+        console.log('[AppInitializer] RevenueCat configured with user ID (User is not Premium in DB)');
+    }
     
   } catch (error) {
     console.error('Error initializing user session:', error);

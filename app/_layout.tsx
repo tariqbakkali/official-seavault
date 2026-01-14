@@ -48,6 +48,7 @@ function RootLayout() {
   const insets = useSafeAreaInsets();
   const { isPro, isLoading: isPurchaseLoading, checkPurchaseStatus } = usePurchase();
   const [showPaywallGate, setShowPaywallGate] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     const checkInitialSessionAndSync = async () => {
@@ -165,22 +166,41 @@ function RootLayout() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const userId = session?.user?.id || null;
 
-      // Update user ID state first so navigation knows we're authenticated
+      // Update global store logic (keep this immediate for non-UI logic if needed, or move it down too)
       setCurrentUserID(userId);
-      setCurrentUserIDState(userId);
 
       if (userId) {
         // Reset onboarding state - user has logged in
         setShowOnboarding(false);
-        await initializeUserSession(userId);
-        await forceSyncAll();
-        // Re-check purchase status after login (RevenueCat is now configured with user ID)
-        // This will trigger the navigation effect with the correct isPro value
-        await checkPurchaseStatus();
+        setIsLoggingIn(true); // Show loading overlay
+
+        // CRITICAL FIX: Wait for session init (and "Paranoid Check") BEFORE updating UI state
+        // This prevents the UI from seeing "Authenticated=true" + "isPro=false" (default)
+        // and flashing the paywall before the check finishes.
+        try {
+          await initializeUserSession(userId);
+          await forceSyncAll();
+          // Re-check purchase status after login/sync
+          await checkPurchaseStatus();
+        } catch (e) {
+          console.error('[RootLayout] Error initializing user session:', e);
+        } finally {
+          setIsLoggingIn(false); // Hide loading overlay
+        }
+
+        // NOW update the UI state to trigger navigation/rendering
+        // By this point, checkPurchaseStatus() has run, so isPro should be correct.
+        setCurrentUserIDState(userId);
       } else {
-        await cleanupUserSession();
-        // Reset paywall gate when user logs out
+        // Reset paywall gate IMMEDIATELY when user logs out to prevent flash
         setShowPaywallGate(false);
+        setCurrentUserIDState(null); // Clear state immediately on logout to trigger navigation
+
+        // Delay cleanup to next tick to allow UI to unmount/navigate away
+        // preventing the "Authenticated=true, IsPro=false" race condition
+        setTimeout(async () => {
+          await cleanupUserSession();
+        }, 100);
       }
     });
 
@@ -310,6 +330,20 @@ function RootLayout() {
             }
           }}
         />
+      </Modal>
+
+      {/* Login Loading Overlay - Shown while verifying premium status */}
+      <Modal
+        visible={isLoggingIn}
+        transparent={false}
+        animationType="fade"
+      >
+        <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+          <Text style={{ color: '#fff', marginTop: DIMENSIONS.MARGIN_MD, fontWeight: '600', fontSize: 16 }}>
+            Verifying Membership...
+          </Text>
+        </View>
       </Modal>
     </>
   );

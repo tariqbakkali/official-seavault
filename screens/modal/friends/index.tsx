@@ -20,25 +20,37 @@ import { COLORS, TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { searchUsers, sendFriendRequest, getFriendRequests, respondToFriendRequest, getFriends, removeFriend, getFriendsProfiles } from '@/services/friendsService';
 import { Profile } from '@/types/database';
 
+import { allUsersProfiles$ } from '@/stores/syncedObservables'; // Import profile store
+
 type Tab = 'friends' | 'requests';
 
 export default function FriendsScreen() {
   const insets = useSafeAreaInsets();
-  const { profile, allProfiles, friends: friendsStore } = useSyncedData();
+  const { profile, allProfiles, friends: friendsStore, fetchCatalog, isLoading } = useSyncedData();
   const userProfile = profile ? Object.values(profile)[0] : null;
   const currentUserId = userProfile?.id;
 
   const [activeTab, setActiveTab] = useState<Tab>('friends');
+
+
+  // ... inside component ...
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  // Removed recentlySentRequests state
 
-  // Derive data from synced store
-  const { myFriends, incomingRequests, outgoingRequests } = React.useMemo(() => {
+  // Fetch data on mount
+  useEffect(() => {
+    fetchCatalog();
+  }, []);
+
+  // Derive data from synced store - Removed useMemo to ensure immediate updates on observable changes
+  const { myFriends, incomingRequests, outgoingRequests } = (() => {
     if (!currentUserId || !friendsStore) return { myFriends: [], incomingRequests: [], outgoingRequests: [] };
 
     const allFriends = Object.values(friendsStore);
-    
+
     // My Friends (Accepted)
     const friendsList = allFriends
       .filter(f => (f.user_id === currentUserId || f.friend_id === currentUserId) && f.status === 'accepted')
@@ -64,11 +76,32 @@ export default function FriendsScreen() {
         to_profile: allProfiles?.[f.friend_id]
       }));
 
+    // No need for manual optimistic merging anymore!
+
     return { myFriends: friendsList, incomingRequests: incoming, outgoingRequests: outgoing };
-  }, [friendsStore, allProfiles, currentUserId]);
+  })();
+
+  // Handle auto-search with debounce
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    // Clear results if query is too short
+    if (searchQuery.length < 2) {
+      if (searchResults.length > 0) {
+        setSearchResults([]);
+      }
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      handleSearch();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, currentUserId]);
 
   const handleSearch = async () => {
-    if (!currentUserId || searchQuery.length < 2) return;
+    if (!currentUserId || searchQuery.length < 2) return; // rigorous check
     setIsSearching(true);
     try {
       const results = await searchUsers(searchQuery, currentUserId);
@@ -80,18 +113,30 @@ export default function FriendsScreen() {
     }
   };
 
-  const handleSendRequest = async (targetId: string) => {
+  const handleSendRequest = async (targetUser: any) => {
     if (!currentUserId) return;
+
+    // Cache the profile locally so it appears in the list immediately (and persists)
+    // We update the observable which updates 'allProfiles' via useSyncedData
+    if (targetUser && targetUser.id) {
+      // We use assign to merge/set this specific user's profile in the store
+      // This ensures allProfiles?.[id] resolves correctly in the useMemo above
+      try {
+        (allUsersProfiles$ as any)[targetUser.id].set(targetUser);
+      } catch (e) {
+        console.warn('Failed to cache profile locally', e);
+      }
+    }
+
     try {
-      const { error } = await sendFriendRequest(currentUserId, targetId);
+      const { error } = await sendFriendRequest(currentUserId, targetUser.id);
       if (error) {
-          if (error === 'Friend request already exists') {
-               Alert.alert('Info', 'Friend request already sent or exists.');
-          } else {
-               Alert.alert('Error', 'Failed to send friend request.');
-          }
+        if (error === 'Friend request already exists') {
+          Alert.alert('Info', 'Friend request already sent or exists.');
+        } else {
+          Alert.alert('Error', 'Failed to send friend request.');
+        }
       } else {
-        // UI updates automatically via sync
         Alert.alert('Success', 'Friend request sent!');
       }
     } catch (error) {
@@ -111,9 +156,9 @@ export default function FriendsScreen() {
 
   const handleReject = async (requestId: string) => {
     try {
-       const { error } = await respondToFriendRequest(requestId, 'blocked');
-       if (error) throw error;
-       // UI updates automatically via sync
+      const { error } = await respondToFriendRequest(requestId, 'blocked');
+      if (error) throw error;
+      // UI updates automatically via sync
     } catch (error) {
       Alert.alert('Error', 'Failed to reject request.');
     }
@@ -122,18 +167,20 @@ export default function FriendsScreen() {
   const handleRemoveFriend = async (friendId: string) => {
     if (!currentUserId) return;
     Alert.alert(
-        "Remove Friend",
-        "Are you sure you want to remove this friend?",
-        [
-            { text: "Cancel", style: "cancel" },
-            { text: "Remove", style: "destructive", onPress: async () => {
-                const { error } = await removeFriend(currentUserId, friendId);
-                if (error) {
-                    Alert.alert('Error', 'Failed to remove friend.');
-                }
-                // UI updates automatically via sync
-            }}
-        ]
+      "Remove Friend",
+      "Are you sure you want to remove this friend?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove", style: "destructive", onPress: async () => {
+            const { error } = await removeFriend(currentUserId, friendId);
+            if (error) {
+              Alert.alert('Error', 'Failed to remove friend.');
+            }
+            // UI updates automatically via sync
+          }
+        }
+      ]
     );
   };
 
@@ -142,12 +189,13 @@ export default function FriendsScreen() {
     const isFriend = myFriends.some(f => f.id === item.id);
     const hasOutgoingRequest = outgoingRequests.some(r => r.friend_id === item.id);
     const hasIncomingRequest = incomingRequests.some(r => r.user_id === item.id);
+    // ... rest of render ...
 
     return (
       <View style={styles.userCard}>
-        <Image 
-          source={{ uri: item.avatar_url || 'https://via.placeholder.com/50' }} 
-          style={styles.avatar} 
+        <Image
+          source={{ uri: item.avatar_url || 'https://via.placeholder.com/50' }}
+          style={styles.avatar}
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{item.full_name || 'Unknown User'}</Text>
@@ -165,17 +213,17 @@ export default function FriendsScreen() {
             <Text style={styles.pendingText}>Pending</Text>
           </View>
         ) : hasIncomingRequest ? (
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.acceptButton]} 
+          <TouchableOpacity
+            style={[styles.actionButton, styles.acceptButton]}
             onPress={() => handleAccept(incomingRequests.find(r => r.user_id === item.id)?.id || '')}
           >
             <Text style={styles.actionButtonText}>Accept</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.addButton}
             onPress={async () => {
-              await handleSendRequest(item.id);
+              await handleSendRequest(item);
             }}
           >
             <UserPlus size={20} color="#FFF" />
@@ -187,14 +235,14 @@ export default function FriendsScreen() {
 
   const renderFriend = ({ item }: { item: any }) => (
     <View style={styles.userCard}>
-      <Image 
-        source={{ uri: item.avatar_url || 'https://via.placeholder.com/50' }} 
-        style={styles.avatar} 
+      <Image
+        source={{ uri: item.avatar_url || 'https://via.placeholder.com/50' }}
+        style={styles.avatar}
       />
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{item.full_name || 'Unknown User'}</Text>
       </View>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.removeButton}
         onPress={() => handleRemoveFriend(item.id)}
       >
@@ -204,124 +252,128 @@ export default function FriendsScreen() {
   );
 
   const renderRequest = ({ item, type }: { item: any, type: 'incoming' | 'outgoing' }) => {
-     const otherUser = type === 'incoming' ? item.from_profile : item.to_profile;
-     return (
-        <View style={styles.userCard}>
-        <Image 
-            source={{ uri: otherUser?.avatar_url || 'https://via.placeholder.com/50' }} 
-            style={styles.avatar} 
+    const otherUser = type === 'incoming' ? item.from_profile : item.to_profile;
+    return (
+      <View style={styles.userCard}>
+        <Image
+          source={{ uri: otherUser?.avatar_url || 'https://via.placeholder.com/50' }}
+          style={styles.avatar}
         />
         <View style={styles.userInfo}>
-            <Text style={styles.userName}>{otherUser?.full_name || 'Unknown User'}</Text>
-            <Text style={styles.userSubtext}>{type === 'incoming' ? 'Sent you a request' : 'Request sent'}</Text>
+          <Text style={styles.userName}>{otherUser?.full_name || 'Unknown User'}</Text>
+          <Text style={styles.userSubtext}>{type === 'incoming' ? 'Sent you a request' : 'Request sent'}</Text>
         </View>
         {type === 'incoming' ? (
-            <View style={styles.actionButtons}>
-            <TouchableOpacity 
-                style={[styles.actionButton, styles.acceptButton]}
-                onPress={() => handleAccept(item.id)}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.acceptButton]}
+              onPress={() => handleAccept(item.id)}
             >
-                <Check size={16} color="#FFF" />
-                <Text style={styles.actionButtonText}>Accept</Text>
+              <Check size={16} color="#FFF" />
+              <Text style={styles.actionButtonText}>Accept</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-                style={[styles.actionButton, styles.rejectButton]}
-                onPress={() => handleReject(item.id)}
+            <TouchableOpacity
+              style={[styles.actionButton, styles.rejectButton]}
+              onPress={() => handleReject(item.id)}
             >
-                <X size={16} color="#FFF" />
+              <X size={16} color="#FFF" />
             </TouchableOpacity>
-            </View>
+          </View>
         ) : (
-            <View style={styles.pendingTag}>
-                <Clock size={14} color="#8E8E93" />
-                <Text style={styles.pendingText}>Pending</Text>
-            </View>
+          <View style={styles.pendingTag}>
+            <Clock size={14} color="#8E8E93" />
+            <Text style={styles.pendingText}>Pending</Text>
+          </View>
         )}
-        </View>
+      </View>
     );
   };
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom, paddingTop: Platform.OS === 'android' ? insets.top : 0 }]}>
-      <ScreenHeader 
-        title="Friends" 
+      <ScreenHeader
+        title="Friends"
         onBackPress={() => router.back()}
         showBackButton={true}
       />
 
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
-            <Search size={20} color="#8E8E93" />
-            <TextInput
-                style={styles.searchInput}
-                placeholder="Search users..."
-                placeholderTextColor="#8E8E93"
-                value={searchQuery}
-                onChangeText={(text) => {
-                    setSearchQuery(text);
-                    if (text.length === 0) {
-                        setSearchResults([]);
-                    }
-                }}
-                onSubmitEditing={handleSearch}
-                returnKeyType="search"
-            />
+          <Search size={20} color="#8E8E93" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search users..."
+            placeholderTextColor="#8E8E93"
+            value={searchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (text.length === 0) {
+                setSearchResults([]);
+              }
+            }}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
         </View>
       </View>
 
       {searchQuery.length > 0 ? (
         <FlatList
-            data={searchResults}
-            renderItem={renderSearchResult}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={() => (
-                <View style={styles.emptyContainer}>
-                    {isSearching ? (
-                        <ActivityIndicator color={COLORS.PRIMARY} />
-                    ) : (
-                        <Text style={styles.emptyText}>No users found.</Text>
-                    )}
-                </View>
-            )}
+          data={searchResults}
+          renderItem={renderSearchResult}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              {isSearching ? (
+                <ActivityIndicator color={COLORS.PRIMARY} />
+              ) : (
+                <Text style={styles.emptyText}>No users found.</Text>
+              )}
+            </View>
+          )}
         />
       ) : (
         <>
-            <View style={styles.tabs}>
-                <TouchableOpacity 
-                    style={[styles.tab, activeTab === 'friends' && styles.activeTab]}
-                    onPress={() => setActiveTab('friends')}
-                >
-                    <Users size={20} color={activeTab === 'friends' ? '#FFF' : '#8E8E93'} />
-                    <Text style={[styles.tabText, activeTab === 'friends' && styles.activeTabText]}>My Friends</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                    style={[styles.tab, activeTab === 'requests' && styles.activeTab]}
-                    onPress={() => setActiveTab('requests')}
-                >
-                    <User size={20} color={activeTab === 'requests' ? '#FFF' : '#8E8E93'} />
-                    <Text style={[styles.tabText, activeTab === 'requests' && styles.activeTabText]}>Requests</Text>
-                    {(incomingRequests.length > 0) && (
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{incomingRequests.length}</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
-            </View>
+          <View style={styles.tabs}>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'friends' && styles.activeTab]}
+              onPress={() => setActiveTab('friends')}
+            >
+              <Users size={20} color={activeTab === 'friends' ? '#FFF' : '#8E8E93'} />
+              <Text style={[styles.tabText, activeTab === 'friends' && styles.activeTabText]}>My Friends</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'requests' && styles.activeTab]}
+              onPress={() => setActiveTab('requests')}
+            >
+              <User size={20} color={activeTab === 'requests' ? '#FFF' : '#8E8E93'} />
+              <Text style={[styles.tabText, activeTab === 'requests' && styles.activeTabText]}>Requests</Text>
+              {(incomingRequests.length > 0) && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{incomingRequests.length}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
 
-            <FlatList
-                data={(activeTab === 'friends' ? myFriends : [...incomingRequests, ...outgoingRequests]) as any[]}
-                renderItem={({ item }) => activeTab === 'friends' ? renderFriend({ item }) : renderRequest({ item, type: incomingRequests.includes(item) ? 'incoming' : 'outgoing' })}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContent}
-                ListEmptyComponent={() => (
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>
-                            {activeTab === 'friends' ? 'No friends yet. Search to add some!' : 'No pending requests.'}
-                        </Text>
-                    </View>
+          <FlatList
+            data={(activeTab === 'friends' ? myFriends : [...incomingRequests, ...outgoingRequests]) as any[]}
+            renderItem={({ item }) => activeTab === 'friends' ? renderFriend({ item }) : renderRequest({ item, type: incomingRequests.includes(item) ? 'incoming' : 'outgoing' })}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyContainer}>
+                {isLoading?.friends ? (
+                  <ActivityIndicator color={COLORS.PRIMARY} />
+                ) : (
+                  <Text style={styles.emptyText}>
+                    {activeTab === 'friends' ? 'No friends yet. Search to add some!' : 'No pending requests.'}
+                  </Text>
                 )}
-            />
+              </View>
+            )}
+          />
         </>
       )}
     </View>
