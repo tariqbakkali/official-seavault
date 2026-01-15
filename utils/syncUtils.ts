@@ -142,6 +142,10 @@ export const forceSyncAll = async () => {
     
     // Syncing user achievements
     userAchievements$.get(); // Force sync user achievements observable
+    
+    // Syncing friends
+    const { friends$ } = require('../stores/syncedObservables');
+    friends$.get();
 
     // Completed force sync of all observables
   } catch (error) {

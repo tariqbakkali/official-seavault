@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { Trophy, ArrowLeft } from 'lucide-react-native';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { getLeaderboardData } from '@/services/leaderboardService';
-import { getFriends } from '@/services/friendsService';
+// getFriends removed as we use local synced data
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { forceSyncAll } from '@/utils/syncUtils';
 import LeaderboardEntry from './components/LeaderboardEntry';
@@ -47,7 +47,7 @@ export default function LeaderboardModal() {
 
   const insets = useSafeAreaInsets();
 
-  const { allProfiles: allProfiles, allUsersSightings, creatures: allCreatures, profile, fetchUserData, fetchCatalog, achievements: allAchievements, allUsersAchievements } = useSyncedData();
+  const { allProfiles: allProfiles, allUsersSightings, creatures: allCreatures, profile, fetchUserData, fetchCatalog, achievements: allAchievements, allUsersAchievements, friends: friendsStore } = useSyncedData();
   const userProfile = profile ? Object.values(profile)[0] : undefined;
 
   // Update the fetchLeaderboard function to accept friendIds
@@ -82,10 +82,14 @@ export default function LeaderboardModal() {
       fetchCatalog()
     ]);
 
-    // If user is logged in and mode is friends, fetch friends list locally for this request
+    // If user is logged in and mode is friends, derive friends list locally
     let currentFriends: string[] = [];
-    if (userProfile?.id && currentFilterMode === 'friends') {
-      currentFriends = await getFriends(userProfile.id);
+    if (userProfile?.id && currentFilterMode === 'friends' && friendsStore) {
+      // Logic duplicated from FriendsScreen to ensure consistency
+      const allFriends = Object.values(friendsStore);
+      currentFriends = allFriends
+        .filter(f => (f.user_id === userProfile.id || f.friend_id === userProfile.id) && f.status === 'accepted')
+        .map(f => f.user_id === userProfile.id ? f.friend_id : f.user_id);
     }
 
     // Now fetch leaderboard with current data and explicit friends list
@@ -157,7 +161,7 @@ export default function LeaderboardModal() {
     return () => {
       isActive = false;
     };
-  }, [userProfile?.id, filterMode]); // Reload when profile ID or filter changes specifically
+  }, [userProfile?.id, filterMode, friendsStore]); // Reload when profile ID, filter, or friends list changes
 
   const renderLeaderboardEntry = ({ item }: { item: LeaderboardUser }) => (
     <LeaderboardEntry

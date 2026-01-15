@@ -9,7 +9,8 @@ import {
   Image,
   ActivityIndicator,
   Platform,
-  Alert
+  Alert,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -19,6 +20,7 @@ import ScreenHeader from '@/components/ui/ScreenHeader';
 import { COLORS, TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { searchUsers, sendFriendRequest, getFriendRequests, respondToFriendRequest, getFriends, removeFriend, getFriendsProfiles } from '@/services/friendsService';
 import { Profile } from '@/types/database';
+import { forceSyncAll } from '@/utils/syncUtils';
 
 import { allUsersProfiles$ } from '@/stores/syncedObservables'; // Import profile store
 
@@ -38,7 +40,18 @@ export default function FriendsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  // Removed recentlySentRequests state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await forceSyncAll();
+    } catch (error) {
+      console.error('Refresh failed:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Fetch data on mount
   useEffect(() => {
@@ -323,6 +336,9 @@ export default function FriendsScreen() {
           renderItem={renderSearchResult}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={COLORS.PRIMARY} />
+          }
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
               {isSearching ? (
@@ -362,6 +378,9 @@ export default function FriendsScreen() {
             renderItem={({ item }) => activeTab === 'friends' ? renderFriend({ item }) : renderRequest({ item, type: incomingRequests.includes(item) ? 'incoming' : 'outgoing' })}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={COLORS.PRIMARY} />
+            }
             ListEmptyComponent={() => (
               <View style={styles.emptyContainer}>
                 {isLoading?.friends ? (

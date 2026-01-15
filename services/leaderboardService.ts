@@ -33,6 +33,19 @@ export const getLeaderboardData = (
     };
   });
 
+  // Ensure all friendIds are present, even if they don't have a profile
+  if (friendIds) {
+    friendIds.forEach(friendId => {
+      if (!userStats[friendId]) {
+        userStats[friendId] = {
+          points: 0,
+          creatures: new Set<string>(),
+          profile: null // Will be handled as 'Unknown User' in mapping
+        };
+      }
+    });
+  }
+
   // Convert creatures array to a map for quick lookup
   const creatureMap = new Map<string, Creature>();
   allCreatures.forEach(creature => {

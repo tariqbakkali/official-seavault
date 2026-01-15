@@ -302,7 +302,7 @@ export const allUsersProfiles$ = observable<Record<string, Profile>>(customSynce
   supabase,
   collection: 'profiles',
   actions: ['read'],
-  persist: { name: 'all_profiles_v6' },
+  persist: { name: 'all_profiles_v7' },
   changesSince: 'last-sync',
     delete: async (item: any) => {
     const data = ""
@@ -552,8 +552,14 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
 export const friends$ = observable(customSynced({
   supabase,
   collection: 'friends',
+  filter: (select: any) => {
+    const userId = currentUserID$.get();
+    if (!userId) return select.eq('user_id', '00000000-0000-0000-0000-000000000000'); 
+    // Filter friends where either user_id OR friend_id matches current user
+    return select.or(`user_id.eq.${userId},friend_id.eq.${userId}`);
+  },
   actions: ['read', 'create', 'update', 'delete'],
-  persist: { name: 'friends_v1', retrySync: true },
+  persist: { name: 'friends_v2', retrySync: true },
   changesSince: 'last-sync',
   realtime: true,
   fieldCreatedAt: 'created_at',
