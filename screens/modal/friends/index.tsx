@@ -22,7 +22,8 @@ import { searchUsers, sendFriendRequest, getFriendRequests, respondToFriendReque
 import { Profile } from '@/types/database';
 import { forceSyncAll } from '@/utils/syncUtils';
 
-import { allUsersProfiles$ } from '@/stores/syncedObservables'; // Import profile store
+import { allUsersProfiles$, friends$ } from '@/stores/syncedObservables'; // Import profile store
+import { supabase } from '@/services/supabase';
 
 type Tab = 'friends' | 'requests';
 
@@ -70,7 +71,7 @@ export default function FriendsScreen() {
       .map(f => {
         const otherId = f.user_id === currentUserId ? f.friend_id : f.user_id;
         const otherProfile = allProfiles?.[otherId];
-        return otherProfile || { id: otherId, full_name: 'Unknown User' };
+        return otherProfile || { id: otherId, full_name: 'Diver', isPlaceholder: true };
       });
 
     // Incoming Requests (Pending, sent to me)
@@ -211,8 +212,8 @@ export default function FriendsScreen() {
           style={styles.avatar}
         />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{item.full_name || 'Unknown User'}</Text>
-          <Text style={styles.userSubtext}>Diver</Text>
+          <Text style={styles.userName}>{item.full_name || item.email?.split('@')[0] || 'Diver'}</Text>
+          <Text style={styles.userSubtext}>{item.email || 'Diver'}</Text>
         </View>
 
         {isFriend ? (
@@ -253,7 +254,8 @@ export default function FriendsScreen() {
         style={styles.avatar}
       />
       <View style={styles.userInfo}>
-        <Text style={styles.userName}>{item.full_name || 'Unknown User'}</Text>
+        <Text style={styles.userName}>{item.full_name || item.email?.split('@')[0] || 'Diver'}</Text>
+        <Text style={styles.userSubtext}>{item.email || 'Diver'}</Text>
       </View>
       <TouchableOpacity
         style={styles.removeButton}
@@ -273,7 +275,7 @@ export default function FriendsScreen() {
           style={styles.avatar}
         />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{otherUser?.full_name || 'Unknown User'}</Text>
+          <Text style={styles.userName}>{otherUser?.full_name || otherUser?.email?.split('@')[0] || 'Diver'}</Text>
           <Text style={styles.userSubtext}>{type === 'incoming' ? 'Sent you a request' : 'Request sent'}</Text>
         </View>
         {type === 'incoming' ? (
@@ -336,6 +338,7 @@ export default function FriendsScreen() {
           renderItem={renderSearchResult}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
+          extraData={{ myFriends, outgoingRequests, incomingRequests }} // Force update when status changes
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={COLORS.PRIMARY} />
           }
@@ -378,6 +381,7 @@ export default function FriendsScreen() {
             renderItem={({ item }) => activeTab === 'friends' ? renderFriend({ item }) : renderRequest({ item, type: incomingRequests.includes(item) ? 'incoming' : 'outgoing' })}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
+            extraData={{ activeTab, myFriends, incomingRequests, outgoingRequests }} // Force update when list changes
             refreshControl={
               <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={COLORS.PRIMARY} />
             }

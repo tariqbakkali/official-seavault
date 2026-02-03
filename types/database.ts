@@ -80,6 +80,7 @@ export interface Database {
           created_at: string;
           is_premium: boolean | null;
           has_seen_onboarding: boolean | null;
+          updated_at: string;
         };
         Insert: Omit<Database['public']['Tables']['profiles']['Row'], 'created_at'>;
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
@@ -235,6 +236,7 @@ export interface Database {
           friend_id: string;
           status: 'pending' | 'accepted' | 'blocked';
           created_at: string;
+          updated_at: string;
         };
         Insert: Omit<Database['public']['Tables']['friends']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['friends']['Insert']>;

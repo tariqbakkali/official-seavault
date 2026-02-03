@@ -15,28 +15,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// Custom fetch with timeout for better network error handling
-const fetchWithTimeout = async (url: RequestInfo | URL, options: RequestInit = {}): Promise<Response> => {
-  const timeout = 30000; // 30 seconds
-  
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      throw new Error('Network request timed out. Please check your connection and try again.');
-    }
-    throw error;
-  }
-};
+
 
 
 // ✅ Create Supabase client with AsyncStorage for React Native
@@ -46,9 +25,6 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false, // No browser URL handling in RN
-  },
-  global: {
-    fetch: fetchWithTimeout,
   },
 });
 
@@ -60,6 +36,20 @@ export const uploadImage = async (
   isPublic: boolean = true
 ): Promise<string | null> => {
   try {
+    // Sanitize folder path: ensure it's not a full path or URL
+    // If it looks like a UUID or just a folder name, keep it. 
+    // If it contains slashes, take the last part (usually the ID).
+    let sanitizedFolder = folder;
+    if (folder.includes('/')) {
+        const parts = folder.split('/').filter(Boolean);
+        // If it's something like "avatars/[userId]", take the second part
+        if (parts[0] === 'avatars' && parts.length > 1) {
+            sanitizedFolder = parts[1];
+        } else {
+            sanitizedFolder = parts[parts.length - 1];
+        }
+    }
+    
     // Read file as base64
     const base64 = await readAsStringAsync(uri, {
       encoding: EncodingType.Base64,
@@ -71,7 +61,7 @@ export const uploadImage = async (
     // Determine file extension from URI
     const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${folder}/${fileName}`;
+    const filePath = `${sanitizedFolder}/${fileName}`;
 
     // Determine content type
     const contentType = `image/${fileExt === 'jpg' || fileExt === 'jpeg' ? 'jpeg' : fileExt}`;

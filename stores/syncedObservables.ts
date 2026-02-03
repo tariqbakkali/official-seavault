@@ -302,28 +302,24 @@ export const allUsersProfiles$ = observable<Record<string, Profile>>(customSynce
   supabase,
   collection: 'profiles',
   actions: ['read'],
-  persist: { name: 'all_profiles_v7' },
-  changesSince: 'last-sync',
+  persist: { name: 'all_profiles_v8' },
     delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
 
   fieldCreatedAt: 'created_at',
-  realtime: false, // Disable realtime to reduce load
+  realtime: false, // Disabled to prevent sync overhead
   retry: {
     infinite: false,
     times: 1, // Only retry once
     delay: 5000, // Wait 5 seconds before retry
   },
   onError: (error: any) => {
-    // Silently handle the error - profiles are optional
-    // Only log once to avoid spam
     if (!profileErrorLogged) {
-      console.warn('[allUsersProfiles$] Profiles sync disabled due to permissions. This is expected if RLS restricts access.');
+      console.warn('[allUsersProfiles$] Profiles sync restricted or disabled.');
       profileErrorLogged = true;
     }
-    // Don't throw - let the app continue without profiles
     return;
   }
 }));
@@ -548,22 +544,16 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
   });
 };
 
-// Friends observable - synced for offline support
-export const friends$ = observable(customSynced({
-  supabase,
-  collection: 'friends',
-  filter: (select: any) => {
-    const userId = currentUserID$.get();
-    if (!userId) return select.eq('user_id', '00000000-0000-0000-0000-000000000000'); 
-    // Filter friends where either user_id OR friend_id matches current user
-    return select.or(`user_id.eq.${userId},friend_id.eq.${userId}`);
-  },
-  actions: ['read', 'create', 'update', 'delete'],
-  persist: { name: 'friends_v2', retrySync: true },
-  changesSince: 'last-sync',
-  realtime: true,
-  fieldCreatedAt: 'created_at',
-}));
+// Friends observable - moved to standard persisted observable for "The Proper Way"
+// This eliminates conflicts between the sync engine and manual realtime listeners.
+export const friends$ = observable<Record<string, any>>({});
+
+syncObservable(friends$, {
+  persist: {
+    name: 'friends_v16',
+    plugin: observablePersistAsyncStorage({ AsyncStorage }),
+  }
+});
 
 export const getSightings = getCurrentUserSightings;
 export const getAllFriends = () => friends$.get();

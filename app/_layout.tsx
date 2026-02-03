@@ -18,6 +18,7 @@ import {
   initializeUserSession,
   cleanupUserSession,
 } from '@/utils/appInitializer';
+import { subscribeToFriendsRealtime, unsubscribeFriendsRealtime, syncFriends } from '@/services/friendsService';
 import 'react-native-get-random-values';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -114,6 +115,11 @@ function RootLayout() {
           setCurrentUserID(userId);
           setCurrentUserIDState(userId);
 
+          if (userId) {
+            syncFriends(userId);
+            subscribeToFriendsRealtime(userId);
+          }
+
           if (!onboardingCompleted && !userId) {
             setShowOnboarding(true);
           }
@@ -180,6 +186,9 @@ function RootLayout() {
         try {
           await initializeUserSession(userId);
           await forceSyncAll();
+          // The "Proper Way": Manual sync followed by robust realtime
+          await syncFriends(userId);
+          subscribeToFriendsRealtime(userId);
           // Re-check purchase status after login/sync
           await checkPurchaseStatus();
         } catch (e) {
@@ -199,6 +208,7 @@ function RootLayout() {
         // Delay cleanup to next tick to allow UI to unmount/navigate away
         // preventing the "Authenticated=true, IsPro=false" race condition
         setTimeout(async () => {
+          unsubscribeFriendsRealtime();
           await cleanupUserSession();
         }, 100);
       }
