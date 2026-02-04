@@ -21,6 +21,15 @@ import {
   removeWishlistItem,
   updateUserProfile,
   friends$,
+  dives$,
+  media$,
+  createDive,
+  updateDive,
+  deleteDive,
+  updateSighting,
+  deleteSighting,
+  addMedia,
+  deleteMedia,
 } from '../stores/syncedObservables';
 import { supabase } from '../services/supabase';
 import { Database } from '../types/database';
@@ -42,6 +51,8 @@ export const useSyncedData = () => {
   const achievements = use$(achievements$);
   const userAchievements = use$(userAchievements$);
   const friends = use$(friends$);
+  const dives = use$(dives$);
+  const media = use$(media$);
 
   // Get sync states for each observable
   // For sync states, we need to use useObservable because we need the observable objects
@@ -58,7 +69,9 @@ export const useSyncedData = () => {
   const achievementsSyncState = useObservable(syncState(achievements$));
   const userAchievementsSyncState = useObservable(syncState(userAchievements$));
   const profilesSyncState = useObservable(syncState(allUsersProfiles$));
-  const friendsSyncState = useObservable(syncState(friends$)); // Added profilesSyncState
+  const friendsSyncState = useObservable(syncState(friends$)); 
+  const divesSyncState = useObservable(syncState(dives$));
+  const mediaSyncState = useObservable(syncState(media$));
 
   // Loading states
   const isLoading = {
@@ -74,7 +87,9 @@ export const useSyncedData = () => {
     achievements: !achievementsSyncState.isLoaded,
     userAchievements: !userAchievementsSyncState.isLoaded,
     allProfiles: !profilesSyncState.isLoaded,
-    friends: !friendsSyncState.isLoaded, // Added allProfiles loading state
+    friends: !friendsSyncState.isLoaded,
+    dives: !divesSyncState.isLoaded,
+    media: !mediaSyncState.isLoaded,
   };
 
   // Error states
@@ -91,7 +106,9 @@ export const useSyncedData = () => {
     achievements: achievementsSyncState.error,
     userAchievements: userAchievementsSyncState.error,
     allProfiles: profilesSyncState.error,
-    friends: friendsSyncState.error, // Added allProfiles error state
+    friends: friendsSyncState.error,
+    dives: divesSyncState.error,
+    media: mediaSyncState.error,
   };
 
   // Fetch functions for catalog data
@@ -115,6 +132,16 @@ export const useSyncedData = () => {
     }
   };
 
+  // Fetch functions for dive data
+  const fetchDiveData = async () => {
+    if (!divesSyncState.isLoaded.get()) {
+      dives$.get();
+    }
+    if (!mediaSyncState.isLoaded.get()) {
+      media$.get();
+    }
+  };
+
   // Fetch functions for user data
   const fetchUserData = async () => {
     // Trigger loading of user data if not already loaded
@@ -123,6 +150,12 @@ export const useSyncedData = () => {
     }
     if (!currentUserSightingsSyncState.isLoaded.get()) {
       currentUserSightings$.get();
+    }
+    if (!divesSyncState.isLoaded.get()) {
+      dives$.get();
+    }
+    if (!mediaSyncState.isLoaded.get()) {
+      media$.get();
     }
     // currentUserDives sync removed
     if (!wishlistsSyncState.isLoaded.get()) {
@@ -189,6 +222,7 @@ export const useSyncedData = () => {
         membership_tier: null,
         is_premium: null,
         has_seen_onboarding: null,
+        updated_at: new Date().toISOString(),
       };
       
       // Set the profile in the observable using the correct structure
@@ -267,6 +301,7 @@ export const useSyncedData = () => {
         is_premium: profileData.is_premium || dbProfile?.is_premium || null,
         has_seen_onboarding: profileData.has_seen_onboarding || dbProfile?.has_seen_onboarding || null,
         created_at: dbProfile?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
     
       // Set the profile in the observable using the correct structure
@@ -304,6 +339,8 @@ export const useSyncedData = () => {
     userAchievements,
     allProfiles,
     friends,
+    dives,
+    media,
     
     // Loading states
     isLoading,
@@ -315,6 +352,7 @@ export const useSyncedData = () => {
     fetchCatalog,
     fetchUserData,
     fetchDiveSites,
+    fetchDiveData,
     
     // Profile functions
     ensureUserProfile,
@@ -322,7 +360,13 @@ export const useSyncedData = () => {
     
     // Mutation functions
     createSighting,
-    // createDive removed
+    updateSighting,
+    deleteSighting,
+    createDive,
+    updateDive,
+    deleteDive,
+    addMedia,
+    deleteMedia,
     createWishlistItem,
     createDiveSite,
     removeWishlistItem,

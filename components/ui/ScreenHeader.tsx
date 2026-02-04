@@ -3,11 +3,14 @@ import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-nativ
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import { ArrowLeft } from 'lucide-react-native';
 
+import { LucideIcon } from 'lucide-react-native';
+
 interface ScreenHeaderProps {
   title: string;
   onBackPress?: () => void;
   onActionPress?: () => void;
   actionText?: string;
+  actionIcon?: LucideIcon;
   showBackButton?: boolean;
   showActionButton?: boolean;
   style?: ViewStyle;
@@ -21,6 +24,7 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   onBackPress,
   onActionPress,
   actionText,
+  actionIcon: ActionIcon,
   showBackButton = true,
   showActionButton = false,
   style
@@ -32,12 +36,22 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
           <ArrowLeft size={DIMENSIONS.ICON_LG} color={COLORS.PRIMARY} />
         </TouchableOpacity>
       )}
-      
+
       <Text style={styles.headerText}>{title}</Text>
-      
-      {showActionButton && onActionPress && actionText && (
-        <TouchableOpacity onPress={onActionPress} style={styles.actionButton}>
-          <Text style={styles.actionButtonText}>{actionText}</Text>
+
+      {(showActionButton || ActionIcon) && onActionPress && (
+        <TouchableOpacity
+          onPress={onActionPress}
+          style={[
+            styles.actionButton,
+            ActionIcon && styles.iconActionButton
+          ]}
+        >
+          {ActionIcon ? (
+            <ActionIcon size={20} color="#fff" />
+          ) : (
+            <Text style={styles.actionButtonText}>{actionText}</Text>
+          )}
         </TouchableOpacity>
       )}
     </View>
@@ -80,6 +94,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: TYPOGRAPHY.SIZE_LG,
     fontWeight: TYPOGRAPHY.WEIGHT_SEMIBOLD,
+  },
+  iconActionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   placeholder: {
     width: 40,

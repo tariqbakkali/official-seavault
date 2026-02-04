@@ -15,12 +15,14 @@ import ErrorDisplay from '@/components/ErrorDisplay';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
 import DiveSitePicker from './components/DiveSitePicker';
 import DateTimePickerSection from './components/DateTimePickerSection';
+import { Info } from 'lucide-react-native';
 import DiveMetricsSection from './components/DiveMetricsSection';
 import TrainingSection from './components/TrainingSection';
 import ModeSelection from './components/ModeSelection';
 import DiveNotesSection from './components/DiveNotesSection';
 import DiveConditionsSection from './components/DiveConditionsSection';
 import MultipleCreatureSelector from './components/MultipleCreatureSelector';
+import MediaSection from './components/MediaSection';
 import DiveTypeSelector from './components/DiveTypeSelector';
 import InstructorPicker from './components/InstructorPicker';
 import { useLogDive } from './hooks/useLogDive';
@@ -29,7 +31,7 @@ import { useSelector } from '@legendapp/state/react';
 
 const LogDiveScreen = () => {
   const insets = useSafeAreaInsets();
-  const { selectedDiveSiteId } = useLocalSearchParams();
+  const { selectedDiveSiteId, editId } = useLocalSearchParams();
   // Get temp selection from store
   const tempSelection = useSelector(() => tempSelectionStore$.get());
 
@@ -117,9 +119,9 @@ const LogDiveScreen = () => {
         ]}
       >
         <ScreenHeader
-          title="Log Dive"
+          title={editId ? "Edit Dive" : "Log Dive"}
           onBackPress={handleBackPress}
-          showBackButton={shouldShowBackButton}
+          showBackButton={shouldShowBackButton || !!editId}
         />
         <LoadingScreen message="Preparing dive log..." />
       </View>
@@ -147,9 +149,9 @@ const LogDiveScreen = () => {
         ]}
       >
         <ScreenHeader
-          title="Log Dive"
+          title={editId ? "Edit Dive" : "Log Dive"}
           onBackPress={handleBackPress}
-          showBackButton={shouldShowBackButton}
+          showBackButton={shouldShowBackButton || !!editId}
         />
         <ErrorDisplay
           message={String(errorMessage)}
@@ -170,9 +172,9 @@ const LogDiveScreen = () => {
       ]}
     >
       <ScreenHeader
-        title="Log Dive"
+        title={editId ? (editId.includes('_') ? "Upgrade Dive" : "Edit Dive") : "Log Dive"}
         onBackPress={handleBackPress}
-        showBackButton={shouldShowBackButton}
+        showBackButton={shouldShowBackButton || !!editId}
       />
       <ScrollView
         ref={scrollViewRef}
@@ -182,6 +184,14 @@ const LogDiveScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
+          {editId && editId.includes('_') && (
+            <View style={styles.upgradeNotice}>
+              <Info size={16} color={COLORS.PRIMARY} />
+              <Text style={styles.upgradeNoticeText}>
+                Saving will upgrade this legacy record to the new enhanced format.
+              </Text>
+            </View>
+          )}
           {/* 1. Mode Selection */}
           <ModeSelection
             mode={formData.diveMode}
@@ -276,7 +286,21 @@ const LogDiveScreen = () => {
             }
           />
 
-          {/* 8. Creatures (Sightings) */}
+          {/* 8. Media Section */}
+          <MediaSection
+            media={formData.media}
+            onMediaAdded={(items) => setFormData({
+              ...formData,
+              media: [...formData.media, ...items]
+            })}
+            onMediaRemoved={(index) => {
+              const newMedia = [...formData.media];
+              newMedia.splice(index, 1);
+              setFormData({ ...formData, media: newMedia });
+            }}
+          />
+
+          {/* 9. Creatures (Sightings) */}
           <MultipleCreatureSelector
             catalog={catalog}
             selectedCategories={selectedCategories}
@@ -289,7 +313,7 @@ const LogDiveScreen = () => {
 
           {/* Submit Button */}
           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>Log Dive</Text>
+            <Text style={styles.submitButtonText}>{editId ? "Update Dive" : "Log Dive"}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -317,6 +341,22 @@ const styles = StyleSheet.create({
     padding: DIMENSIONS.PADDING_HORIZONTAL,
     paddingTop: DIMENSIONS.SPACE_LG,
     paddingBottom: DIMENSIONS.SPACE_LG,
+  },
+  upgradeNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(64, 196, 255, 0.1)',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(64, 196, 255, 0.2)',
+  },
+  upgradeNoticeText: {
+    color: COLORS.TEXT_PRIMARY,
+    fontSize: 12,
+    flex: 1,
   },
   submitButton: {
     backgroundColor: COLORS.PRIMARY,

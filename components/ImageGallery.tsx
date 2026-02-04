@@ -30,7 +30,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
 }) => {
   const [selectedImage, setSelectedImage] = useState<ImageMetadata | null>(null);
   const [showModal, setShowModal] = useState(false);
-  
+
   const { uploadImage, uploadMultipleImages } = useImageUpload();
   const { retryFailedUploads, startSync } = useImageSync();
 
@@ -77,23 +77,23 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
           <OptimizedImage
             imageMetadata={item}
             style={styles.thumbnail}
-            resizeMode="cover"
+            contentFit="cover"
           />
         </TouchableOpacity>
-        
+
         {/* Sync status badge */}
         <View style={[
           styles.statusBadge,
           item.syncStatus === 'synced' ? styles.syncedBadge :
-          item.syncStatus === 'failed' ? styles.failedBadge :
-          styles.pendingBadge
+            item.syncStatus === 'failed' ? styles.failedBadge :
+              styles.pendingBadge
         ]}>
           <Text style={styles.statusText}>
             {item.syncStatus === 'synced' ? '✓' :
-             item.syncStatus === 'failed' ? '✗' : '⋯'}
+              item.syncStatus === 'failed' ? '✗' : '⋯'}
           </Text>
         </View>
-        
+
         {/* Retry button for failed uploads */}
         {item.syncStatus === 'failed' && (
           <TouchableOpacity
@@ -103,7 +103,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
             <RefreshCw size={16} color="#fff" />
           </TouchableOpacity>
         )}
-        
+
         {/* Delete button */}
         <TouchableOpacity
           style={styles.deleteButton}
@@ -118,11 +118,11 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   // Render failed uploads summary
   const renderFailedUploadsSummary = () => {
     const failedCount = images.filter(img => img.syncStatus === 'failed').length;
-    
+
     if (failedCount === 0) {
       return null;
     }
-    
+
     return (
       <View style={styles.failedSummaryContainer}>
         <AlertCircle size={20} color="#c62828" />
@@ -143,7 +143,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   return (
     <View style={styles.container}>
       {renderFailedUploadsSummary()}
-      
+
       <FlatList
         data={images}
         renderItem={renderItem}
@@ -153,7 +153,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
-      
+
       {/* Image modal */}
       <Modal
         visible={showModal}
@@ -167,15 +167,15 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
           >
             <Text style={styles.modalCloseText}>×</Text>
           </TouchableOpacity>
-          
+
           {selectedImage && (
             <View style={styles.modalImageContainer}>
               <OptimizedImage
                 imageMetadata={selectedImage}
                 style={styles.fullImage}
-                resizeMode="contain"
+                contentFit="contain"
               />
-              
+
               <View style={styles.modalImageInfo}>
                 <Text style={styles.imageInfoText}>
                   Added: {new Date(selectedImage.createdAt).toLocaleDateString()}

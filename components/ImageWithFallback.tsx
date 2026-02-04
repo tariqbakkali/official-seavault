@@ -15,16 +15,18 @@ interface ImageWithFallbackProps {
   defaultImageSource?: ImageSourcePropType;
   retryCount?: number; // Number of retry attempts
   showOfflineIndicator?: boolean; // Show offline indicator
+  contentFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
 }
 
-export default function ImageWithFallback({ 
-  uri, 
-  style, 
+export default function ImageWithFallback({
+  uri,
+  style,
   containerStyle,
   fallbackColor = '#2a2a2a',
   defaultImageSource,
   retryCount = 3,
-  showOfflineIndicator = false
+  showOfflineIndicator = false,
+  contentFit = 'cover',
 }: ImageWithFallbackProps) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
@@ -89,7 +91,7 @@ export default function ImageWithFallback({
   // Retry mechanism for failed image loads
   const handleRetry = React.useCallback(() => {
     const urls = [urlOptions.original, urlOptions.encoded, urlOptions.proxied].filter(Boolean) as string[];
-    
+
     // Try next URL option if available
     if (currentUrlIndex < urls.length - 1) {
       setCurrentUrlIndex(prev => prev + 1);
@@ -100,12 +102,12 @@ export default function ImageWithFallback({
       setRetryAttempt(prev => prev + 1);
       setLoading(true);
       setError(false);
-      
+
       // Add a small delay before retrying to avoid rapid retries
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
       }
-      
+
       retryTimeoutRef.current = setTimeout(() => {
         // Force re-render by updating state
         setLoading(false);
@@ -127,9 +129,9 @@ export default function ImageWithFallback({
       );
     }
     return (
-      <DefaultImagePlaceholder 
-        style={style} 
-        containerStyle={containerStyle} 
+      <DefaultImagePlaceholder
+        style={style}
+        containerStyle={containerStyle}
       />
     );
   }
@@ -170,9 +172,9 @@ export default function ImageWithFallback({
     if (error) {
       return (
         <View style={containerStyle}>
-          <DefaultImagePlaceholder 
-            style={style} 
-            containerStyle={containerStyle} 
+          <DefaultImagePlaceholder
+            style={style}
+            containerStyle={containerStyle}
           />
           {showOfflineIndicator && !isOnline && (
             <View style={styles.offlineBadge}>
@@ -187,7 +189,7 @@ export default function ImageWithFallback({
   return (
     <View style={containerStyle}>
       {loading && (
-        <LoadingShimmer 
+        <LoadingShimmer
           style={StyleSheet.absoluteFill as ViewStyle}
         />
       )}
@@ -195,6 +197,7 @@ export default function ImageWithFallback({
         key={currentUrl} // Force re-render when URL changes
         source={{ uri: currentUrl || '' }}
         style={style}
+        contentFit={contentFit}
         cachePolicy="memory-disk"
         allowDownscaling={true}
         onLoad={() => {
@@ -208,7 +211,7 @@ export default function ImageWithFallback({
           console.warn('ImageWithFallback: Image load error:', e, 'URL:', currentUrl);
           // Log additional error details if available
           console.warn('ImageWithFallback: Error details:', JSON.stringify(e, null, 2));
-          
+
           setLoading(false);
           // Only handle retry if we're online, otherwise just show error
           if (isOnline) {

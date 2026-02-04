@@ -5,7 +5,10 @@ import { useSyncedData } from '@/hooks/useSyncedData';
 import { showAlert } from '@/utils/alertUtils';
 import { feetToMeters, metersToFeet } from '@/utils/format';
 import { ROUTES } from '@/constants/routes';
-import { Database } from '@/types/database';
+import { Database, Dive, Sighting, Media } from '@/types/database';
+import { saveDiveSession, getDiveSession } from '@/services/diveService';
+import { dives$, media$ } from '@/stores/syncedObservables';
+import { useSelector } from '@legendapp/state/react';
 
 // Helper to calculate duration in minutes
 const calculateDuration = (start: string, end: string): string => {
@@ -69,10 +72,21 @@ interface FormData {
   courseType: string;
   completedSkills: Record<string, boolean>;
   waterway: string | null;
+  media: Array<{
+    uri: string;
+    type: 'image' | 'video';
+    id?: string; // Existing media ID
+    sightingId?: string;
+  }>;
 }
 
 export const useLogDive = () => {
-  const { selectedCategory, selectedCreature, source } = useLocalSearchParams();
+  const { selectedCategory, selectedCreature, source, editId } = useLocalSearchParams<{
+    selectedCategory?: string;
+    selectedCreature?: string;
+    source?: string;
+    editId?: string;
+  }>();
   
   const [formData, setFormData] = useState<FormData>({
     diveSiteId: null,
@@ -99,6 +113,7 @@ export const useLogDive = () => {
     waterway: null,
     instructorName: '',
     instructorId: null,
+    media: [],
   });
 
   // Removed selectedImage state as it's no longer needed
@@ -135,6 +150,58 @@ export const useLogDive = () => {
       }));
     }
   }, [selectedCategory, selectedCreature]);
+
+  // Load existing dive data if editing
+  useEffect(() => {
+    if (editId) {
+      const session = getDiveSession(editId);
+      if (session) {
+        const { dive, sightings, media } = session;
+        
+        // Map sightings back to form format
+        const creatureSightings = sightings.map(s => ({
+          creatureId: s.creature_id,
+          notes: s.creature_notes,
+          imageUrl: s.image_url,
+        }));
+
+        setFormData({
+          diveSiteId: dive.dive_site_id,
+          date: new Date(dive.date),
+          timeOfDay: sightings[0]?.time_of_day || '',
+          diveMode: dive.dive_type === 'training' ? 'training' : 'leisure',
+          diveType: dive.dive_type,
+          depth: dive.max_depth ? dive.max_depth.toString() : '',
+          diveNotes: dive.notes || '',
+          creatureSightings,
+          duration: dive.duration ? dive.duration.toString() : '',
+          weather: dive.weather,
+          visibility: dive.visibility,
+          current: dive.current,
+          timeIn: dive.time_in || '',
+          timeOut: dive.time_out || '',
+          airIn: dive.air_in ? dive.air_in.toString() : '',
+          airOut: dive.air_out ? dive.air_out.toString() : '',
+          airUnit: dive.air_unit || 'bar',
+          depthUnit: dive.depth_unit || 'meters',
+          courseType: dive.course_type || 'open_water',
+          completedSkills: (dive.skills_completed || []).reduce((acc: any, skill: string) => {
+            acc[skill] = true;
+            return acc;
+          }, {}),
+          waterway: dive.waterway,
+          instructorName: dive.instructor_id ? '' : '', // Placeholder: would need look up if not embedded
+          instructorId: dive.instructor_id,
+          media: media.map(m => ({
+            uri: m.url,
+            type: m.type as 'image' | 'video',
+            id: m.id,
+            sightingId: m.sighting_id || undefined,
+          })),
+        });
+      }
+    }
+  }, [editId]);
 
   // Auto-calculate duration when Time In or Time Out changes
   useEffect(() => {
@@ -220,113 +287,98 @@ export const useLogDive = () => {
          return;
       }
 
-      // Format time of day from the time picker
-      const timeOfDay = formData.timeOfDay;
-      
-      let sightingsToCreate = [...formData.creatureSightings];
-      
-      // If no sightings but valid valid (training dive), create a placeholder sighting
-      if (sightingsToCreate.length === 0) {
-        sightingsToCreate.push({
-            creatureId: null,
-            notes: null,
-            imageUrl: null
-        });
-      }
-      
-      // Create sightings with all dive data embedded
-      const sightingPromises = sightingsToCreate.map(async (sighting) => {
-        const sightingData = {
-          // Dive-level data (stored in each sighting)
+      const sessionData: any = {
+        dive: {
           dive_site_id: formData.diveSiteId,
           date: formData.date.toISOString().split('T')[0],
           time_in: formData.timeIn || null,
           time_out: formData.timeOut || null,
           duration: formData.duration ? parseInt(formData.duration, 10) : null,
-   // Calculate depth in meters for storage
-          depth: formData.depth ? (
-            formData.depthUnit === 'feet' 
-              ? feetToMeters(parseFloat(formData.depth)).toString() 
-              : formData.depth
-          ) : null,
+          max_depth: formData.depth ? parseFloat(formData.depth) : null,
           air_in: formData.airIn ? parseInt(formData.airIn, 10) : null,
           air_out: formData.airOut ? parseInt(formData.airOut, 10) : null,
           air_unit: formData.airUnit,
           depth_unit: formData.depthUnit,
-          dive_type: formData.diveType, // Now storing real DB enum
+          dive_type: formData.diveType,
           course_type: formData.diveMode === 'training' ? (formData.courseType || null) : null,
           skills_completed: formData.diveMode === 'training' ? Object.keys(formData.completedSkills).filter(skill => formData.completedSkills[skill]) : [],
-          dive_notes: formData.diveNotes || null,
+          notes: formData.diveNotes || null,
           weather: formData.weather || null,
           visibility: formData.visibility || null,
           current: formData.current || null,
-          time_of_day: timeOfDay || null,
           instructor_id: formData.instructorId || null,
-          instructor_name: formData.instructorName || null,
+          waterway: formData.waterway || null,
+        },
+        sightings: formData.creatureSightings.map(s => ({
+          creature_id: s.creatureId,
+          creature_notes: s.notes,
+          image_url: s.imageUrl,
+          date: formData.date.toISOString().split('T')[0],
+          // Duplicate dive info into sightings for backward compat
+          dive_site_id: formData.diveSiteId,
+          dive_type: formData.diveType,
+          time_in: formData.timeIn || null,
+          time_of_day: formData.timeOfDay || null,
+          depth: formData.depth || null,
+          duration: formData.duration ? parseInt(formData.duration, 10) : null,
           waterway: formData.waterway || null,
           dive_mode: formData.diveMode,
-          
-          // Sighting-specific data
-          creature_id: sighting.creatureId || null,
-          image_url: sighting.imageUrl || null,
-          creature_notes: sighting.notes || null,
-        };
-        
-        return createSighting(sightingData as any); 
-      });
+        })),
+        media: formData.media,
+      };
+
+      await saveDiveSession(sessionData, editId);
       
-      // Create all sightings
-      await Promise.all(sightingPromises);
-      
-      // Check network status to determine if saved offline or online
       const networkState = await NetInfo.fetch();
       const isOnline = networkState.isConnected && networkState.isInternetReachable !== false;
       
-      // Show appropriate success message
       if (isOnline) {
         showAlert(
-          'Dive Log Saved',
-          'Your dive log has been saved successfully and synchronized with the cloud.'
+          editId ? 'Dive Updated' : 'Dive Log Saved',
+          editId ? 'Your dive log has been updated successfully.' : 'Your dive log has been saved successfully and synchronized with the cloud.'
         );
       } else {
         showAlert(
-          'Dive Log Saved Offline',
-          'Your dive log has been saved locally and will be synchronized when you\'re back online.'
+          editId ? 'Dive Updated Offline' : 'Dive Log Saved Offline',
+          'Your changes have been saved locally and will sync when you\'re online.'
         );
       }
       
-      // Reset form
-      setFormData({
-        diveSiteId: null,
-        date: new Date(),
-        timeOfDay: '',
-        diveMode: 'leisure',
-        diveType: null,
-        depth: '',
-        diveNotes: '',
-        creatureSightings: [],
-        duration: '',
-        weather: null,
-        visibility: null,
-        current: null,
-        timeIn: '',
-        timeOut: '',
-        airIn: '',
-        airOut: '',
-        airUnit: 'bar',
-        depthUnit: 'meters',
-        courseType: 'open_water',
-        completedSkills: {},
-        waterway: null,
-        instructorName: '', // Reset to match initial state
-        instructorId: null,
-      });
-      
-      // Removed setSelectedImage reset
-      setSelectedCategories([]); // Clear category selections
+      if (editId) {
+        router.back();
+      } else {
+        // Reset form
+        setFormData({
+          diveSiteId: null,
+          date: new Date(),
+          timeOfDay: '',
+          diveMode: 'leisure',
+          diveType: null,
+          depth: '',
+          diveNotes: '',
+          creatureSightings: [],
+          duration: '',
+          weather: null,
+          visibility: null,
+          current: null,
+          timeIn: '',
+          timeOut: '',
+          airIn: '',
+          airOut: '',
+          airUnit: 'bar',
+          depthUnit: 'meters',
+          courseType: 'open_water',
+          completedSkills: {},
+          waterway: null,
+          instructorName: '',
+          instructorId: null,
+          media: [],
+        });
+        setSelectedCategories([]);
+      }
     } catch (error) {
       console.error('Error submitting dive log:', error);
-      showAlert('Error', 'Error submitting dive log. Please try again.');
+      showAlert('Error', 'Error saving dive log. Please try again.');
     }
   };
 

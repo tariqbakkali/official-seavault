@@ -483,7 +483,6 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   leaderboardName: {
     fontSize: TYPOGRAPHY.SIZE_LG,

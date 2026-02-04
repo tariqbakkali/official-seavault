@@ -101,6 +101,7 @@ export interface Database {
           creature_notes: string | null;
           updated_at: string;
           image_upload_status?: 'pending' | 'uploaded' | 'failed' | null;
+          dive_id: string | null;
           // Dive-level fields (stored in each sighting)
           duration: number | null; // in minutes
           weather: string | null;
@@ -241,6 +242,19 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['friends']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['friends']['Insert']>;
       };
+      media: {
+        Row: {
+          id: string;
+          user_id: string;
+          dive_id: string | null;
+          sighting_id: string | null;
+          url: string;
+          type: 'image' | 'video';
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['media']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['media']['Insert']>;
+      };
     };
   };
 }
@@ -257,6 +271,7 @@ export type Dive = Database['public']['Tables']['dives']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
 export type Instructor = Database['public']['Tables']['instructors']['Row'];
 export type Friend = Database['public']['Tables']['friends']['Row'];
+export type Media = Database['public']['Tables']['media']['Row'];
 
 
 export interface CachedCatalog {

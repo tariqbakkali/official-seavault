@@ -31,7 +31,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // ✅ Upload image utility
 export const uploadImage = async (
   uri: string,
-  bucket: "avatars" | "sightings" | "keypictures",
+  bucket: "avatars" | "sightings" | "keypictures" | "dives",
   folder: string,
   isPublic: boolean = true
 ): Promise<string | null> => {
@@ -64,7 +64,10 @@ export const uploadImage = async (
     const filePath = `${sanitizedFolder}/${fileName}`;
 
     // Determine content type
-    const contentType = `image/${fileExt === 'jpg' || fileExt === 'jpeg' ? 'jpeg' : fileExt}`;
+    let contentType = `image/${fileExt === 'jpg' || fileExt === 'jpeg' ? 'jpeg' : fileExt}`;
+    if (['mp4', 'mov', 'avi', 'mkv'].includes(fileExt)) {
+      contentType = `video/${fileExt === 'mov' ? 'quicktime' : fileExt}`;
+    }
 
     // Upload file
     const { data, error } = await supabase.storage

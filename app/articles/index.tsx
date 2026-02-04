@@ -8,8 +8,8 @@ import {
     Linking,
     Modal,
     Dimensions,
-    SafeAreaView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { useSelector } from '@legendapp/state/react';
 import { articles$ } from '@/stores/syncedObservables';
@@ -154,13 +154,14 @@ const styles = StyleSheet.create({
     },
     headerSafeArea: {
         backgroundColor: '#000',
+        height: 110,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: DIMENSIONS.PADDING_LG,
-        paddingVertical: DIMENSIONS.PADDING_MD,
+        paddingVertical: DIMENSIONS.PADDING_SM,
     },
     backButton: {
         padding: 8,
@@ -190,7 +191,6 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover',
     },
     gradientOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -251,7 +251,6 @@ const styles = StyleSheet.create({
     modalImage: {
         width: '100%',
         height: 300,
-        resizeMode: 'cover',
     },
     modalContent: {
         padding: DIMENSIONS.PADDING_XL,

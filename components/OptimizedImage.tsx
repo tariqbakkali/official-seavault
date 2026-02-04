@@ -11,14 +11,14 @@ interface OptimizedImageProps {
   imageMetadata: ImageMetadata;
   style?: object;
   showSyncStatus?: boolean;
-  resizeMode?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+  contentFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
 }
 
 export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   imageMetadata,
   style,
   showSyncStatus = false,
-  resizeMode = 'cover',
+  contentFit = 'cover',
 }) => {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,7 +123,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
           <Image
             source={{ uri: imageMetadata.localUri }}
             style={styles.image}
-            contentFit={resizeMode}
+            contentFit={contentFit}
             onLoad={() => {
               setHasError(false); // If it loads, clear error
             }}
@@ -149,7 +149,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
           <Image
             source={{ uri: imageMetadata.remoteUrl }}
             style={styles.image}
-            contentFit={resizeMode}
+            contentFit={contentFit}
             onLoad={() => {
               setHasError(false); // If it loads, clear error
             }}
@@ -185,7 +185,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
       <Image
         source={{ uri: imageUri }}
         style={styles.image}
-        contentFit={resizeMode}
+        contentFit={contentFit}
         onLoad={() => {
           setIsLoading(false);
           setHasError(false);

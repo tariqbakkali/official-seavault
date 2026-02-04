@@ -20,6 +20,7 @@ export type Achievement = Database['public']['Tables']['achievements']['Row'];
 export type UserAchievement = Database['public']['Tables']['user_achievements']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
 export type Instructor = Database['public']['Tables']['instructors']['Row'];
+export type Media = Database['public']['Tables']['media']['Row'];
 
 
 
@@ -115,6 +116,7 @@ export const userAchievements$ = observable(customSynced({
 
   // changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
+  fieldUpdatedAt: 'created_at', // Override global default since this table lacks updated_at
   realtime: true,
 }));
 
@@ -339,6 +341,29 @@ export const articles$ = observable(customSynced({
   realtime: true,
 }));
 
+// Dives observable
+export const dives$ = observable(customSynced({
+  supabase,
+  collection: 'dives',
+  actions: ['read', 'create', 'update', 'delete'],
+  persist: { name: 'dives_v1' },
+  select: (select: any) => select.select('*'),
+  fieldCreatedAt: 'created_at',
+  realtime: true,
+}));
+
+// Media observable
+export const media$ = observable(customSynced({
+  supabase,
+  collection: 'media',
+  actions: ['read', 'create', 'update', 'delete'],
+  persist: { name: 'media_v1' },
+  select: (select: any) => select.select('*'),
+  fieldCreatedAt: 'created_at',
+  fieldUpdatedAt: 'created_at', // Override global default since this table lacks updated_at
+  realtime: true,
+}));
+
 // Utility functions for working with the observables
 export const getCategories = () => categories$.get();
 export const getCreatures = () => creatures$.get();
@@ -356,6 +381,8 @@ export const getCurrentUserProfile = () => currentUserProfile$.get();
 export const getAllUsersProfiles = () => allUsersProfiles$.get();
 export const getAllArticles = () => articles$.get();
 export const getInstructors = () => instructors$.get();
+export const getDives = () => dives$.get();
+export const getMedia = () => media$.get();
 // Removed getCurrentUserDives - using sightings table only
 
 // Utility functions for creating new records
@@ -420,6 +447,90 @@ export const createSighting = async (sightingData: Omit<Sighting, 'id' | 'create
   }
   
   return newSighting;
+};
+
+// Utility function to create a dive
+export const createDive = async (diveData: any) => {
+  const userId = currentUserID$.get();
+  if (!userId) throw new Error('User must be logged in to create dives');
+  
+  const id = uuidv4();
+  const newDive = {
+    ...diveData,
+    id,
+    user_id: userId,
+    created_at: new Date().toISOString(),
+  };
+
+  // Set the data in the observable
+  (dives$ as any)[id].set(newDive);
+
+  return newDive;
+};
+
+// Utility function to update a dive
+export const updateDive = async (id: string, updates: any) => {
+  const existing = (dives$ as any)[id].peek();
+  if (!existing) throw new Error('Dive not found');
+  
+  const updatedDive = {
+    ...existing,
+    ...updates,
+    updated_at: new Date().toISOString(),
+  };
+
+  (dives$ as any)[id].set(updatedDive);
+
+  return updatedDive;
+};
+
+// Utility function to update a sighting
+export const updateSighting = async (id: string, updates: any) => {
+  const existing = (currentUserSightings$ as any)[id].peek();
+  if (!existing) throw new Error('Sighting not found');
+  
+  const updatedSighting = {
+    ...existing,
+    ...updates,
+    updated_at: new Date().toISOString(),
+  };
+
+  (currentUserSightings$ as any)[id].set(updatedSighting);
+
+  return updatedSighting;
+};
+
+// Utility function to delete a dive
+export const deleteDive = async (id: string) => {
+  return (dives$ as any)[id].delete();
+};
+
+// Utility function to delete a sighting
+export const deleteSighting = async (id: string) => {
+  return (currentUserSightings$ as any)[id].delete();
+};
+
+// Utility function to add media
+export const addMedia = async (mediaData: Omit<Media, 'id' | 'created_at' | 'user_id'>) => {
+  const userId = currentUserID$.get();
+  if (!userId) throw new Error('User must be logged in to add media');
+  
+  const id = uuidv4();
+  const newMedia = {
+    ...mediaData,
+    id,
+    user_id: userId,
+    created_at: new Date().toISOString(),
+  };
+
+  (media$ as any)[id].set(newMedia);
+
+  return newMedia;
+};
+
+// Utility function to delete media
+export const deleteMedia = async (id: string) => {
+  return (media$ as any)[id].delete();
 };
 
 export const createWishlistItem = async (creatureId: string) => {

@@ -15,17 +15,19 @@ interface OfflineImageHandlerProps {
   defaultImageSource?: ImageSourcePropType;
   retryCount?: number;
   showOfflineIndicator?: boolean;
+  contentFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
 }
 
-export default function OfflineImageHandler({ 
-  uri, 
+export default function OfflineImageHandler({
+  uri,
   localUri,
-  style, 
+  style,
   containerStyle,
   fallbackColor = '#2a2a2a',
   defaultImageSource,
   retryCount = 3,
-  showOfflineIndicator = false
+  showOfflineIndicator = false,
+  contentFit = 'cover'
 }: OfflineImageHandlerProps) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
@@ -79,7 +81,7 @@ export default function OfflineImageHandler({
     if (!isOnline && localUri) {
       return localUri;
     }
-    
+
     const urls = [urlOptions.original, urlOptions.encoded, urlOptions.proxied].filter(Boolean) as string[];
     return urls[currentUrlIndex] || urlOptions.original;
   }, [urlOptions, currentUrlIndex, isOnline, localUri]);
@@ -100,9 +102,9 @@ export default function OfflineImageHandler({
       setLoading(false);
       return;
     }
-    
+
     const urls = [urlOptions.original, urlOptions.encoded, urlOptions.proxied].filter(Boolean) as string[];
-    
+
     // Try next URL option if available
     if (currentUrlIndex < urls.length - 1) {
       setCurrentUrlIndex(prev => prev + 1);
@@ -113,12 +115,12 @@ export default function OfflineImageHandler({
       setRetryAttempt(prev => prev + 1);
       setLoading(true);
       setError(false);
-      
+
       // Add a small delay before retrying to avoid rapid retries
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
       }
-      
+
       retryTimeoutRef.current = setTimeout(() => {
         // Force re-render by updating state
         setLoading(false);
@@ -140,9 +142,9 @@ export default function OfflineImageHandler({
       );
     }
     return (
-      <DefaultImagePlaceholder 
-        style={style} 
-        containerStyle={containerStyle} 
+      <DefaultImagePlaceholder
+        style={style}
+        containerStyle={containerStyle}
       />
     );
   }
@@ -165,9 +167,9 @@ export default function OfflineImageHandler({
   if (error) {
     return (
       <View style={containerStyle}>
-        <DefaultImagePlaceholder 
-          style={style} 
-          containerStyle={containerStyle} 
+        <DefaultImagePlaceholder
+          style={style}
+          containerStyle={containerStyle}
         />
         {showOfflineIndicator && !isOnline && (
           <View style={styles.offlineBadge}>
@@ -181,7 +183,7 @@ export default function OfflineImageHandler({
   return (
     <View style={containerStyle}>
       {loading && (
-        <LoadingShimmer 
+        <LoadingShimmer
           style={StyleSheet.absoluteFill as ViewStyle}
         />
       )}
@@ -189,6 +191,7 @@ export default function OfflineImageHandler({
         key={currentUrl} // Force re-render when URL changes
         source={{ uri: currentUrl || '' }}
         style={style}
+        contentFit={contentFit}
         cachePolicy="memory-disk"
         allowDownscaling={true}
         onLoad={() => {

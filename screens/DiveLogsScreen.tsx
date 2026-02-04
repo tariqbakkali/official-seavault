@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from '@legendapp/state/react';
-import { Calendar, MapPin, Clock, ArrowRight, Waves, Fish } from 'lucide-react-native';
+import { Calendar, MapPin, Clock, ArrowRight, Waves, Fish, Pencil } from 'lucide-react-native';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { currentUserSightings$, diveSites$, creatures$ } from '@/stores/syncedObservables';
 import { COLORS, DIMENSIONS, TYPOGRAPHY, ROUTES } from '@/constants';
@@ -46,7 +46,8 @@ export default function DiveLogsScreen() {
 
         sightings.forEach(sighting => {
             // Create unique key for each dive session
-            const diveKey = `${sighting.date}_${sighting.time_in || '00:00'}_${sighting.dive_site_id || 'unknown'}`;
+            // Prioritize dive_id for new records, fallback to composite key for legacy
+            const diveKey = sighting.dive_id || `${sighting.date}_${sighting.time_in || '00:00'}_${sighting.dive_site_id || 'unknown'}`;
 
             if (!diveGroups.has(diveKey)) {
                 diveGroups.set(diveKey, []);
@@ -101,6 +102,13 @@ export default function DiveLogsScreen() {
         router.push(ROUTES.PROFILE.DIVE_LOG_DETAIL(log.id));
     };
 
+    const handleEdit = (log: DiveLogGroup) => {
+        router.push({
+            pathname: ROUTES.TABS.LOG_DIVE,
+            params: { editId: log.id }
+        });
+    };
+
     const renderItem = ({ item }: { item: DiveLogGroup }) => (
         <TouchableOpacity
             style={styles.card}
@@ -113,7 +121,16 @@ export default function DiveLogsScreen() {
                         <MapPin size={16} color={COLORS.PRIMARY} style={{ marginTop: 2 }} />
                         <Text style={styles.siteName} numberOfLines={1}>{item.siteName}</Text>
                     </View>
-                    <Text style={styles.date}>{new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+                    <View style={styles.headerRight}>
+                        <TouchableOpacity
+                            style={styles.editButton}
+                            onPress={() => handleEdit(item)}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Pencil size={14} color={COLORS.PRIMARY} />
+                        </TouchableOpacity>
+                        <Text style={styles.date}>{new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+                    </View>
                 </View>
 
                 <View style={styles.metricsRow}>
@@ -140,6 +157,7 @@ export default function DiveLogsScreen() {
                         </View>
                     )}
                 </View>
+
 
                 {(item.previewCreatures.length > 0) ? (
                     <View style={styles.highlightsContainer}>
@@ -255,6 +273,17 @@ const styles = StyleSheet.create({
     metricText: {
         fontSize: TYPOGRAPHY.SIZE_SM,
         color: '#ccc',
+    },
+    headerRight: {
+        alignItems: 'flex-end',
+        gap: 4,
+    },
+    editButton: {
+        backgroundColor: 'rgba(64, 196, 255, 0.1)',
+        padding: 6,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(64, 196, 255, 0.2)',
     },
     dot: {
         width: 3,

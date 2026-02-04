@@ -12,15 +12,17 @@ interface WikimediaImageProps {
   fallbackColor?: string;
   defaultImageSource?: ImageSourcePropType;
   retryCount?: number;
+  contentFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
 }
 
-export default function WikimediaImage({ 
-  uri, 
-  style, 
+export default function WikimediaImage({
+  uri,
+  style,
   containerStyle,
   fallbackColor = '#2a2a2a',
   defaultImageSource,
-  retryCount = 3
+  retryCount = 3,
+  contentFit = 'cover'
 }: WikimediaImageProps) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
@@ -50,7 +52,7 @@ export default function WikimediaImage({
   // Retry mechanism for failed image loads
   const handleRetry = React.useCallback(() => {
     const urls = [urlOptions.original, urlOptions.encoded, urlOptions.proxied].filter(Boolean) as string[];
-    
+
     // Try next URL option if available
     if (currentUrlIndex < urls.length - 1) {
       setCurrentUrlIndex(prev => prev + 1);
@@ -61,12 +63,12 @@ export default function WikimediaImage({
       setRetryAttempt(prev => prev + 1);
       setLoading(true);
       setError(false);
-      
+
       // Add a small delay before retrying to avoid rapid retries
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
       }
-      
+
       retryTimeoutRef.current = setTimeout(() => {
         // Force re-render by updating state
         setLoading(false);
@@ -88,9 +90,9 @@ export default function WikimediaImage({
       );
     }
     return (
-      <DefaultImagePlaceholder 
-        style={style} 
-        containerStyle={containerStyle} 
+      <DefaultImagePlaceholder
+        style={style}
+        containerStyle={containerStyle}
       />
     );
   }
@@ -108,9 +110,9 @@ export default function WikimediaImage({
   if (error) {
     return (
       <View style={containerStyle}>
-        <DefaultImagePlaceholder 
-          style={style} 
-          containerStyle={containerStyle} 
+        <DefaultImagePlaceholder
+          style={style}
+          containerStyle={containerStyle}
         />
       </View>
     );
@@ -119,7 +121,7 @@ export default function WikimediaImage({
   return (
     <View style={containerStyle}>
       {loading && (
-        <LoadingShimmer 
+        <LoadingShimmer
           style={StyleSheet.absoluteFill as ViewStyle}
         />
       )}
@@ -127,6 +129,7 @@ export default function WikimediaImage({
         key={currentUrl} // Force re-render when URL changes
         source={{ uri: currentUrl || '' }}
         style={style}
+        contentFit={contentFit}
         cachePolicy="memory-disk"
         allowDownscaling={true}
         onLoad={() => {
@@ -139,7 +142,7 @@ export default function WikimediaImage({
           console.warn('WikimediaImage: Image load error:', e, 'URL:', currentUrl);
           // Log additional error details if available
           console.warn('WikimediaImage: Error details:', JSON.stringify(e, null, 2));
-          
+
           setLoading(false);
           handleRetry();
         }}

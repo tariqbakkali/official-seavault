@@ -8,8 +8,8 @@ import {
     Linking,
     Dimensions,
     Modal,
-    SafeAreaView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BookOpen, X } from 'lucide-react-native'; // Assuming BookOpen icon exists
 import { ImageWithFallback } from '@/components';
 import { Article } from '@/types/database';
@@ -193,7 +193,6 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover',
     },
     gradientOverlay: {
         ...StyleSheet.absoluteFillObject,
@@ -258,7 +257,6 @@ const styles = StyleSheet.create({
     modalImage: {
         width: '100%',
         height: 300,
-        resizeMode: 'cover',
     },
     modalContent: {
         padding: DIMENSIONS.PADDING_XL,

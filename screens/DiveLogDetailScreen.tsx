@@ -1,14 +1,15 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView, Dimensions } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from '@legendapp/state/react';
-import { Clock, MapPin, Wind, Waves, Eye, Calendar, Thermometer, ArrowLeft, Anchor, User, Gauge, GraduationCap, Droplet } from 'lucide-react-native';
+import { Clock, MapPin, Wind, Waves, Eye, Calendar, Thermometer, ArrowLeft, Anchor, User, Gauge, GraduationCap, Droplet, Pencil } from 'lucide-react-native';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import { currentUserSightings$, diveSites$, creatures$ } from '@/stores/syncedObservables';
-import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import { currentUserSightings$, diveSites$, creatures$, media$ } from '@/stores/syncedObservables';
+import { COLORS, DIMENSIONS, TYPOGRAPHY, ROUTES } from '@/constants';
 import { Sighting, DiveSite, Creature } from '@/types/database';
 import { ImageWithFallback } from '@/components';
+import { MediaViewerModal } from '@/components/MediaViewerModal';
 
 const { width } = Dimensions.get('window');
 
@@ -33,14 +34,22 @@ export default function DiveLogDetailScreen() {
             if (c.creature_id) creatureMap.set(c.creature_id, c);
         });
 
-        // We filter sightings that match the group ID (date_time_in_siteId)
+        // Match sightings by dive_id (new model) or legacy composite key
         const matchingSightings = sightings.filter(s => {
-            // Reconstruct key logic from DiveLogsScreen - must match exactly!
+            if (s.dive_id === id) return true;
             const key = `${s.date}_${s.time_in || '00:00'}_${s.dive_site_id || 'unknown'}`;
             return key === id;
         });
 
         if (matchingSightings.length === 0) return null;
+
+        // Fetch media for this dive
+        const allMedia = Object.values(media$.get() || {}) as any[];
+        const sightingIds = matchingSightings.map(s => s.id);
+        const diveMedia = allMedia.filter(m =>
+            (m.dive_id === id || (m.sighting_id && sightingIds.includes(m.sighting_id))) &&
+            m.type === 'image'
+        ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
         const first = matchingSightings[0];
         const siteName = first.dive_site_id ? (siteMap.get(first.dive_site_id) || 'Unknown Location') : 'Unknown Location';
@@ -98,9 +107,21 @@ export default function DiveLogDetailScreen() {
             waterway,
             diveNotes,
             totalSightings: realSightings.length,
-            items: sightingsWithDetails
+            items: sightingsWithDetails,
+            media: diveMedia
         };
     });
+
+    const [viewerVisible, setViewerVisible] = useState(false);
+    const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+
+    const handleEdit = () => {
+        if (!id) return;
+        router.push({
+            pathname: ROUTES.TABS.LOG_DIVE,
+            params: { editId: id as string }
+        });
+    };
 
     if (!diveLog) {
         return (
@@ -132,9 +153,39 @@ export default function DiveLogDetailScreen() {
 
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
-            <ScreenHeader title="Dive Details" showBackButton onBackPress={() => router.back()} />
+            <ScreenHeader
+                title="Dive Details"
+                showBackButton
+                onBackPress={() => router.back()}
+                onActionPress={handleEdit}
+                actionIcon={Pencil}
+            />
 
             <ScrollView contentContainerStyle={styles.content}>
+
+                {diveLog.media && diveLog.media.length > 0 && (
+                    <View style={styles.mediaGalleryContainer}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mediaScroll}>
+                            {diveLog.media.map((item: any, idx: number) => (
+                                <TouchableOpacity
+                                    key={item.id}
+                                    style={styles.mediaItem}
+                                    onPress={() => {
+                                        setSelectedMediaIndex(idx);
+                                        setViewerVisible(true);
+                                    }}
+                                    activeOpacity={0.9}
+                                >
+                                    <ImageWithFallback
+                                        uri={item.url}
+                                        style={styles.galleryImage}
+                                        fallbackColor="#2A2A2A"
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
 
                 {/* Header / Location Card */}
                 <View style={styles.locationCard}>
@@ -226,6 +277,13 @@ export default function DiveLogDetailScreen() {
                 </View>
 
             </ScrollView>
+
+            <MediaViewerModal
+                isVisible={viewerVisible}
+                onClose={() => setViewerVisible(false)}
+                media={diveLog.media}
+                initialIndex={selectedMediaIndex}
+            />
         </View>
     );
 }
@@ -420,5 +478,33 @@ const styles = StyleSheet.create({
         fontSize: TYPOGRAPHY.SIZE_MD,
         textAlign: 'center',
         lineHeight: 22,
+    },
+    mediaGalleryContainer: {
+        marginBottom: DIMENSIONS.MARGIN_XL,
+        marginHorizontal: -DIMENSIONS.PADDING_LG, // Bleed out to edges
+    },
+    mediaScroll: {
+        paddingHorizontal: DIMENSIONS.PADDING_LG,
+        gap: DIMENSIONS.GAP_MD,
+    },
+    mediaItem: {
+        width: width * 0.7,
+        height: 200,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#1E1E1E',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    galleryImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    videoOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
