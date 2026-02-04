@@ -4,9 +4,6 @@ import { Database } from '../types/database';
 import { v4 as uuidv4 } from 'uuid';
 import { customSynced } from '@/services/legendStateConfig';
 import { checkAndAwardSightingAchievements } from '@/services/achievementService';
-import { syncObservable } from '@legendapp/state/sync';
-import { observablePersistAsyncStorage } from '@legendapp/state/persist-plugins/async-storage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Types for our observables
 export type Creature = Database['public']['Tables']['creatures']['Row'];
@@ -657,14 +654,14 @@ export const updateUserProfile = async (updates: Partial<Profile>) => {
 
 // Friends observable - moved to standard persisted observable for "The Proper Way"
 // This eliminates conflicts between the sync engine and manual realtime listeners.
-export const friends$ = observable<Record<string, any>>({});
-
-syncObservable(friends$, {
-  persist: {
-    name: 'friends_v16',
-    plugin: observablePersistAsyncStorage({ AsyncStorage }),
-  }
-});
+export const friends$ = observable<Record<string, any>>(customSynced({
+  supabase,
+  collection: 'friends', 
+  actions: ['read'],
+  persist: { name: 'friends_v17' },
+  fieldCreatedAt: 'created_at',
+  realtime: true 
+}));
 
 export const getSightings = getCurrentUserSightings;
 export const getAllFriends = () => friends$.get();

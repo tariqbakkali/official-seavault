@@ -92,7 +92,7 @@ export const uploadImage = async (
       return signedUrlData?.signedUrl ?? null;
     }
   } catch (error) {
-    console.error('Error uploading image:', error);
+    console.error(`Error uploading image to bucket "${bucket}":`, error);
     return null;
   }
 };
