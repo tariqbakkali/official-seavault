@@ -313,7 +313,7 @@ function RootLayout() {
             contentStyle: { backgroundColor: '#000', paddingTop: Platform.OS === 'android' ? insets.top : 0 },
           }}
         />
-        <Stack.Screen name="dive-sites/add" />
+        <Stack.Screen name="dive/template/[id]" />
         <Stack.Screen name="modal/paywall" options={{ presentation: 'modal', headerShown: false, gestureEnabled: false }} />
       </Stack>
       {/* Purchase Gate Modal - Blocks app access for non-subscribers */}

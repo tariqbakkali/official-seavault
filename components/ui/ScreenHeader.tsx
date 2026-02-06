@@ -5,12 +5,20 @@ import { ArrowLeft } from 'lucide-react-native';
 
 import { LucideIcon } from 'lucide-react-native';
 
+interface HeaderAction {
+  icon?: LucideIcon;
+  text?: string;
+  onPress: () => void;
+  style?: ViewStyle;
+}
+
 interface ScreenHeaderProps {
   title: string;
   onBackPress?: () => void;
   onActionPress?: () => void;
   actionText?: string;
   actionIcon?: LucideIcon;
+  actions?: HeaderAction[];
   showBackButton?: boolean;
   showActionButton?: boolean;
   style?: ViewStyle;
@@ -25,6 +33,7 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   onActionPress,
   actionText,
   actionIcon: ActionIcon,
+  actions,
   showBackButton = true,
   showActionButton = false,
   style
@@ -39,21 +48,43 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
 
       <Text style={styles.headerText}>{title}</Text>
 
-      {(showActionButton || ActionIcon) && onActionPress && (
-        <TouchableOpacity
-          onPress={onActionPress}
-          style={[
-            styles.actionButton,
-            ActionIcon && styles.iconActionButton
-          ]}
-        >
-          {ActionIcon ? (
-            <ActionIcon size={20} color="#fff" />
-          ) : (
-            <Text style={styles.actionButtonText}>{actionText}</Text>
-          )}
-        </TouchableOpacity>
-      )}
+      <View style={styles.actionsContainer}>
+        {actions ? (
+          actions.map((action, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={action.onPress}
+              style={[
+                styles.actionButton,
+                action.icon && styles.iconActionButton,
+                action.style
+              ]}
+            >
+              {action.icon ? (
+                <action.icon size={20} color="#fff" />
+              ) : (
+                <Text style={styles.actionButtonText}>{action.text}</Text>
+              )}
+            </TouchableOpacity>
+          ))
+        ) : (
+          (showActionButton || ActionIcon) && onActionPress && (
+            <TouchableOpacity
+              onPress={onActionPress}
+              style={[
+                styles.actionButton,
+                ActionIcon && styles.iconActionButton
+              ]}
+            >
+              {ActionIcon ? (
+                <ActionIcon size={20} color="#fff" />
+              ) : (
+                <Text style={styles.actionButtonText}>{actionText}</Text>
+              )}
+            </TouchableOpacity>
+          )
+        )}
+      </View>
     </View>
   );
 };
@@ -104,10 +135,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingVertical: 0,
   },
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
   placeholder: {
     width: 40,
   },
-
 });
 
 export default ScreenHeader;

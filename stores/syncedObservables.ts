@@ -10,14 +10,12 @@ export type Creature = Database['public']['Tables']['creatures']['Row'];
 export type Category = Database['public']['Tables']['categories']['Row'];
 export type DiveSite = Database['public']['Tables']['dive_sites']['Row'];
 export type Sighting = Database['public']['Tables']['sightings']['Row'];
-export type Dive = Database['public']['Tables']['dives']['Row'];
 export type Wishlist = Database['public']['Tables']['wishlists']['Row'];
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Achievement = Database['public']['Tables']['achievements']['Row'];
 export type UserAchievement = Database['public']['Tables']['user_achievements']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
-export type Instructor = Database['public']['Tables']['instructors']['Row'];
-export type Media = Database['public']['Tables']['media']['Row'];
+export type Friend = Database['public']['Tables']['friends']['Row'];
 
 
 
@@ -38,10 +36,6 @@ export const categories$ = observable(customSynced({
   collection: 'categories',
   actions: ['read'],
   persist: { name: 'categories_v6' },
-    delete: async (item: any) => {
-    const data = ""
-    return { data, error: null };
-  },
 
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
@@ -86,10 +80,6 @@ export const achievements$ = observable(customSynced({
   collection: 'achievements',
   actions: ['read'],
   persist: { name: 'achievements_v6' },
-    delete: async (item: any) => {
-    const data = ""
-    return { data, error: null };
-  },
 
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
@@ -106,8 +96,26 @@ export const userAchievements$ = observable(customSynced({
   },
   actions: ['read', 'create'],
   persist: { name: 'user_achievements_v6' },
-    delete: async (item: any) => {
-    const data = ""
+
+  // Sanitation for user_achievements
+  update: async (input: any) => {
+    const validColumns = ['id', 'user_id', 'achievement_id', 'created_at', 'updated_at'];
+    const sanitizedInput = Object.keys(input)
+      .filter(key => validColumns.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = input[key];
+        return obj;
+      }, {} as any);
+
+    const { data, error } = await supabase
+      .from('user_achievements')
+      .upsert(sanitizedInput)
+      .select()
+      .single();
+    
+    if (error) {
+      throw new Error(`Failed to save achievement: ${error.message}`);
+    }
     return { data, error: null };
   },
 
@@ -136,19 +144,26 @@ export const diveSites$ = observable(customSynced({
   persist: { name: 'dive_sites_v6' },
   // changesSince: 'last-sync',
   update: async (input: any) => {
+    const validColumns = [
+      'id', 'name', 'latitude', 'longitude', 'description', 
+      'created_at', 'user_id', 'is_public', 'deleted', 'updated_at'
+    ];
+    const sanitizedInput = Object.keys(input)
+      .filter(key => validColumns.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = input[key];
+        return obj;
+      }, {} as any);
+
     const { data, error } = await supabase
       .from('dive_sites')
-      .upsert(input)
+      .upsert(sanitizedInput)
       .select()
       .single();
     
     if (error) {
       throw new Error(`Failed to update dive site: ${error.message}`);
     } 
-    return { data, error: null };
-  },
-    delete: async (item: any) => {
-    const data = ""
     return { data, error: null };
   },
 
@@ -168,22 +183,36 @@ export const currentUserSightings$ = observable(customSynced({
   },
   actions: ['read', 'create', 'update', 'delete'],
   persist: { name: 'sightings_v6', retrySync: true },
-    delete: async (item: any) => {
-    const data = ""
-    return { data, error: null };
-  },
 
   // changesSince: 'last-sync',
   update: async (input: any) => {
-    // Custom Supabase upsert function for sightings
+    // List of valid columns to prevent 400 errors from extra local fields
+    const validColumns = [
+      'id', 'user_id', 'creature_id', 'date', 'dive_notes', 'image_url', 
+      'created_at', 'dive_site_id', 'dive_type', 'time_of_day', 'depth', 
+      'creature_notes', 'updated_at', 'image_upload_status', 'deleted', 
+      'duration', 'weather', 'visibility', 'current', 'time_in', 'time_out', 
+      'air_in', 'air_out', 'air_unit', 'course_type', 'skills_completed', 
+      'instructor_id', 'waterway', 'student_id', 'instructor_name', 
+      'water_temperature', 'depth_unit', 'dive_mode', 'dive_id', 'images',
+      'max_depth', 'is_public_template'
+    ];
+
+    const sanitizedInput = Object.keys(input)
+      .filter(key => validColumns.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = input[key];
+        return obj;
+      }, {} as any);
+
     const { data, error } = await supabase
       .from('sightings')
-      .upsert(input)
+      .upsert(sanitizedInput)
       .select()
       .single();
     
     if (error) {
-      throw new Error(`Failed to update sighting: ${error.message}`);
+      throw new Error(`Failed to update sighting ${input.id}: ${error.message}`);
     }
     return { data, error: null };
   },
@@ -196,12 +225,8 @@ export const currentUserSightings$ = observable(customSynced({
 export const allUsersSightings$ = observable(customSynced({
   supabase,
   collection: 'sightings',
-  actions: ['read', 'create', 'update', 'delete'],
+  actions: ['read'], // Community view is read-only
   persist: { name: 'all_sightings_v6' },
-    delete: async (item: any) => {
-    const data = ""
-    return { data, error: null };
-  },
 
   // changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
@@ -215,10 +240,6 @@ export const allUsersAchievements$ = observable(customSynced({
   collection: 'user_achievements',
   actions: ['read'],
   persist: { name: 'all_user_achievements_v6' },
-    delete: async (item: any) => {
-    const data = ""
-    return { data, error: null };
-  },
 
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
@@ -236,12 +257,19 @@ export const wishlists$ = observable(customSynced({
   },
   actions: ['read', 'update', 'delete'],
   update: async (input: any) => {
+    const validColumns = ['id', 'user_id', 'creature_id', 'created_at', 'updated_at', 'deleted'];
+    const sanitizedInput = Object.keys(input)
+      .filter(key => validColumns.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = input[key];
+        return obj;
+      }, {} as any);
 
-    if (input.deleted ) {
+    if (sanitizedInput.deleted) {
       const { data, error } = await supabase
       .from('wishlists')
       .delete()
-      .eq('id', input.id)
+      .eq('id', sanitizedInput.id)
       .select()
       .single();
       if (error) {
@@ -253,7 +281,7 @@ export const wishlists$ = observable(customSynced({
     // Custom Supabase create function for wishlists
     const { data, error } = await supabase
       .from('wishlists')
-      .insert(input)
+      .upsert(sanitizedInput)
       .select()
       .single();
     
@@ -283,7 +311,30 @@ export const currentUserProfile$ = observable<Record<string, Profile>>(customSyn
     return result;
   },
   actions: ['read', 'update'],
-   delete: async (item: any) => {
+  update: async (input: any) => {
+    const validColumns = [
+      'id', 'email', 'full_name', 'avatar_url', 'membership_tier', 
+      'created_at', 'is_premium', 'has_seen_onboarding', 'updated_at'
+    ];
+    const sanitizedInput = Object.keys(input)
+      .filter(key => validColumns.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = input[key];
+        return obj;
+      }, {} as any);
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert(sanitizedInput)
+      .select()
+      .single();
+    
+    if (error) {
+      throw new Error(`Failed to update profile: ${error.message}`);
+    }
+    return { data, error: null };
+  },
+  delete: async (item: any) => {
     const data = ""
     return { data, error: null };
   },
@@ -302,10 +353,6 @@ export const allUsersProfiles$ = observable<Record<string, Profile>>(customSynce
   collection: 'profiles',
   actions: ['read'],
   persist: { name: 'all_profiles_v8' },
-    delete: async (item: any) => {
-    const data = ""
-    return { data, error: null };
-  },
 
   fieldCreatedAt: 'created_at',
   realtime: false, // Disabled to prevent sync overhead
@@ -338,28 +385,7 @@ export const articles$ = observable(customSynced({
   realtime: true,
 }));
 
-// Dives observable
-export const dives$ = observable(customSynced({
-  supabase,
-  collection: 'dives',
-  actions: ['read', 'create', 'update', 'delete'],
-  persist: { name: 'dives_v1' },
-  select: (select: any) => select.select('*'),
-  fieldCreatedAt: 'created_at',
-  realtime: true,
-}));
-
-// Media observable
-export const media$ = observable(customSynced({
-  supabase,
-  collection: 'media',
-  actions: ['read', 'create', 'update', 'delete'],
-  persist: { name: 'media_v1' },
-  select: (select: any) => select.select('*'),
-  fieldCreatedAt: 'created_at',
-  fieldUpdatedAt: 'created_at', // Override global default since this table lacks updated_at
-  realtime: true,
-}));
+// Articles observable - synced for offline support
 
 // Utility functions for working with the observables
 export const getCategories = () => categories$.get();
@@ -378,8 +404,6 @@ export const getCurrentUserProfile = () => currentUserProfile$.get();
 export const getAllUsersProfiles = () => allUsersProfiles$.get();
 export const getAllArticles = () => articles$.get();
 export const getInstructors = () => instructors$.get();
-export const getDives = () => dives$.get();
-export const getMedia = () => media$.get();
 // Removed getCurrentUserDives - using sightings table only
 
 // Utility functions for creating new records
@@ -422,7 +446,20 @@ export const createSighting = async (sightingData: Omit<Sighting, 'id' | 'create
     created_at: new Date().toISOString(),
     image_url: imageUrl,
     image_upload_status: imageUploadStatus,
-  } as Sighting;
+    images: (sightingData as any).images || (imageUrl ? [{
+      id: uuidv4(),
+      remoteUrl: imageUrl,
+      syncStatus: imageUploadStatus === 'uploaded' ? 'synced' : 'pending',
+      createdAt: new Date().toISOString(),
+      fileName: imageUrl.split('/').pop() || 'image.png',
+      mimeType: 'image/png'
+    }] : []),
+  } as any;
+
+  // Consistency check: ensure dive_notes is set if notes was passed (though types should prevent this now)
+  if ((sightingData as any).notes && !newSighting.dive_notes) {
+    newSighting.dive_notes = (sightingData as any).notes;
+  }
 
   // Update both currentUserSightings$ and allUsersSightings$ observables
   (currentUserSightings$ as any)[id].set(newSighting);
@@ -446,41 +483,6 @@ export const createSighting = async (sightingData: Omit<Sighting, 'id' | 'create
   return newSighting;
 };
 
-// Utility function to create a dive
-export const createDive = async (diveData: any) => {
-  const userId = currentUserID$.get();
-  if (!userId) throw new Error('User must be logged in to create dives');
-  
-  const id = uuidv4();
-  const newDive = {
-    ...diveData,
-    id,
-    user_id: userId,
-    created_at: new Date().toISOString(),
-  };
-
-  // Set the data in the observable
-  (dives$ as any)[id].set(newDive);
-
-  return newDive;
-};
-
-// Utility function to update a dive
-export const updateDive = async (id: string, updates: any) => {
-  const existing = (dives$ as any)[id].peek();
-  if (!existing) throw new Error('Dive not found');
-  
-  const updatedDive = {
-    ...existing,
-    ...updates,
-    updated_at: new Date().toISOString(),
-  };
-
-  (dives$ as any)[id].set(updatedDive);
-
-  return updatedDive;
-};
-
 // Utility function to update a sighting
 export const updateSighting = async (id: string, updates: any) => {
   const existing = (currentUserSightings$ as any)[id].peek();
@@ -497,37 +499,45 @@ export const updateSighting = async (id: string, updates: any) => {
   return updatedSighting;
 };
 
-// Utility function to delete a dive
-export const deleteDive = async (id: string) => {
-  return (dives$ as any)[id].delete();
+// Function to clone a dive template to the user's logbook
+export const cloneDive = async (templateDiveId: string) => {
+  const userId = currentUserID$.get();
+  if (!userId) throw new Error('Must be logged in to clone dives');
+
+  // Fetch all sightings for this template dive
+  // We use supabase directly to handle templates that might not be in the local observable
+  const { data: templateSightings, error } = await supabase
+    .from('sightings')
+    .select('*')
+    .eq('dive_id', templateDiveId);
+
+  if (error) throw error;
+  if (!templateSightings || templateSightings.length === 0) {
+    throw new Error('Template dive not found or has no sightings');
+  }
+
+  const newDiveId = uuidv4();
+  const today = new Date().toISOString().split('T')[0];
+
+  // Clone each sighting
+  for (const s of templateSightings) {
+    const sightingObj = s as any;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _, created_at: __, updated_at: ___, user_id: ____, ...rest } = sightingObj;
+    
+    // Create new sighting for the current user
+    await createSighting({
+      ...rest,
+      dive_id: newDiveId,
+      date: today,
+    } as any);
+  }
+
+  return newDiveId;
 };
 
-// Utility function to delete a sighting
 export const deleteSighting = async (id: string) => {
   return (currentUserSightings$ as any)[id].delete();
-};
-
-// Utility function to add media
-export const addMedia = async (mediaData: Omit<Media, 'id' | 'created_at' | 'user_id'>) => {
-  const userId = currentUserID$.get();
-  if (!userId) throw new Error('User must be logged in to add media');
-  
-  const id = uuidv4();
-  const newMedia = {
-    ...mediaData,
-    id,
-    user_id: userId,
-    created_at: new Date().toISOString(),
-  };
-
-  (media$ as any)[id].set(newMedia);
-
-  return newMedia;
-};
-
-// Utility function to delete media
-export const deleteMedia = async (id: string) => {
-  return (media$ as any)[id].delete();
 };
 
 export const createWishlistItem = async (creatureId: string) => {

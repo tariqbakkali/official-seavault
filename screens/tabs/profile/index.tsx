@@ -80,7 +80,7 @@ export default function ProfileScreen() {
   // Reactive Achievements with Status
   const achievementsWithStatus = useSelector(() => {
     const userAchievementsArray = Object.values(userAchievements$.get() || []);
-    const sightingsArray = Object.values(currentUserSightings$.get() || []);
+    const sightingsArray = Object.values(currentUserSightings$.get() || []).filter(Boolean);
     const allAchievementsArray = Object.values(achievements$.get() || []);
 
     const unlockedIds = new Set(userAchievementsArray.map((i: any) => i.achievement_id));

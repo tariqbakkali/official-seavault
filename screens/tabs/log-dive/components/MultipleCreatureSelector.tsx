@@ -9,6 +9,7 @@ import { DIMENSIONS, TYPOGRAPHY, COLORS } from '@/constants';
 import UniversalCreaturePicker from './UniversalCreaturePicker';
 
 interface CreatureSighting {
+  id: string; // tempId
   creatureId: string | null;
   notes: string | null;
   imageUrl: string | null;
@@ -45,6 +46,7 @@ const MultipleCreatureSelector: React.FC<MultipleCreatureSelectorProps> = ({
   // Add creatures from the picker
   const handleAddCreatures = (selectedCreatures: any[]) => {
     const newSightings = selectedCreatures.map(creature => ({
+      id: uuidv4(),
       creatureId: creature.id,
       notes: null,
       imageUrl: null,

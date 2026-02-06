@@ -1,46 +1,18 @@
 import { observable } from '@legendapp/state';
 import { customSynced } from '@/services/legendStateConfig';
-import { supabase } from '@/services/supabase';
+import { supabase } from '../services/supabase';
+import { uploadImageToSupabase } from '../services/imageService';
+import { Database } from '../types/database';
 import { ImageMetadata } from '@/types/image.types';
 import { v4 as uuidv4 } from 'uuid';
-import { currentUserID$ } from './syncedObservables';
+import { currentUserID$, currentUserSightings$ } from './syncedObservables';
 
 /**
  * Image State Management using Legend State
  * This file defines observables for managing image metadata and sync status
  */
 
-// Image metadata observable - using sightings table to store image references
-export const images$ = observable(customSynced({
-  supabase,
-  collection: 'sightings',
-  filter: (select: any) => {
-    // Filter by current user if available
-    const userId = currentUserID$.get();
-    if (!userId) return select.eq('id', '00000000-0000-0000-0000-000000000000');
-    return select.eq('user_id', userId).not('image_url', 'is', null);
-  },
-  actions: ['read', 'create', 'update', 'delete'],
-  persist: { name: 'images', retrySync: true },
-  changesSince: 'last-sync',
-  fieldCreatedAt: 'created_at',
-  fieldUpdatedAt: 'updated_at',
-  generateId: () => uuidv4(),
-  update: async (input: any) => {
-    // Custom Supabase update function for images
-    const { data, error } = await supabase
-      .from('sightings')
-      .insert(input)
-      .select()
-      .single();
-    
-    if (error) {
-      throw new Error(`Failed to update image: ${error.message}`);
-    }
-    return { data, error: null };
-  },
-  realtime: true,
-}));
+// Upload queue observable - tracks images that need to be uploaded
 
 // Upload queue observable - tracks images that need to be uploaded
 export const uploadQueue$ = observable<{
@@ -64,75 +36,100 @@ export const imageCache$ = observable<{
 
 // Utility functions for working with image observables
 
-/**
- * Get all images
- */
-export const getImages = () => images$.get();
 
-/**
- * Get images for a specific dive site
- */
-export const getImagesForDiveSite = (diveSiteId: string) => {
-  const allImages = images$.get() || {};
-  return Object.values(allImages).filter(
-    (image: any) => image.diveSiteId === diveSiteId
+
+export const getImagesForDiveSite = (diveSiteId: string): ImageMetadata[] => {
+  const allSightings = currentUserSightings$.get() || {};
+  const sightings = Object.values(allSightings).filter(
+    (s: any) => s.dive_site_id === diveSiteId && s.images && Array.isArray(s.images)
   );
+
+  const images: ImageMetadata[] = [];
+  sightings.forEach((s: any) => {
+    s.images.forEach((img: any) => {
+      images.push({
+        ...img,
+        diveSiteId: s.dive_site_id, // Ensure consistency
+      });
+    });
+  });
+
+  return images;
 };
 
 /**
  * Add a new image
  */
-export const addImage = async (imageData: Omit<ImageMetadata, 'id' | 'created_at' | 'user_id'>) => {
+export const addImage = async (imageData: Omit<ImageMetadata, 'id' | 'createdAt' | 'syncStatus'>) => {
   const userId = currentUserID$.get();
-  if (!userId) {
-    throw new Error('User must be logged in to add images');
-  }
+  if (!userId) throw new Error('User must be logged in to add images');
   
+  // Find the primary sighting for this dive site to store the image
+  const allSightings = currentUserSightings$.get() || {};
+  const sighting = Object.values(allSightings).find((s: any) => s.dive_site_id === imageData.diveSiteId);
+
+  if (!sighting) {
+    throw new Error('No sighting found for this dive site to attach images to.');
+  }
+
   const id = uuidv4();
-  
-  const newImage = {
-    ...imageData,
-    id,
-    user_id: userId,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  } as ImageMetadata & { user_id: string; updated_at: string };
-  
-  // Set the data in the observable
-  (images$ as any)[id].set(newImage);
-  
-  return newImage;
-};
+  let remoteUrl = imageData.remoteUrl;
 
-/**
- * Update an existing image
- */
-export const updateImage = async (imageId: string, updates: Partial<ImageMetadata>) => {
-  const currentImages = images$.get() || {};
-  const currentImage = (currentImages as Record<string, any>)[imageId];
-  
-  if (!currentImage) {
-    throw new Error(`Image with ID ${imageId} not found`);
+  // If we have a local URI but no remote URL, attempt upload now
+  if (imageData.localUri && !remoteUrl) {
+    try {
+      const uploadedUrl = await uploadImageToSupabase(
+        imageData.localUri,
+        imageData.fileName,
+        imageData.mimeType
+      );
+      if (uploadedUrl) {
+        remoteUrl = uploadedUrl;
+      }
+    } catch (error) {
+      console.error('Error uploading image in addImage:', error);
+    }
   }
-  
-  const updatedImage = {
-    ...currentImage,
-    ...updates,
-    updated_at: new Date().toISOString(),
+
+  const newImageMetadata: ImageMetadata = {
+    id,
+    diveSiteId: imageData.diveSiteId,
+    createdAt: new Date().toISOString(),
+    fileName: imageData.fileName,
+    size: imageData.size,
+    mimeType: imageData.mimeType,
+    remoteUrl: remoteUrl || undefined,
+    localUri: imageData.localUri,
+    syncStatus: remoteUrl ? 'synced' : 'pending',
   };
+
+  // Update original sighting
+  const currentImages = (sighting as any).images || [];
+  (currentUserSightings$ as any)[(sighting as any).id].images.set([...currentImages, newImageMetadata]);
   
-  // Update the observable
-  (images$ as any)[imageId].set(updatedImage);
-  
-  return updatedImage;
+  return newImageMetadata;
 };
 
 /**
- * Delete an image
+ * Delete an image from a sighting
  */
 export const deleteImage = async (imageId: string) => {
-  // Use Legend State's delete method
-  (images$ as any)[imageId].delete();
+  try {
+    const allSightings = currentUserSightings$.get() || {};
+    const sighting = Object.values(allSightings).find((s: any) => 
+      s.images && Array.isArray(s.images) && s.images.some((img: any) => img.id === imageId)
+    );
+
+    if (sighting) {
+      const newImages = (sighting as any).images.filter((img: any) => img.id !== imageId);
+      (currentUserSightings$ as any)[(sighting as any).id].images.set(newImages);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    return false;
+  }
 };
 
 /**
@@ -243,6 +240,5 @@ export const updateImageCacheAccessTime = (imageId: string) => {
 };
 
 // Export types for convenience
-export type ImageObservable = typeof images$;
 export type UploadQueueObservable = typeof uploadQueue$;
 export type ImageCacheObservable = typeof imageCache$;

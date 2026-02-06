@@ -312,8 +312,16 @@ const LogDiveScreen = () => {
           />
 
           {/* Submit Button */}
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>{editId ? "Update Dive" : "Log Dive"}</Text>
+          <TouchableOpacity
+            style={[styles.submitButton, isLoading && { opacity: 0.7 }]}
+            onPress={handleSubmit}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={COLORS.TEXT_PRIMARY} />
+            ) : (
+              <Text style={styles.submitButtonText}>{editId ? "Update Dive" : "Log Dive"}</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>

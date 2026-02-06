@@ -12,7 +12,8 @@ import { ImagePicker } from '@/components/ImagePicker';
 import { ImageGallery } from '@/components/ImageGallery';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useImageSync } from '@/hooks/useImageSync';
-import { images$, addImage, deleteImage } from '@/stores/imageState';
+import { useSelector } from '@legendapp/state/react';
+import { images$, addImage, deleteImage, getImagesForDiveSite } from '@/stores/imageState';
 import { ImageMetadata } from '@/types/image.types';
 import { TYPOGRAPHY, DIMENSIONS } from '@/constants';
 import { Upload, RefreshCw, AlertCircle } from 'lucide-react-native';
@@ -26,41 +27,15 @@ export const DiveSiteDetailExample: React.FC<DiveSiteDetailExampleProps> = ({
   diveSiteId,
   diveSiteName,
 }) => {
-  const [images, setImages] = useState<ImageMetadata[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  
-  const { isUploading, uploadedImages, error: uploadError, clearError } = useImageUpload();
+
+  const { isUploading, error: uploadError, clearError } = useImageUpload();
   const { isSyncing, isOnline, queueStatus, syncError, startSync, clearSyncError } = useImageSync();
 
-  // Load images for this dive site
-  useEffect(() => {
-    const loadImages = () => {
-      try {
-        // In a real implementation, you would filter images by diveSiteId
-        const allImages = images$.get() || {};
-        const diveSiteImages = Object.values(allImages).filter(
-          (image: any) => image.diveSiteId === diveSiteId
-        ) as ImageMetadata[];
-        
-        setImages(diveSiteImages);
-      } catch (error) {
-        console.error('Error loading images:', error);
-      }
-    };
-    
-    loadImages();
-    
-    // Set up a listener for image changes
-    // In a real implementation, you would set up a listener for image changes
-    // For now, we'll just load images once
-    // const unsubscribe = images$.subscribe(() => {
-    //   loadImages();
-    // });
-    
-    return () => {
-      // unsubscribe();
-    };
-  }, [diveSiteId]);
+  // Use selector to get images reactively
+  const images = useSelector(() => getImagesForDiveSite(diveSiteId));
+
+  // Clear errors when component unmounts
 
   // Handle image selection
   const handleImageSelect = async (imageMetadata: ImageMetadata) => {
@@ -70,11 +45,8 @@ export const DiveSiteDetailExample: React.FC<DiveSiteDetailExampleProps> = ({
         ...imageMetadata,
         diveSiteId,
       };
-      
+
       await addImage(imageWithDiveSite);
-      
-      // Start sync process
-      startSync();
     } catch (error) {
       Alert.alert('Error', 'Failed to add image');
       console.error('Error adding image:', error);
@@ -94,8 +66,6 @@ export const DiveSiteDetailExample: React.FC<DiveSiteDetailExampleProps> = ({
             style: 'destructive',
             onPress: async () => {
               await deleteImage(imageId);
-              // Refresh the image list
-              startSync();
             },
           },
         ]
@@ -135,7 +105,7 @@ export const DiveSiteDetailExample: React.FC<DiveSiteDetailExampleProps> = ({
     >
       <View style={styles.header}>
         <Text style={styles.title}>{diveSiteName}</Text>
-        
+
         {/* Status bar */}
         <View style={styles.statusBar}>
           <View style={styles.statusItem}>
@@ -143,7 +113,7 @@ export const DiveSiteDetailExample: React.FC<DiveSiteDetailExampleProps> = ({
               {isOnline ? 'Online' : 'Offline'}
             </Text>
           </View>
-          
+
           {queueStatus.pending > 0 && (
             <View style={styles.statusItem}>
               <Upload size={16} color="#ff9800" />
@@ -152,7 +122,7 @@ export const DiveSiteDetailExample: React.FC<DiveSiteDetailExampleProps> = ({
               </Text>
             </View>
           )}
-          
+
           {queueStatus.failed > 0 && (
             <View style={styles.statusItem}>
               <AlertCircle size={16} color="#f44336" />
@@ -163,7 +133,7 @@ export const DiveSiteDetailExample: React.FC<DiveSiteDetailExampleProps> = ({
           )}
         </View>
       </View>
-      
+
       {/* Image picker */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Add Photos</Text>
@@ -172,11 +142,11 @@ export const DiveSiteDetailExample: React.FC<DiveSiteDetailExampleProps> = ({
           diveSiteId={diveSiteId}
           disabled={isUploading}
         />
-        
+
         {isUploading && (
           <Text style={styles.uploadStatus}>Uploading images...</Text>
         )}
-        
+
         {(uploadError || syncError) && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>
@@ -195,13 +165,13 @@ export const DiveSiteDetailExample: React.FC<DiveSiteDetailExampleProps> = ({
           </View>
         )}
       </View>
-      
+
       {/* Image gallery */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
           Photos ({images.length})
         </Text>
-        
+
         {images.length > 0 ? (
           <ImageGallery
             images={images}
@@ -217,7 +187,7 @@ export const DiveSiteDetailExample: React.FC<DiveSiteDetailExampleProps> = ({
           </View>
         )}
       </View>
-      
+
       {/* Sync status */}
       {isSyncing && (
         <View style={styles.syncStatusContainer}>

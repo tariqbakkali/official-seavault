@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { showAlert } from '@/utils/alertUtils';
 import { feetToMeters, metersToFeet } from '@/utils/format';
 import { ROUTES } from '@/constants/routes';
-import { Database, Dive, Sighting, Media } from '@/types/database';
+import { Database, Sighting } from '@/types/database';
 import { saveDiveSession, getDiveSession } from '@/services/diveService';
-import { dives$, media$ } from '@/stores/syncedObservables';
+import { currentUserSightings$ } from '@/stores/syncedObservables';
 import { useSelector } from '@legendapp/state/react';
+import { v4 as uuidv4 } from 'uuid';
 
 // Helper to calculate duration in minutes
 const calculateDuration = (start: string, end: string): string => {
@@ -41,6 +42,7 @@ const calculateDuration = (start: string, end: string): string => {
 
 // New interface for creature sighting data
 interface CreatureSighting {
+  id: string; // tempId for linking
   creatureId: string | null;
   notes: string | null;
   imageUrl: string | null;
@@ -87,6 +89,7 @@ export const useLogDive = () => {
     source?: string;
     editId?: string;
   }>();
+  const router = useRouter();
   
   const [formData, setFormData] = useState<FormData>({
     diveSiteId: null,
@@ -118,8 +121,9 @@ export const useLogDive = () => {
 
   // Removed selectedImage state as it's no longer needed
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { creatures: allCreatures, categories: allCategories, diveSites: allDiveSites, createSighting, isLoading, errors } = useSyncedData();
+  const { creatures: allCreatures, categories: allCategories, diveSites: allDiveSites, createSighting, isLoading: isSyncLoading, errors } = useSyncedData();
 
   // Determine if we should show back button based on navigation source
   const shouldShowBackButton = source === 'creature';
@@ -144,9 +148,15 @@ export const useLogDive = () => {
     }
     
     if (selectedCreature && typeof selectedCreature === 'string') {
+      // If coming from creature details, pre-fill sighting
       setFormData(prev => ({
         ...prev,
-        creatureSightings: [{ creatureId: selectedCreature, notes: null, imageUrl: null }],
+        creatureSightings: [{ 
+          id: uuidv4(), // Ensure ID is always present
+          creatureId: selectedCreature, 
+          notes: null, 
+          imageUrl: null 
+        }],
       }));
     }
   }, [selectedCategory, selectedCreature]);
@@ -160,6 +170,7 @@ export const useLogDive = () => {
         
         // Map sightings back to form format
         const creatureSightings = sightings.map(s => ({
+          id: s.id,
           creatureId: s.creature_id,
           notes: s.creature_notes,
           imageUrl: s.image_url,
@@ -169,10 +180,10 @@ export const useLogDive = () => {
           diveSiteId: dive.dive_site_id,
           date: new Date(dive.date),
           timeOfDay: sightings[0]?.time_of_day || '',
-          diveMode: dive.dive_type === 'training' ? 'training' : 'leisure',
+          diveMode: dive.dive_mode || 'leisure',
           diveType: dive.dive_type,
           depth: dive.max_depth ? dive.max_depth.toString() : '',
-          diveNotes: dive.notes || '',
+          diveNotes: dive.dive_notes || '',
           creatureSightings,
           duration: dive.duration ? dive.duration.toString() : '',
           weather: dive.weather,
@@ -190,12 +201,12 @@ export const useLogDive = () => {
             return acc;
           }, {}),
           waterway: dive.waterway,
-          instructorName: dive.instructor_id ? '' : '', // Placeholder: would need look up if not embedded
+          instructorName: dive.instructor_name || '',
           instructorId: dive.instructor_id,
           media: media.map(m => ({
             uri: m.url,
             type: m.type as 'image' | 'video',
-            id: m.id,
+            id: (m as any).id,
             sightingId: m.sighting_id || undefined,
           })),
         });
@@ -274,7 +285,10 @@ export const useLogDive = () => {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting(true);
       // Validate dive type requirements
       if (formData.diveMode === 'leisure' && formData.creatureSightings.length === 0) {
         showAlert('Missing Sightings', 'Leisure dives must have at least one creature sighting recorded.');
@@ -302,11 +316,12 @@ export const useLogDive = () => {
           dive_type: formData.diveType,
           course_type: formData.diveMode === 'training' ? (formData.courseType || null) : null,
           skills_completed: formData.diveMode === 'training' ? Object.keys(formData.completedSkills).filter(skill => formData.completedSkills[skill]) : [],
-          notes: formData.diveNotes || null,
+          dive_notes: formData.diveNotes || null,
           weather: formData.weather || null,
           visibility: formData.visibility || null,
           current: formData.current || null,
           instructor_id: formData.instructorId || null,
+          instructor_name: formData.instructorName || null,
           waterway: formData.waterway || null,
         },
         sightings: formData.creatureSightings.map(s => ({
@@ -379,6 +394,8 @@ export const useLogDive = () => {
     } catch (error) {
       console.error('Error submitting dive log:', error);
       showAlert('Error', 'Error saving dive log. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -389,7 +406,7 @@ export const useLogDive = () => {
     // Removed selectedImage and setSelectedImage
     selectedCategories,
     setSelectedCategories,
-    isLoading,
+    isLoading: isSubmitting,
     
     // Data
     diveSitesArray,

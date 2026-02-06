@@ -77,7 +77,7 @@ export const initializeUserSession = async (userId: string) => {
          console.log('[AppInitializer] Local cache says Free/Missing. Verifying with Server (Paranoid Check)...');
          const { data, error } = await supabase
             .from('profiles')
-            .select('is_premium')
+            .select('*')
             .eq('id', userId)
             .single();
             

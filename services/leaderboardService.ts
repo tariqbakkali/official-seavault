@@ -54,6 +54,8 @@ export const getLeaderboardData = (
 
   // Calculate points and discovered creatures from sightings
   allSightings.forEach(sighting => {
+    if (!sighting) return; // Add null check to prevent crash if data is incomplete
+    
     // If filtering by friends, skip if user not in friendIds AND user not already in userStats (which respects the filter above)
     // However, userStats only contains profiles that matched.
     // If a user has no profile but has sightings, we might create an entry below.
@@ -88,6 +90,8 @@ export const getLeaderboardData = (
 
   // Calculate points from achievements
   allUserAchievements.forEach(userAchievement => {
+    if (!userAchievement) return; // Add null check
+    
     if (friendIds && !friendIds.includes(userAchievement.user_id)) {
       return;
     }

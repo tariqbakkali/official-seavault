@@ -28,9 +28,9 @@ export default function DiveLogsScreen() {
     const insets = useSafeAreaInsets();
 
     const diveLogs = useSelector(() => {
-        const sightings = Object.values(currentUserSightings$.get() || {}) as unknown as Sighting[];
-        const sites = Object.values(diveSites$.get() || {}) as unknown as DiveSite[];
-        const creatures = Object.values(creatures$.get() || {}) as unknown as Creature[];
+        const sightings = (Object.values(currentUserSightings$.get() || {}) as unknown as Sighting[]).filter(Boolean);
+        const sites = (Object.values(diveSites$.get() || {}) as unknown as DiveSite[]).filter(Boolean);
+        const creatures = (Object.values(creatures$.get() || {}) as unknown as Creature[]).filter(Boolean);
 
         const siteMap = new Map(sites.map(s => [s.id, s.name]));
 
@@ -44,10 +44,22 @@ export default function DiveLogsScreen() {
         // Group sightings by dive session (date + time_in + dive_site_id)
         const diveGroups = new Map<string, Sighting[]>();
 
+        // First pass: identify legacy-to-UUID mappings
+        const legacyToUuidMap = new Map<string, string>();
+        sightings.forEach(s => {
+            if (s.dive_id) {
+                const legacyKey = `${s.date}_${s.time_in || '00:00'}_${s.dive_site_id || 'unknown'}`;
+                legacyToUuidMap.set(legacyKey, s.dive_id);
+            }
+        });
+
         sightings.forEach(sighting => {
-            // Create unique key for each dive session
-            // Prioritize dive_id for new records, fallback to composite key for legacy
-            const diveKey = sighting.dive_id || `${sighting.date}_${sighting.time_in || '00:00'}_${sighting.dive_site_id || 'unknown'}`;
+            // Priority:
+            // 1. Existing dive_id
+            // 2. Mapped UUID from another sighting in same session
+            // 3. Fallback to composite legacy key
+            const legacyKey = `${sighting.date}_${sighting.time_in || '00:00'}_${sighting.dive_site_id || 'unknown'}`;
+            const diveKey = sighting.dive_id || legacyToUuidMap.get(legacyKey) || legacyKey;
 
             if (!diveGroups.has(diveKey)) {
                 diveGroups.set(diveKey, []);

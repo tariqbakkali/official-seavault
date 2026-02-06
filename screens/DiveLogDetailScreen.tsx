@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, FlatList, ScrollView, Dimensions, TouchableOpac
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from '@legendapp/state/react';
-import { Clock, MapPin, Wind, Waves, Eye, Calendar, Thermometer, ArrowLeft, Anchor, User, Gauge, GraduationCap, Droplet, Pencil } from 'lucide-react-native';
+import { Clock, MapPin, Wind, Waves, Eye, Calendar, Thermometer, ArrowLeft, Anchor, User, Gauge, GraduationCap, Droplet, Pencil, QrCode } from 'lucide-react-native';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import { currentUserSightings$, diveSites$, creatures$, media$ } from '@/stores/syncedObservables';
+import { currentUserSightings$, diveSites$, creatures$ } from '@/stores/syncedObservables';
 import { COLORS, DIMENSIONS, TYPOGRAPHY, ROUTES } from '@/constants';
 import { Sighting, DiveSite, Creature } from '@/types/database';
 import { ImageWithFallback } from '@/components';
 import { MediaViewerModal } from '@/components/MediaViewerModal';
+import { DiveShareModal } from '@/components/DiveShareModal';
 
 const { width } = Dimensions.get('window');
 
@@ -21,7 +22,7 @@ export default function DiveLogDetailScreen() {
     const diveLog = useSelector(() => {
         if (typeof id !== 'string') return null;
 
-        const sightings = Object.values(currentUserSightings$.get() || {}) as unknown as Sighting[];
+        const sightings = (Object.values(currentUserSightings$.get() || {}) as unknown as Sighting[]).filter(Boolean);
         const sites = Object.values(diveSites$.get() || {}) as unknown as DiveSite[];
         const creatures = Object.values(creatures$.get() || {}) as unknown as Creature[];
 
@@ -44,12 +45,18 @@ export default function DiveLogDetailScreen() {
         if (matchingSightings.length === 0) return null;
 
         // Fetch media for this dive
-        const allMedia = Object.values(media$.get() || {}) as any[];
-        const sightingIds = matchingSightings.map(s => s.id);
-        const diveMedia = allMedia.filter(m =>
-            (m.dive_id === id || (m.sighting_id && sightingIds.includes(m.sighting_id))) &&
-            m.type === 'image'
-        ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        const diveMedia: any[] = [];
+        matchingSightings.forEach(s => {
+            if (s.images) {
+                s.images.forEach((img: any) => {
+                    diveMedia.push({
+                        ...img,
+                        url: img.remoteUrl,
+                        type: img.mimeType?.startsWith('video') ? 'video' : 'image',
+                    });
+                });
+            }
+        });
 
         const first = matchingSightings[0];
         const siteName = first.dive_site_id ? (siteMap.get(first.dive_site_id) || 'Unknown Location') : 'Unknown Location';
@@ -78,14 +85,20 @@ export default function DiveLogDetailScreen() {
 
         const sightingsWithDetails = realSightings.map(s => {
             const creature = creatureMap.get(s.creature_id);
+            const firstImage = s.images && s.images.length > 0 ? (s.images[0] as any).remoteUrl : null;
             return {
                 ...s,
-                creatureName: creature?.name || 'Unknown Creature', // Fallback if regular sync fails
+                displayImage: s.image_url || firstImage || creature?.image_url || null,
+                creatureName: creature?.name || 'Unknown Creature',
                 creatureScientific: creature?.scientific_name,
                 creatureImage: creature?.image_url,
                 category: creature?.category_id
             };
         });
+
+        // Use sighting's dive_id if available (handles legacy dives that were migrated)
+        const sightingWithDiveId = matchingSightings.find(s => s.dive_id);
+        const resolvedId = sightingWithDiveId?.dive_id || (id as string);
 
         return {
             date: first.date,
@@ -108,12 +121,15 @@ export default function DiveLogDetailScreen() {
             diveNotes,
             totalSightings: realSightings.length,
             items: sightingsWithDetails,
-            media: diveMedia
+            media: diveMedia,
+            resolvedId,
+            isPublic: false // TEMPORARY: Templates would need new logic in flattened model
         };
     });
 
     const [viewerVisible, setViewerVisible] = useState(false);
     const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+    const [shareVisible, setShareVisible] = useState(false);
 
     const handleEdit = () => {
         if (!id) return;
@@ -157,8 +173,10 @@ export default function DiveLogDetailScreen() {
                 title="Dive Details"
                 showBackButton
                 onBackPress={() => router.back()}
-                onActionPress={handleEdit}
-                actionIcon={Pencil}
+                actions={[
+                    { icon: QrCode, onPress: () => setShareVisible(true) },
+                    { icon: Pencil, onPress: handleEdit }
+                ]}
             />
 
             <ScrollView contentContainerStyle={styles.content}>
@@ -239,7 +257,7 @@ export default function DiveLogDetailScreen() {
                             <View key={item.id} style={styles.sightingCard}>
                                 <View style={styles.sightingImageContainer}>
                                     <ImageWithFallback
-                                        uri={item.image_url || item.creatureImage || undefined}
+                                        uri={item.displayImage || undefined}
                                         style={styles.sightingImage}
                                         fallbackColor="#2A2A2A"
                                     />
@@ -283,6 +301,14 @@ export default function DiveLogDetailScreen() {
                 onClose={() => setViewerVisible(false)}
                 media={diveLog.media}
                 initialIndex={selectedMediaIndex}
+            />
+
+            <DiveShareModal
+                isVisible={shareVisible}
+                onClose={() => setShareVisible(false)}
+                diveId={diveLog.resolvedId}
+                isPublic={diveLog.isPublic}
+                diveName={diveLog.siteName}
             />
         </View>
     );

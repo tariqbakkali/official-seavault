@@ -52,14 +52,14 @@ export const uploadImageToSupabase = async (
 
     // Determine file extension from URI
     const fileExt = fileName.split('.').pop()?.toLowerCase() || 'jpg';
-    const filePath = `dive-site-images/${fileName}`;
+    const filePath = `${fileName}`;
 
     // Determine content type
     const contentType = mimeType || `image/${fileExt === 'jpg' || fileExt === 'jpeg' ? 'jpeg' : fileExt}`;
 
     // Upload file
     const { data, error } = await supabase.storage
-      .from('images')
+      .from('dive-site-images')
       .upload(filePath, arrayBuffer, {
         contentType: contentType,
         upsert: false,
@@ -68,15 +68,41 @@ export const uploadImageToSupabase = async (
     if (error) throw error;
 
     // Return public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('images').getPublicUrl(filePath);
-    
     // Image uploaded to Supabase
+    const publicUrl = supabase.storage.from('dive-site-images').getPublicUrl(filePath).data.publicUrl;
+    
     return publicUrl;
   } catch (error) {
     debugLogger.logError('Error uploading image to Supabase:', error);
     return null;
+  }
+};
+
+/**
+ * Save image metadata to Supabase
+ */
+export const saveImageMetadata = async (
+  imageMetadata: ImageMetadata,
+  remoteUrl: string
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('dive_site_images' as any)
+      .insert({
+        user_id: (await supabase.auth.getUser()).data.user?.id || '',
+        dive_site_id: imageMetadata.diveSiteId,
+        image_url: remoteUrl,
+        file_name: imageMetadata.fileName,
+        file_size: imageMetadata.size,
+        mime_type: imageMetadata.mimeType,
+        deleted: false,
+      });
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    debugLogger.logError('Error saving image metadata:', error);
+    return false;
   }
 };
 
@@ -144,19 +170,27 @@ export const getImagesForDiveSite = async (diveSiteId: string): Promise<ImageMet
     // Get local images
     const localImageUris = await getLocalImagesForDiveSite(diveSiteId);
     
-    // For now, we'll return a simplified version
-    // In a real implementation, this would query the database for remote images
-    // and merge with local images
-    const images: ImageMetadata[] = localImageUris.map((uri, index) => ({
-      id: uuidv4(),
-      diveSiteId,
-      createdAt: new Date(Date.now() - index * 1000).toISOString(),
-      fileName: uri.split('/').pop() || `image-${index}.jpg`,
-      size: 0, // Would need to get actual size
-      mimeType: 'image/jpeg',
-      localUri: uri,
+    // Query the database for remote images
+    const { data: remoteImages, error } = await supabase
+      .from('dive_site_images' as any)
+      .select('*')
+      .eq('dive_site_id', diveSiteId)
+      .eq('deleted', false);
+
+    if (error) throw error;
+
+    const images: ImageMetadata[] = (remoteImages || []).map((img: any) => ({
+      id: img.id,
+      diveSiteId: img.dive_site_id,
+      createdAt: img.created_at,
+      fileName: img.file_name,
+      size: img.file_size || 0,
+      mimeType: img.mime_type || 'image/jpeg',
+      remoteUrl: img.image_url,
       syncStatus: 'synced',
     }));
+
+    // Merge with local images if needed (simplified for now)
     
     // Images for dive site
     return images;
@@ -183,7 +217,7 @@ export const deleteImage = async (imageMetadata: ImageMetadata): Promise<boolean
       const filePath = url.pathname.substring(1); // Remove leading slash
       
       const { error } = await supabase.storage
-        .from('images')
+        .from('dive-site-images')
         .remove([filePath]);
       
       if (error) {

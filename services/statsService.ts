@@ -296,7 +296,7 @@ export async function syncAchievements(
     return { toUnlock, toLock };
   }
 
-  const seenCreatureIds = new Set(userSightings.map(s => s.creature_id));
+  const seenCreatureIds = new Set(userSightings.filter(s => s && s.creature_id).map(s => s.creature_id as string));
   const creaturesMap = new Map(allCreatures.map(c => [c.id, c]));
   
   const sightedCreatureNames = new Set<string>();
