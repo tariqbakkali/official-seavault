@@ -33,6 +33,7 @@ export const ROUTES = {
     EDIT: '/profile/edit' as const,
     DIVE_LOGS: '/profile/dive-logs' as const,
     DIVE_LOG_DETAIL: (id: string) => `/profile/dive-log/${id}` as const,
+    CERTIFICATIONS: '/profile/certifications' as const,
   },
   
   // Dive site routes
@@ -116,6 +117,7 @@ export type RouteParams = {
   '/profile/edit': undefined;
   '/profile/dive-logs': undefined;
   '/profile/dive-log/[id]': { id: string };
+  '/profile/certifications': undefined;
   '/modal/leaderboard': undefined;
   '/modal/explore': undefined;
   '/dive-sites/add': undefined;

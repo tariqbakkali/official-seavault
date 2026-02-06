@@ -16,6 +16,7 @@ export type Achievement = Database['public']['Tables']['achievements']['Row'];
 export type UserAchievement = Database['public']['Tables']['user_achievements']['Row'];
 export type Article = Database['public']['Tables']['articles']['Row'];
 export type Friend = Database['public']['Tables']['friends']['Row'];
+export type Certification = Database['public']['Tables']['certifications']['Row'];
 
 
 
@@ -700,5 +701,48 @@ export const friends$ = observable<Record<string, any>>(customSynced({
   realtime: true 
 }));
 
+// User certifications observable
+export const certifications$ = observable<Record<string, Certification>>(customSynced({
+  supabase,
+  collection: 'certifications',
+  filter: (select: any) => {
+    const userId = currentUserID$.get();
+    if (!userId) return select.eq('user_id', '00000000-0000-0000-0000-000000000000');
+    return select.eq('user_id', userId);
+  },
+  actions: ['read', 'create', 'update', 'delete'],
+  persist: { name: 'certifications_v1', retrySync: true },
+  update: async (input: any) => {
+    const validColumns = [
+      'id', 'user_id', 'agency', 'level', 'certification_number',
+      'card_front_url', 'card_back_url', 'issued_at', 'created_at'
+    ];
+    const sanitizedInput = Object.keys(input)
+      .filter(key => validColumns.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = input[key];
+        return obj;
+      }, {} as any);
+
+    const { data, error } = await supabase
+      .from('certifications')
+      .upsert(sanitizedInput)
+      .select()
+      .single();
+    
+    if (error) {
+      throw new Error(`Failed to save certification: ${error.message}`);
+    }
+    return { data, error: null };
+  },
+  delete: async (item: any) => {
+    const data = "";
+    return { data, error: null };
+  },
+  fieldCreatedAt: 'created_at',
+  realtime: true,
+}));
+
 export const getSightings = getCurrentUserSightings;
 export const getAllFriends = () => friends$.get();
+export const getCertifications = () => certifications$.get();

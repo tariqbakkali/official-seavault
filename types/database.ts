@@ -227,6 +227,22 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['friends']['Insert']>;
         Relationships: [];
       };
+      certifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          agency: 'PADI' | 'SSI' | 'NAUI' | 'SDI' | 'BSAC' | 'CMAS' | 'Other';
+          level: string;
+          certification_number: string | null;
+          card_front_url: string | null;
+          card_back_url: string | null;
+          issued_at: string | null;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['certifications']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['certifications']['Insert']>;
+        Relationships: [];
+      };
     };
     Functions: {
       clone_dive: {
@@ -260,6 +276,7 @@ export type UserAchievement = Database['public']['Tables']['user_achievements'][
 export type Article = Database['public']['Tables']['articles']['Row'];
 export type Instructor = Database['public']['Tables']['instructors']['Row'];
 export type Friend = Database['public']['Tables']['friends']['Row'];
+export type Certification = Database['public']['Tables']['certifications']['Row'];
 
 
 export interface CachedCatalog {

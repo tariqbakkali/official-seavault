@@ -322,6 +322,13 @@ export default function ProfileScreen() {
       chevron: true,
     },
     {
+      icon: <Crown size={24} color="#FFD700" />,
+      title: 'Certifications',
+      subtitle: 'Your diving certification cards',
+      onPress: () => router.push(ROUTES.PROFILE.CERTIFICATIONS),
+      chevron: true,
+    },
+    {
       icon: <Settings size={24} color="#fff" />,
       title: 'Account Settings',
       subtitle: 'Manage your account preferences',
