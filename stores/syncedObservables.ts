@@ -36,7 +36,10 @@ export const categories$ = observable(customSynced({
   collection: 'categories',
   actions: ['read'],
   persist: { name: 'categories_v6' },
-
+   delete: async (item: any) => {
+    const data = ""
+    return { data, error: null };
+  },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all catalog data
@@ -80,6 +83,10 @@ export const achievements$ = observable(customSynced({
   collection: 'achievements',
   actions: ['read'],
   persist: { name: 'achievements_v6' },
+     delete: async (item: any) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
@@ -96,7 +103,10 @@ export const userAchievements$ = observable(customSynced({
   },
   actions: ['read', 'create'],
   persist: { name: 'user_achievements_v6' },
-
+     delete: async (item: any) => {
+    const data = ""
+    return { data, error: null };
+  },
   // Sanitation for user_achievements
   update: async (input: any) => {
     const validColumns = ['id', 'user_id', 'achievement_id', 'created_at', 'updated_at'];
@@ -166,7 +176,10 @@ export const diveSites$ = observable(customSynced({
     } 
     return { data, error: null };
   },
-
+   delete: async (item: any) => {
+    const data = ""
+    return { data, error: null };
+  },
   realtime: true, // Disable realtime for dive sites to reduce constant updates
 }));
 // Synced observables for user-specific data
@@ -183,6 +196,10 @@ export const currentUserSightings$ = observable(customSynced({
   },
   actions: ['read', 'create', 'update', 'delete'],
   persist: { name: 'sightings_v6', retrySync: true },
+     delete: async (item: any) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   // changesSince: 'last-sync',
   update: async (input: any) => {
@@ -227,7 +244,10 @@ export const allUsersSightings$ = observable(customSynced({
   collection: 'sightings',
   actions: ['read'], // Community view is read-only
   persist: { name: 'all_sightings_v6' },
-
+   delete: async (item: any) => {
+    const data = ""
+    return { data, error: null };
+  },
   // changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: false, // DEBUG: Disabled to fix initial sync issue
@@ -240,7 +260,10 @@ export const allUsersAchievements$ = observable(customSynced({
   collection: 'user_achievements',
   actions: ['read'],
   persist: { name: 'all_user_achievements_v6' },
-
+   delete: async (item: any) => {
+    const data = ""
+    return { data, error: null };
+  },
   changesSince: 'last-sync',
   fieldCreatedAt: 'created_at',
   realtime: true, // Enable realtime for all user achievements
@@ -353,6 +376,10 @@ export const allUsersProfiles$ = observable<Record<string, Profile>>(customSynce
   collection: 'profiles',
   actions: ['read'],
   persist: { name: 'all_profiles_v8' },
+     delete: async (item: any) => {
+    const data = ""
+    return { data, error: null };
+  },
 
   fieldCreatedAt: 'created_at',
   realtime: false, // Disabled to prevent sync overhead
