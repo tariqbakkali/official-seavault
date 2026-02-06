@@ -38,7 +38,8 @@ export const DiveShareModal: React.FC<DiveShareModalProps> = ({
         setInternalIsPublic(isPublic);
     }, [isPublic]);
 
-    const shareUrl = `seavault://dive/template/${diveId}`;
+    // OneLink URL with deep_link_value for proper app opening on iOS/Android
+    const shareUrl = `https://seavault.onelink.me/s9Gs?deep_link_value=dive/template/${diveId}`;
 
     const togglePublic = async () => {
         const newValue = !internalIsPublic;

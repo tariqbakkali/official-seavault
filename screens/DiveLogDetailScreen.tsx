@@ -23,6 +23,7 @@ export default function DiveLogDetailScreen() {
         if (typeof id !== 'string') return null;
 
         const sightings = (Object.values(currentUserSightings$.get() || {}) as unknown as Sighting[]).filter(Boolean);
+
         const sites = Object.values(diveSites$.get() || {}) as unknown as DiveSite[];
         const creatures = Object.values(creatures$.get() || {}) as unknown as Creature[];
 
@@ -142,7 +143,17 @@ export default function DiveLogDetailScreen() {
     if (!diveLog) {
         return (
             <View style={[styles.container, { paddingTop: insets.top }]}>
-                <ScreenHeader title="Dive Details" showBackButton onBackPress={() => router.back()} />
+                <ScreenHeader
+                    title="Dive Details"
+                    showBackButton
+                    onBackPress={() => {
+                        if (router.canGoBack()) {
+                            router.back();
+                        } else {
+                            router.replace('/' as any);
+                        }
+                    }}
+                />
                 <View style={styles.center}>
                     <Text style={styles.errorText}>Dive log not found.</Text>
                 </View>
@@ -172,7 +183,13 @@ export default function DiveLogDetailScreen() {
             <ScreenHeader
                 title="Dive Details"
                 showBackButton
-                onBackPress={() => router.back()}
+                onBackPress={() => {
+                    if (router.canGoBack()) {
+                        router.back();
+                    } else {
+                        router.replace('/' as any);
+                    }
+                }}
                 actions={[
                     { icon: QrCode, onPress: () => setShareVisible(true) },
                     { icon: Pencil, onPress: handleEdit }

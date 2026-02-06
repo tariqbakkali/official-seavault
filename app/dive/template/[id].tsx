@@ -36,25 +36,32 @@ export default function DiveTemplateScreen() {
     const [dive, setDive] = useState<any>(null);
     const [siteName, setSiteName] = useState('Unknown Location');
     const [sightings, setSightings] = useState<any[]>([]);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchTemplate();
     }, [id]);
 
     const fetchTemplate = async () => {
-        if (typeof id !== 'string') return;
+        if (typeof id !== 'string') {
+            setLoading(false);
+            if (!id && loading) setError('Invalid QR Code');
+            return;
+        }
 
         setLoading(true);
+        setError(null);
         try {
-            // Fetch sightings for this template (first one has dive info)
+            // Fetch sightings for this template - only if it's public
             const { data: sightingsData, error } = await supabase
                 .from('sightings')
                 .select('*, creatures(*)')
-                .eq('dive_id', id);
+                .eq('dive_id', id)
+                .eq('is_public_template', true);  // Only fetch public templates
 
             if (error) throw error;
             if (!sightingsData || sightingsData.length === 0) {
-                throw new Error('Template not found');
+                throw new Error('This dive template is not available');
             }
 
             const diveData = sightingsData[0] as any;
@@ -76,13 +83,16 @@ export default function DiveTemplateScreen() {
                     if (siteData) setSiteName((siteData as any).name);
                 }
             }
-        } catch (error) {
-            console.error('Error fetching dive template:', error);
-            Alert.alert('Error', 'Could not load dive template. It might no longer be public.');
-            router.back();
+        } catch (err: any) {
+            console.error('Error fetching dive template:', err);
+            setError(err.message || 'Could not load dive template');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleGoHome = () => {
+        router.replace('/(tabs)' as any);
     };
 
     const handleClone = async () => {
@@ -91,23 +101,20 @@ export default function DiveTemplateScreen() {
         setCloning(true);
         try {
             const newDiveId = await cloneDive(id);
+
             Alert.alert(
                 'Success',
                 'Dive log copied to your book!',
                 [
                     {
-                        text: 'View Log',
-                        onPress: () => router.replace({
-                            pathname: '/profile/dive-log/[id]',
-                            params: { id: newDiveId }
-                        })
-                    },
-                    { text: 'OK', onPress: () => router.back() }
+                        text: 'OK',
+                        onPress: () => router.replace('/(tabs)' as any)
+                    }
                 ]
             );
-        } catch (error: any) {
-            console.error('Error cloning dive:', error);
-            Alert.alert('Error', error.message || 'Failed to clone dive.');
+        } catch (err: any) {
+            console.error('Error cloning dive:', err);
+            Alert.alert('Error', err.message);
         } finally {
             setCloning(false);
         }
@@ -116,7 +123,7 @@ export default function DiveTemplateScreen() {
     if (loading) {
         return (
             <View style={[styles.container, { paddingTop: insets.top }]}>
-                <ScreenHeader title="Dive Template" showBackButton onBackPress={() => router.back()} />
+                <ScreenHeader title="Dive Template" showBackButton onBackPress={handleGoHome} />
                 <View style={styles.center}>
                     <ActivityIndicator size="large" color={COLORS.PRIMARY} />
                     <Text style={styles.loadingText}>Loading template...</Text>
@@ -125,7 +132,21 @@ export default function DiveTemplateScreen() {
         );
     }
 
-    if (!dive) return null;
+    // Show error screen with Go Home button
+    if (error || !dive) {
+        return (
+            <View style={[styles.container, { paddingTop: insets.top }]}>
+                <ScreenHeader title="Dive Template" showBackButton onBackPress={handleGoHome} />
+                <View style={styles.center}>
+                    <Text style={styles.errorText}>{error || 'Template not available'}</Text>
+                    <Text style={styles.errorSubText}>This dive is private or no longer exists.</Text>
+                    <TouchableOpacity style={styles.homeButton} onPress={handleGoHome}>
+                        <Text style={styles.homeButtonText}>Go Home</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
 
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -133,7 +154,13 @@ export default function DiveTemplateScreen() {
             <ScreenHeader
                 title="Dive Template"
                 showBackButton
-                onBackPress={() => router.back()}
+                onBackPress={() => {
+                    if (router.canGoBack()) {
+                        router.back();
+                    } else {
+                        router.replace('/(tabs)' as any);
+                    }
+                }}
             />
 
             <ScrollView contentContainerStyle={styles.content}>
@@ -264,6 +291,30 @@ const styles = StyleSheet.create({
         marginTop: 12,
         color: '#888',
         fontSize: 16,
+    },
+    errorText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    errorSubText: {
+        color: '#888',
+        fontSize: 14,
+        textAlign: 'center',
+        marginBottom: 24,
+    },
+    homeButton: {
+        backgroundColor: COLORS.PRIMARY,
+        paddingHorizontal: 32,
+        paddingVertical: 14,
+        borderRadius: 16,
+    },
+    homeButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     content: {
         padding: 20,

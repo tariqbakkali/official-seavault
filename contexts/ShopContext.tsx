@@ -30,6 +30,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [error, setError] = useState<string | null>(null);
     const [shouldNavigateToPaywall, setShouldNavigateToPaywall] = useState(false);
 
+    // Prevent duplicate deep link navigations
+    const handledDeepLinks = useRef<Set<string>>(new Set());
+
     const { isPro, isLoading: isPurchaseLoading } = usePurchase();
 
     useEffect(() => {
@@ -108,6 +111,39 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         onAppsFlyerDeepLink((deepLinkData) => {
             console.log('AppsFlyer deep link data:', JSON.stringify(deepLinkData, null, 2));
 
+            // Check for dive template deep link first
+            const deepLinkValue = deepLinkData?.deep_link_value?.toString() || '';
+            if (deepLinkValue.startsWith('dive/template/')) {
+                const templateId = deepLinkValue.replace('dive/template/', '');
+                console.log('Raw AppsFlyer deep link for template:', templateId);
+
+                // Prevent duplicate navigation
+                if (handledDeepLinks.current.has(templateId)) {
+                    console.log('Already navigated to template (blocked by guard):', templateId);
+                    return;
+                }
+                handledDeepLinks.current.add(templateId);
+
+                // Allow rescanning after 5 seconds
+                setTimeout(() => {
+                    handledDeepLinks.current.delete(templateId);
+                }, 5000);
+
+
+                console.log('Navigating to dive template (REPLACE):', templateId);
+                setTimeout(() => {
+                    try {
+                        router.replace({
+                            pathname: '/dive/template/[id]',
+                            params: { id: templateId }
+                        } as any);
+                    } catch (e) {
+                        console.error('Navigation error:', e);
+                    }
+                }, 500);
+                return; // Don't process as referral code
+            }
+
             // Prioritize explicit code parameters from the link data
             let code = deepLinkData?.params?.code ||
                 deepLinkData?.data?.code ||
@@ -162,8 +198,60 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleDeepLinking = () => {
         const handleUrl = (event: { url: string }) => {
             console.log('Deep Link URL:', event.url);
-            const { queryParams } = Linking.parse(event.url);
-            console.log('Deep Link Query Params:', queryParams);
+            const parsed = Linking.parse(event.url);
+            const { queryParams, path } = parsed;
+            console.log('Deep Link Parsed:', { path, queryParams });
+
+            // Check for dive template path (seavault://dive/template/{id} or via OneLink)
+            if (path?.startsWith('dive/template/')) {
+                const templateId = path.replace('dive/template/', '');
+                console.log('Raw deep link event for template:', templateId);
+
+                // Prevent duplicate navigation
+                if (handledDeepLinks.current.has(templateId)) {
+                    console.log('Already navigated to template (blocked by guard):', templateId);
+                    return;
+                }
+                handledDeepLinks.current.add(templateId);
+
+                // Allow rescanning after 5 seconds
+                setTimeout(() => {
+                    handledDeepLinks.current.delete(templateId);
+                }, 5000);
+
+
+                console.log('Navigating to dive template (REPLACE):', templateId);
+                setTimeout(() => {
+                    try {
+                        router.replace({
+                            pathname: '/dive/template/[id]',
+                            params: { id: templateId }
+                        } as any);
+                    } catch (e) {
+                        console.error('Navigation error:', e);
+                    }
+                }, 500);
+                return;
+            }
+
+            // Check for deep_link_value query param (OneLink format)
+            const deepLinkValue = queryParams?.deep_link_value as string;
+            if (deepLinkValue?.startsWith('dive/template/')) {
+                const templateId = deepLinkValue.replace('dive/template/', '');
+
+                // Prevent duplicate navigation
+                if (handledDeepLinks.current.has(templateId)) {
+                    console.log('Already navigated to template:', templateId);
+                    return;
+                }
+                handledDeepLinks.current.add(templateId);
+
+                console.log('Navigating to dive template from OneLink:', templateId);
+                setTimeout(() => {
+                    router.push(`/dive/template/${templateId}` as any);
+                }, 500);
+                return;
+            }
 
             // Check for 'code' parameter as per new workflow
             let code = queryParams?.code as string;
