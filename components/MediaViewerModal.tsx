@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     View,
     StyleSheet,
@@ -9,7 +9,13 @@ import {
     Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { X } from 'lucide-react-native';
+import { X, Play, Pause } from 'lucide-react-native';
+import { Video, ResizeMode } from 'expo-av';
+import { getOptimizedUrl } from '@/services/cloudinaryService';
+import * as FileSystem from 'expo-file-system/legacy';
+import { AlertCircle } from 'lucide-react-native';
+import { COLORS, TYPOGRAPHY } from '@/constants';
+import { Text } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -23,6 +29,7 @@ interface MediaItem {
     id: string;
     url: string;
     type: 'image' | 'video';
+    thumbnailUrl?: string;
 }
 
 interface MediaViewerModalProps {
@@ -109,6 +116,112 @@ const ImageItem = ({ uri }: { uri: string }) => {
     );
 };
 
+const VideoItem = ({ uri, thumbnailUrl, isVisible }: { uri: string; thumbnailUrl?: string; isVisible: boolean }) => {
+    const video = React.useRef<Video>(null);
+    const [status, setStatus] = React.useState<any>({});
+    const [fileMissing, setFileMissing] = useState(false);
+
+    const [triedFallback, setTriedFallback] = useState(false);
+    const [currentUri, setCurrentUri] = useState(uri);
+
+    useEffect(() => {
+        const checkFile = async () => {
+            if (currentUri.startsWith('file://')) {
+                try {
+                    const info = await FileSystem.getInfoAsync(currentUri);
+                    if (!info.exists) {
+                        console.log('[MediaViewerModal] Local file missing:', currentUri);
+                        if (!triedFallback && uri !== thumbnailUrl) {
+                            // Try thumbnail as fallback if it's a remote URL
+                            if (thumbnailUrl?.startsWith('http')) {
+                                console.log('[MediaViewerModal] Attempting fallback to remote URL');
+                                setCurrentUri(thumbnailUrl);
+                                setTriedFallback(true);
+                            } else {
+                                setFileMissing(true);
+                            }
+                        } else {
+                            setFileMissing(true);
+                        }
+                    } else {
+                        setFileMissing(false);
+                    }
+                } catch (e) {
+                    setFileMissing(true);
+                }
+            } else {
+                setFileMissing(false);
+            }
+        };
+        checkFile();
+    }, [currentUri, uri, triedFallback, thumbnailUrl]);
+
+    const videoSource = useMemo(() => {
+        if (!currentUri) return { uri: '' };
+
+        if (currentUri.startsWith('http') && currentUri.includes('cloudinary.com')) {
+            // Apply f_auto, q_auto for optimization
+            const publicId = currentUri.split('/').pop()?.split('.')[0];
+            if (publicId) {
+                return { uri: getOptimizedUrl(publicId, 'video', ['f_auto', 'q_auto']) };
+            }
+        }
+        return { uri: currentUri };
+    }, [currentUri]);
+
+    useEffect(() => {
+        if (!isVisible && video.current) {
+            video.current.pauseAsync();
+        }
+    }, [isVisible]);
+
+    const posterSource = useMemo(() => {
+        if (thumbnailUrl) return { uri: thumbnailUrl };
+        if (uri.includes('cloudinary.com')) {
+            const publicId = uri.split('/').pop()?.split('.')[0];
+            if (publicId) {
+                return { uri: getOptimizedUrl(publicId, 'video', ['c_fill', 'w_800', 'h_800', 'f_auto', 'q_auto']) + '.jpg' };
+            }
+        }
+        return undefined;
+    }, [uri, thumbnailUrl]);
+
+    return (
+        <View style={styles.itemContainer}>
+            {fileMissing ? (
+                <View style={styles.errorContainer}>
+                    <AlertCircle size={48} color={COLORS.ERROR} />
+                    <Text style={styles.errorText}>Video file not found</Text>
+                    <Text style={styles.errorSubtext}>The local file has been moved or deleted.</Text>
+                </View>
+            ) : (
+                <>
+                    <Video
+                        ref={video}
+                        style={styles.fullMedia}
+                        source={videoSource}
+                        useNativeControls
+                        resizeMode={ResizeMode.CONTAIN}
+                        isLooping
+                        posterSource={posterSource}
+                        usePoster={true}
+                        posterStyle={styles.fullMedia}
+                        onPlaybackStatusUpdate={status => setStatus(() => status)}
+                    />
+                    {status.isLoaded && !status.isPlaying && (
+                        <TouchableOpacity
+                            style={styles.playButtonOverlay}
+                            onPress={() => video.current?.playAsync()}
+                        >
+                            <Play size={50} color="#fff" fill="#fff" opacity={0.8} />
+                        </TouchableOpacity>
+                    )}
+                </>
+            )}
+        </View>
+    );
+};
+
 export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
     isVisible,
     onClose,
@@ -159,9 +272,17 @@ export const MediaViewerModal: React.FC<MediaViewerModalProps> = ({
                         setCurrentIndex(nextIndex);
                     }}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
+                    renderItem={({ item, index }) => (
                         <View style={styles.page}>
-                            <ImageItem uri={item.url} />
+                            {item.type === 'video' ? (
+                                <VideoItem
+                                    uri={item.url}
+                                    thumbnailUrl={item.thumbnailUrl}
+                                    isVisible={currentIndex === index}
+                                />
+                            ) : (
+                                <ImageItem uri={item.url} />
+                            )}
                         </View>
                     )}
                 />
@@ -220,6 +341,29 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+    },
+    playButtonOverlay: {
+        position: 'absolute',
+        zIndex: 10,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        borderRadius: 40,
+        padding: 10,
+    },
+    errorContainer: {
+        alignItems: 'center',
+        padding: 40,
+        gap: 12,
+    },
+    errorText: {
+        color: '#fff',
+        fontSize: TYPOGRAPHY.SIZE_LG,
+        fontWeight: 'bold',
+        marginTop: 8,
+    },
+    errorSubtext: {
+        color: '#888',
+        fontSize: TYPOGRAPHY.SIZE_SM,
+        textAlign: 'center',
     },
 });
 

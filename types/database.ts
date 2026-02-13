@@ -127,6 +127,8 @@ export interface Database {
           waterway: string | null;
           dive_mode: 'leisure' | 'training' | null;
           is_public_template: boolean | null;
+          video_url: string | null;
+          thumbnail_url: string | null;
         };
         Insert: Omit<Database['public']['Tables']['sightings']['Row'], 'created_at'>;
         Update: Partial<Database['public']['Tables']['sightings']['Insert']>;
@@ -243,6 +245,21 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['certifications']['Insert']>;
         Relationships: [];
       };
+      media: {
+        Row: {
+          id: string;
+          dive_id: string;
+          url: string;
+          thumbnail_url: string | null;
+          type: string;
+          metadata: any | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['media']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['media']['Insert']>;
+        Relationships: [];
+      };
     };
     Functions: {
       clone_dive: {
@@ -277,6 +294,7 @@ export type Article = Database['public']['Tables']['articles']['Row'];
 export type Instructor = Database['public']['Tables']['instructors']['Row'];
 export type Friend = Database['public']['Tables']['friends']['Row'];
 export type Certification = Database['public']['Tables']['certifications']['Row'];
+export type Media = Database['public']['Tables']['media']['Row'];
 
 
 export interface CachedCatalog {

@@ -2,9 +2,15 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { documentDirectory, moveAsync } from 'expo-file-system/legacy';
+import { documentDirectory, moveAsync, makeDirectoryAsync } from 'expo-file-system/legacy';
+let VideoThumbnails: any = null;
+try {
+  VideoThumbnails = require('expo-video-thumbnails');
+} catch (e) {
+  console.warn('[MultipleCreatureSelector] VideoThumbnails not available');
+}
 import { v4 as uuidv4 } from 'uuid';
-import { Trash2, Camera } from 'lucide-react-native';
+import { Camera, Image as ImageIcon, X, Trash2, ChevronRight, ChevronLeft, Plus, Check, Search, Fish, Video } from 'lucide-react-native';
 import { DIMENSIONS, TYPOGRAPHY, COLORS } from '@/constants';
 import UniversalCreaturePicker from './UniversalCreaturePicker';
 
@@ -13,6 +19,8 @@ interface CreatureSighting {
   creatureId: string | null;
   notes: string | null;
   imageUrl: string | null;
+  mediaType: 'image' | 'video' | null;
+  thumbnailUrl: string | null;
 }
 
 interface MultipleCreatureSelectorProps {
@@ -50,6 +58,8 @@ const MultipleCreatureSelector: React.FC<MultipleCreatureSelectorProps> = ({
       creatureId: creature.id,
       notes: null,
       imageUrl: null,
+      mediaType: null,
+      thumbnailUrl: null,
     }));
 
     onCreatureSightingsChange([...creatureSightings, ...newSightings]);
@@ -72,19 +82,52 @@ const MultipleCreatureSelector: React.FC<MultipleCreatureSelectorProps> = ({
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
       });
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
+      if (result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const fileName = `sighting-${uuidv4()}.${asset.uri.split('.').pop()}`;
-        const newUri = documentDirectory + fileName;
+        const fileExt = asset.uri.split('.').pop() || (asset.type === 'video' ? 'mp4' : 'jpg');
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const mediaDir = `${documentDirectory}media/`;
+        const newUri = `${mediaDir}${fileName}`;
 
-        await moveAsync({ from: asset.uri, to: newUri });
-        updateCreatureSighting(index, { imageUrl: newUri });
+        let finalImageUrl = null;
+        let finalMediaType: 'image' | 'video' | null = null;
+        let finalThumbnailUrl = null;
+
+        try {
+          await makeDirectoryAsync(mediaDir, { intermediates: true });
+          await moveAsync({ from: asset.uri, to: newUri });
+          finalImageUrl = newUri;
+          finalMediaType = asset.type === 'video' ? 'video' : 'image';
+
+          if (asset.type === 'video' && VideoThumbnails) {
+            try {
+              const { uri: thumbUri } = await VideoThumbnails.getThumbnailAsync(newUri, { time: 1000 });
+              const thumbName = `thumb-${uuidv4()}.jpg`;
+              const persistentThumbUri = `${mediaDir}${thumbName}`;
+              await moveAsync({ from: thumbUri, to: persistentThumbUri });
+              finalThumbnailUrl = persistentThumbUri;
+            } catch (thumbError) {
+              console.warn('[MultipleCreatureSelector] Failed to generate thumbnail:', thumbError);
+            }
+          }
+        } catch (e) {
+          console.error('[MultipleCreatureSelector] Persistence error:', e);
+          // Fallback to using original URI if persistence fails
+          finalImageUrl = asset.uri;
+          finalMediaType = asset.type === 'video' ? 'video' : 'image';
+        }
+
+        updateCreatureSighting(index, {
+          imageUrl: finalImageUrl,
+          mediaType: finalMediaType,
+          thumbnailUrl: finalThumbnailUrl,
+        });
       }
     } catch (error) {
       console.error('ImagePicker Error: ', error);

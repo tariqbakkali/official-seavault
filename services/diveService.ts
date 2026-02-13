@@ -2,10 +2,14 @@ import {
   createSighting, 
   deleteSighting,
   currentUserSightings$,
+  media$,
 } from '../stores/syncedObservables';
 import { uploadImage } from './supabase';
+import { uploadVideo } from './cloudinaryService';
 import { Sighting } from '../types/database';
 import { v4 as uuidv4 } from 'uuid';
+import { isOnline$ } from '@/stores/networkStore';
+import * as FileSystem from 'expo-file-system/legacy';
 
 /**
  * Checks if an ID is a legacy composite key (from DiveLogsScreen)
@@ -30,6 +34,7 @@ export interface DiveSessionData {
     uri: string;
     type: 'image' | 'video';
     sightingId?: string;
+    thumbnailUrl?: string;
   }>;
 }
 
@@ -79,15 +84,61 @@ export const saveDiveSession = async (
   // 3. Handle Media
   for (const mItem of sessionData.media) {
     let finalUrl = mItem.uri;
+    let thumbnailUrl = mItem.thumbnailUrl || null;
     
     if (mItem.uri.startsWith('file://')) {
-      const publicUrl = await uploadImage(mItem.uri, 'dives', `dive_media/${diveId}`);
-      if (publicUrl) {
-        finalUrl = publicUrl;
+      const mediaDir = `${FileSystem.documentDirectory}media/`;
+      const fileName = mItem.uri.split('/').pop() || (mItem.type === 'video' ? `video_${Date.now()}.mp4` : `image_${Date.now()}.jpg`);
+      const targetUri = `${mediaDir}${fileName}`;
+
+      if (mItem.type === 'video') {
+        // Local-first: Save local URI immediately. 
+        // Background sync (mediaSyncService) will handle upload.
+        
+        // Check if already in persistent storage
+        if (mItem.uri.startsWith(mediaDir)) {
+          console.log('[diveService] Video already in persistent storage:', mItem.uri);
+          finalUrl = mItem.uri;
+        } else {
+          // COPY to document directory to prevent cache wipe
+          try {
+            // Ensure directory exists
+            await FileSystem.makeDirectoryAsync(mediaDir, { intermediates: true });
+            
+            await FileSystem.copyAsync({ from: mItem.uri, to: targetUri });
+            finalUrl = targetUri;
+            console.log('[diveService] Copied video to persistent storage:', finalUrl);
+          } catch (e) {
+            console.warn('[diveService] Failed to copy video to persistent storage, using original URI:', e);
+            finalUrl = mItem.uri;
+          }
+        }
+
+        // thumbnail is already in thumbnailUrl from mItem
+      } else {
+        // Images are small enough to upload immediately or strict local-first pattern ensures we handle them.
+        // For now, keep existing logic for images (upload immediately)
+        const publicUrl = await uploadImage(mItem.uri, 'dives', `dive_media/${diveId}`);
+        if (publicUrl) {
+          finalUrl = publicUrl;
+        }
       }
     }
 
-    // Attach to the specific sighting or the first one
+    // Save to dive-level media table regardless of whether it's attached to a sighting
+    const mediaId = uuidv4();
+    media$.assign({
+      [mediaId]: {
+        id: mediaId,
+        dive_id: diveId,
+        url: finalUrl,
+        thumbnail_url: thumbnailUrl || undefined,
+        type: mItem.type === 'video' ? 'video_link' : 'image',
+        created_at: new Date().toISOString(),
+      }
+    });
+
+    // Attach to the specific sighting or the first one (Legacy compatibility)
     const actualSightingId = mItem.sightingId ? (sightingIdMap[mItem.sightingId] || mItem.sightingId) : sightingIds[0];
     
     if (actualSightingId) {
@@ -102,17 +153,20 @@ export const saveDiveSession = async (
             {
               id: uuidv4(),
               remoteUrl: finalUrl,
+              thumbnailUrl: thumbnailUrl,
               syncStatus: 'synced',
               createdAt: new Date().toISOString(),
-              fileName: finalUrl.split('/').pop() || 'image.png',
-              mimeType: (mItem as any).type === 'video' ? 'video/mp4' : 'image/png'
+              fileName: finalUrl.split('/').pop() || (mItem.type === 'video' ? 'video.mp4' : 'image.png'),
+              mimeType: mItem.type === 'video' ? 'video/mp4' : 'image/png'
             }
           ];
           
           (currentUserSightings$ as any)[actualSightingId].images.set(newImages);
           
-          // Also set the main image_url if not already set, for legacy compatibility and thumbnail usage
-          if (!targetSighting.image_url) {
+          // Also set the main image_url or video_url
+          if (mItem.type === 'video' && !targetSighting.video_url) {
+            (currentUserSightings$ as any)[actualSightingId].video_url.set(finalUrl);
+          } else if (mItem.type === 'image' && !targetSighting.image_url) {
             (currentUserSightings$ as any)[actualSightingId].image_url.set(finalUrl);
           }
         }
@@ -151,7 +205,8 @@ export const getDiveSession = (diveId: string) => {
         media.push({
           url: img.remoteUrl,
           type: img.mimeType?.startsWith('video') ? 'video' : 'image',
-          sighting_id: s.id
+          sighting_id: s.id,
+          thumbnail_url: img.thumbnailUrl
         });
       });
     }

@@ -1,13 +1,23 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Video } from 'lucide-react-native';
+import { documentDirectory, moveAsync, makeDirectoryAsync, getInfoAsync } from 'expo-file-system/legacy';
+let VideoThumbnails: any = null;
+try {
+    VideoThumbnails = require('expo-video-thumbnails');
+} catch (e) {
+    console.warn('[MediaSection] VideoThumbnails not available');
+}
+import { v4 as uuidv4 } from 'uuid';
+import { Video, Play } from 'lucide-react-native';
 import { COLORS, DIMENSIONS, TYPOGRAPHY } from '@/constants';
+import ImageWithFallback from '@/components/ImageWithFallback';
 
 interface MediaItem {
     uri: string;
     type: 'image' | 'video';
     id?: string;
+    thumbnailUrl?: string;
 }
 
 interface MediaSectionProps {
@@ -36,10 +46,77 @@ const MediaSection: React.FC<MediaSectionProps> = ({
             });
 
             if (!result.canceled && result.assets) {
-                const newItems: MediaItem[] = result.assets.map(asset => ({
-                    uri: asset.uri,
-                    type: asset.type === 'video' ? 'video' : 'image',
+                console.log('[MediaSection] Picked assets:', result.assets.length);
+                const persistentItems: MediaItem[] = [];
+                const mediaDir = `${documentDirectory}media/`;
+
+                // Ensure directory exists
+                try {
+                    const dirInfo = await getInfoAsync(mediaDir);
+                    if (!dirInfo.exists) {
+                        console.log('[MediaSection] Creating media directory:', mediaDir);
+                        await makeDirectoryAsync(mediaDir, { intermediates: true });
+                    }
+                } catch (e) {
+                    console.error('[MediaSection] Error creating media directory:', e);
+                }
+
+                const processedAssets = await Promise.all(result.assets.map(async (asset, index) => {
+                    const fileExt = asset.uri.split('.').pop() || (asset.type === 'video' ? 'mp4' : 'jpg');
+                    const fileName = `${uuidv4()}.${fileExt}`;
+                    const newUri = `${mediaDir}${fileName}`;
+
+                    console.log(`[MediaSection] Processing asset ${index}:`, {
+                        type: asset.type,
+                        originalUri: asset.uri,
+                        newUri
+                    });
+
+                    try {
+                        // Ensure directory exists before moving, as it might be deleted or not created by the initial check
+                        await makeDirectoryAsync(mediaDir, { intermediates: true });
+                        await moveAsync({ from: asset.uri, to: newUri });
+                        console.log(`[MediaSection] Asset ${index} moved to persistent storage`);
+
+                        let thumbnailUrl = undefined;
+                        if (asset.type === 'video') {
+                            if (VideoThumbnails) {
+                                try {
+                                    console.log(`[MediaSection] Generating thumbnail for asset ${index}...`);
+                                    const { uri: thumbUri } = await VideoThumbnails.getThumbnailAsync(newUri, { time: 1000 });
+                                    const thumbName = `thumb-${uuidv4()}.jpg`;
+                                    const persistentThumbUri = `${mediaDir}${thumbName}`;
+                                    await moveAsync({ from: thumbUri, to: persistentThumbUri });
+                                    thumbnailUrl = persistentThumbUri;
+                                    console.log(`[MediaSection] Thumbnail generated for asset ${index}:`, thumbnailUrl);
+                                } catch (thumbError) {
+                                    console.warn(`[MediaSection] Failed to generate thumbnail for asset ${index}:`, thumbError);
+                                }
+                            } else {
+                                console.warn(`[MediaSection] VideoThumbnails module not available for asset ${index}`);
+                            }
+                        }
+
+                        return {
+                            uri: newUri,
+                            type: asset.type || 'image',
+                            thumbnailUrl
+                        };
+                    } catch (e) {
+                        console.error(`[MediaSection] Error persisting asset ${index}:`, e);
+                        return {
+                            uri: asset.uri,
+                            type: asset.type || 'image'
+                        };
+                    }
                 }));
+
+                const newItems: MediaItem[] = processedAssets.map(asset => ({
+                    uri: asset.uri,
+                    type: asset.type as 'image' | 'video',
+                    thumbnailUrl: asset.thumbnailUrl
+                }));
+                console.log('[MediaSection] Adding new items to state:', newItems);
                 onMediaAdded(newItems);
             }
         } catch (error) {
@@ -60,10 +137,24 @@ const MediaSection: React.FC<MediaSectionProps> = ({
                 {media.map((item, index) => (
                     <View key={index} style={styles.mediaWrapper}>
                         {item.type === 'image' ? (
-                            <Image source={{ uri: item.uri }} style={styles.mediaThumbnail} />
+                            <ImageWithFallback
+                                uri={item.uri}
+                                style={styles.mediaThumbnail}
+                            />
                         ) : (
-                            <View style={[styles.mediaThumbnail, styles.videoPlaceholder]}>
-                                <Video color="#fff" size={24} />
+                            <View style={styles.mediaThumbnail}>
+                                <ImageWithFallback
+                                    uri={[
+                                        item.thumbnailUrl || '',
+                                        item.uri?.startsWith('http') ? item.uri.replace(/\.\w+$/, '.jpg') : '',
+                                    ].filter(Boolean)}
+                                    style={styles.mediaThumbnail}
+                                    defaultImageSource={undefined}
+                                    showOfflineIndicator={false}
+                                />
+                                <View style={styles.videoOverlay}>
+                                    <Play color="#fff" size={16} fill="#fff" />
+                                </View>
                             </View>
                         )}
                         <TouchableOpacity
@@ -156,6 +247,17 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '900',
         lineHeight: 18,
+    },
+    videoOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+        borderRadius: 12,
     },
 });
 

@@ -8,12 +8,12 @@ import DefaultImagePlaceholder from './DefaultImagePlaceholder';
 import { getImageUrlOptions } from '@/utils/imageProxy';
 
 interface ImageWithFallbackProps {
-  uri: string | null | undefined;
+  uri: string | string[] | null | undefined;
   style?: ImageStyle;
   containerStyle?: ViewStyle;
   fallbackColor?: string;
   defaultImageSource?: ImageSourcePropType;
-  retryCount?: number; // Number of retry attempts
+  retryCount?: number; // Number of retry attempts per URL
   showOfflineIndicator?: boolean; // Show offline indicator
   contentFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
 }
@@ -69,55 +69,90 @@ export default function ImageWithFallback({
     };
   }, []);
 
-  // Get URL options
-  const urlOptions = React.useMemo(() => {
-    return getImageUrlOptions(uri);
-  }, [uri]);
+  // Get URL options for current index
+  const currentUri = React.useMemo(() => {
+    if (!uri) return null;
+    if (Array.isArray(uri)) {
+      return uri[currentUrlIndex] || null;
+    }
+    return currentUrlIndex === 0 ? uri : null;
+  }, [uri, currentUrlIndex]);
 
-  // Get current URL to try
+  const urlOptions = React.useMemo(() => {
+    return getImageUrlOptions(currentUri);
+  }, [currentUri]);
+
+  // Get current URL to try (original, encoded, proxied)
+  const [internalUrlIndex, setInternalUrlIndex] = React.useState(0);
+
   const currentUrl = React.useMemo(() => {
     const urls = [urlOptions.original, urlOptions.encoded, urlOptions.proxied].filter(Boolean) as string[];
-    return urls[currentUrlIndex] || urlOptions.original;
-  }, [urlOptions, currentUrlIndex]);
+    const urlToTry = urls[internalUrlIndex] || urlOptions.original;
 
-  // Reset loading state when URI changes
+    // Safety check: Don't attempt to load raw video files as images
+    if (urlToTry?.match(/\.(mp4|mov|m4v|3gp|quicktime)$/i)) {
+      return null;
+    }
+
+    return urlToTry;
+  }, [urlOptions, internalUrlIndex]);
+
+  // Reset state when URI changes
   React.useEffect(() => {
     setLoading(true);
     setError(false);
     setRetryAttempt(0);
     setCurrentUrlIndex(0);
+    setInternalUrlIndex(0);
   }, [uri]);
 
   // Retry mechanism for failed image loads
   const handleRetry = React.useCallback(() => {
-    const urls = [urlOptions.original, urlOptions.encoded, urlOptions.proxied].filter(Boolean) as string[];
+    const internalUrls = [urlOptions.original, urlOptions.encoded, urlOptions.proxied].filter(Boolean) as string[];
 
-    // Try next URL option if available
-    if (currentUrlIndex < urls.length - 1) {
+    // 1. Try internal variations (original -> encoded -> proxied)
+    if (internalUrlIndex < internalUrls.length - 1) {
+      console.log(`[ImageWithFallback] Trying next internal variation for URI index ${currentUrlIndex}`);
+      setInternalUrlIndex(prev => prev + 1);
+      setLoading(true);
+      setError(false);
+      return;
+    }
+
+    // 2. Try next URI in the provided array
+    const uriArray = Array.isArray(uri) ? uri : [uri];
+    if (currentUrlIndex < uriArray.length - 1) {
+      console.log(`[ImageWithFallback] URI at index ${currentUrlIndex} failed, trying next URI: ${uriArray[currentUrlIndex + 1]}`);
       setCurrentUrlIndex(prev => prev + 1);
+      setInternalUrlIndex(0);
+      setRetryAttempt(0);
       setLoading(true);
       setError(false);
-    } else if (retryAttempt < retryCount) {
-      // Retry with same URL
+      return;
+    }
+
+    // 3. Retry the whole process a few times
+    if (retryAttempt < retryCount) {
+      console.log(`[ImageWithFallback] All URIs failed, starting retry attempt ${retryAttempt + 1}`);
       setRetryAttempt(prev => prev + 1);
+      setCurrentUrlIndex(0);
+      setInternalUrlIndex(0);
       setLoading(true);
       setError(false);
 
-      // Add a small delay before retrying to avoid rapid retries
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
       }
 
       retryTimeoutRef.current = setTimeout(() => {
-        // Force re-render by updating state
         setLoading(false);
-        // Small timeout to allow state update before setting back to loading
         setTimeout(() => setLoading(true), 50);
-      }, 500 * (retryAttempt + 1)); // Exponential backoff
+      }, 500 * (retryAttempt + 1));
     } else {
+      console.warn('[ImageWithFallback] All URIs and retries failed for:', uri);
       setError(true);
     }
-  }, [retryAttempt, retryCount, urlOptions, currentUrlIndex]);
+  }, [retryAttempt, retryCount, urlOptions, currentUrlIndex, internalUrlIndex, uri]);
 
   // If no URI, render the default image or fallback
   if (!uri) {

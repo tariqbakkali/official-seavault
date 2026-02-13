@@ -3,6 +3,7 @@ import { supabase } from '../services/supabase';
 import { setCurrentUserID } from '../stores/syncedObservables';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkPendingImageUploads } from '../services/imageSyncService'; // Import checkPendingImageUploads
+import { initMediaSync } from '../services/mediaSyncService'; // Import video sync
 import { checkAndRunMigrations } from './appMigration'; // Import migration utility
 
 /**
@@ -23,6 +24,7 @@ export const initializeApp = async () => {
 
     // Check for any pending image uploads on app start
     checkPendingImageUploads();
+    initMediaSync();
     
   } catch (error) {
     console.error('Error initializing local-first app:', error);
@@ -77,7 +79,7 @@ export const initializeUserSession = async (userId: string) => {
          console.log('[AppInitializer] Local cache says Free/Missing. Verifying with Server (Paranoid Check)...');
          const { data, error } = await supabase
             .from('profiles')
-            .select('*')
+            .select('is_premium')
             .eq('id', userId)
             .single();
             

@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, FlatList, ScrollView, Dimensions, TouchableOpac
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from '@legendapp/state/react';
-import { Clock, MapPin, Wind, Waves, Eye, Calendar, Thermometer, ArrowLeft, Anchor, User, Gauge, GraduationCap, Droplet, Pencil, QrCode } from 'lucide-react-native';
+import { Clock, MapPin, Wind, Waves, Eye, Calendar, Thermometer, ArrowLeft, Anchor, User, Gauge, GraduationCap, Droplet, Pencil, QrCode, Play } from 'lucide-react-native';
+import { getOptimizedUrl } from '@/services/cloudinaryService';
 import ScreenHeader from '@/components/ui/ScreenHeader';
-import { currentUserSightings$, diveSites$, creatures$ } from '@/stores/syncedObservables';
+import { currentUserSightings$, diveSites$, creatures$, media$ } from '@/stores/syncedObservables';
 import { COLORS, DIMENSIONS, TYPOGRAPHY, ROUTES } from '@/constants';
 import { Sighting, DiveSite, Creature } from '@/types/database';
 import { ImageWithFallback } from '@/components';
@@ -47,17 +48,58 @@ export default function DiveLogDetailScreen() {
 
         // Fetch media for this dive
         const diveMedia: any[] = [];
+        const globalMedia = Object.values(media$.peek() || {}) as any[]; // Fetch global media once
         matchingSightings.forEach(s => {
             if (s.images) {
-                s.images.forEach((img: any) => {
+                const currentImages = s.images || []; // Use 's' instead of 'sighting'
+                currentImages.forEach((img: any) => {
+                    // 1. Better type detection (fallback to extension)
+                    let mediaType = img.mimeType?.startsWith('video') ? 'video' : 'image';
+                    if (!img.mimeType && img.remoteUrl) {
+                        const ext = img.remoteUrl.split('.').pop()?.toLowerCase();
+                        if (['mp4', 'mov', 'm4v', '3gp'].includes(ext || '')) {
+                            mediaType = 'video';
+                        }
+                    }
+
+                    // 2. Cross-reference with media table if local
+                    let effectiveUrl = img.remoteUrl;
+                    let effectiveThumbnail = img.thumbnailUrl;
+
+                    if (effectiveUrl?.startsWith('file://')) {
+                        // 1. Check media table
+                        const match = globalMedia.find(m => m.url === effectiveUrl || m.thumbnail_url === effectiveUrl);
+                        if (match && match.url?.startsWith('http')) {
+                            effectiveUrl = match.url;
+                            effectiveThumbnail = match.thumbnail_url || effectiveThumbnail;
+                        }
+
+                        // 2. Check parent sighting fields (often has the authoritative URL)
+                        if (effectiveUrl?.startsWith('file://')) {
+                            if (mediaType === 'video' && s.video_url?.startsWith('http')) {
+                                effectiveUrl = s.video_url;
+                            } else if (mediaType === 'image' && s.image_url?.startsWith('http')) {
+                                // If it's the only image, safe to assume it matches
+                                if (currentImages.length === 1) {
+                                    effectiveUrl = s.image_url;
+                                }
+                            }
+                        }
+                    }
+
                     diveMedia.push({
                         ...img,
-                        url: img.remoteUrl,
-                        type: img.mimeType?.startsWith('video') ? 'video' : 'image',
+                        url: effectiveUrl,
+                        thumbnailUrl: effectiveThumbnail,
+                        type: mediaType,
                     });
                 });
             }
         });
+
+        console.log('[DiveLogDetail] matchingSightings count:', matchingSightings.length);
+        console.log('[DiveLogDetail] globalMedia count:', globalMedia.length);
+        console.log('[DiveLogDetail] diveMedia:', JSON.stringify(diveMedia, null, 2));
 
         const first = matchingSightings[0];
         const siteName = first.dive_site_id ? (siteMap.get(first.dive_site_id) || 'Unknown Location') : 'Unknown Location';
@@ -212,10 +254,22 @@ export default function DiveLogDetailScreen() {
                                     activeOpacity={0.9}
                                 >
                                     <ImageWithFallback
-                                        uri={item.url}
+                                        uri={item.type === 'video'
+                                            ? [
+                                                item.thumbnailUrl || '',
+                                                item.url.includes('cloudinary')
+                                                    ? getOptimizedUrl(item.url.split('/').pop()?.split('.')[0] || '', 'video', ['c_fill', 'w_300', 'h_300', 'f_auto', 'q_auto']) + '.jpg'
+                                                    : '',
+                                            ].filter(Boolean)
+                                            : item.url}
                                         style={styles.galleryImage}
                                         fallbackColor="#2A2A2A"
                                     />
+                                    {item.type === 'video' && (
+                                        <View style={styles.videoOverlay}>
+                                            <Play size={32} color="#fff" fill="rgba(255,255,255,0.5)" />
+                                        </View>
+                                    )}
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>

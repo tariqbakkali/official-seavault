@@ -57,7 +57,14 @@ export const customSynced = configureSynced(syncedSupabase, {
   
   // Default Update Handler
   // This provides a sensible default for all synced observables
-  update: async ({ collection, value }: any) => {
+  update: async (params: any) => {
+    const { collection, value } = params;
+    
+    if (!collection) {
+      console.error('[LegendState] Update called with undefined collection. Params:', JSON.stringify(params, null, 2));
+      return { data: null, error: { message: 'Collection undefined' } };
+    }
+
     const { data, error } = await supabase
       .from(collection)
       .upsert(value)

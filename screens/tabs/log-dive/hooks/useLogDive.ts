@@ -46,6 +46,7 @@ interface CreatureSighting {
   creatureId: string | null;
   notes: string | null;
   imageUrl: string | null;
+  thumbnailUrl?: string | null;
 }
 
 interface FormData {
@@ -79,6 +80,7 @@ interface FormData {
     type: 'image' | 'video';
     id?: string; // Existing media ID
     sightingId?: string;
+    thumbnailUrl?: string;
   }>;
 }
 
@@ -174,6 +176,7 @@ export const useLogDive = () => {
           creatureId: s.creature_id,
           notes: s.creature_notes,
           imageUrl: s.image_url,
+          thumbnailUrl: s.thumbnail_url,
         }));
 
         setFormData({
@@ -208,6 +211,7 @@ export const useLogDive = () => {
             type: m.type as 'image' | 'video',
             id: (m as any).id,
             sightingId: m.sighting_id || undefined,
+            thumbnailUrl: m.thumbnail_url || undefined,
           })),
         });
       }
@@ -328,6 +332,7 @@ export const useLogDive = () => {
           creature_id: s.creatureId,
           creature_notes: s.notes,
           image_url: s.imageUrl,
+          thumbnail_url: s.thumbnailUrl,
           date: formData.date.toISOString().split('T')[0],
           // Duplicate dive info into sightings for backward compat
           dive_site_id: formData.diveSiteId,

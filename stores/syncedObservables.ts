@@ -17,6 +17,15 @@ export type UserAchievement = Database['public']['Tables']['user_achievements'][
 export type Article = Database['public']['Tables']['articles']['Row'];
 export type Friend = Database['public']['Tables']['friends']['Row'];
 export type Certification = Database['public']['Tables']['certifications']['Row'];
+export type Media = {
+  id: string;
+  dive_id: string;
+  url: string;
+  thumbnail_url?: string;
+  type: string;
+  metadata?: any;
+  created_at: string;
+};
 
 
 
@@ -213,7 +222,7 @@ export const currentUserSightings$ = observable(customSynced({
       'air_in', 'air_out', 'air_unit', 'course_type', 'skills_completed', 
       'instructor_id', 'waterway', 'student_id', 'instructor_name', 
       'water_temperature', 'depth_unit', 'dive_mode', 'dive_id', 'images',
-      'max_depth', 'is_public_template'
+      'max_depth', 'is_public_template', 'video_url'
     ];
 
     const sanitizedInput = Object.keys(input)
@@ -737,6 +746,54 @@ export const certifications$ = observable<Record<string, Certification>>(customS
   },
   delete: async (item: any) => {
     const data = "";
+    return { data, error: null };
+  },
+  fieldCreatedAt: 'created_at',
+  realtime: true,
+}));
+
+// Media observable - for dive-level videos and photos
+export const media$ = observable<Record<string, Media>>(customSynced({
+  supabase,
+  collection: 'media',
+  filter: (select: any) => {
+    // Media are linked by dive_id, which is shared among sightings of a user.
+    // However, media themselves don't have user_id. 
+    // We'll trust the RLS policies and the specific dive_id contexts in the app.
+    return select; 
+  },
+  actions: ['read', 'create', 'update', 'delete'],
+  persist: { name: 'media_v1', retrySync: true },
+  update: async (input: any) => {
+    const validColumns = ['id', 'dive_id', 'url', 'thumbnail_url', 'type', 'metadata', 'created_at', 'deleted'];
+    const sanitizedInput = Object.keys(input)
+      .filter(key => validColumns.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = input[key];
+        return obj;
+      }, {} as any);
+
+    const { data, error } = await supabase
+      .from('media')
+      .upsert(sanitizedInput)
+      .select()
+      .single();
+    
+    if (error) {
+      throw new Error(`Failed to save media: ${error.message}`);
+    }
+    return { data, error: null };
+  },
+  delete: async (item: any) => {
+    const { data, error } = await supabase
+      .from('media')
+      .delete()
+      .eq('id', item.id)
+      .select()
+      .single();
+    if (error) {
+      throw new Error(`Failed to delete media: ${error.message}`);
+    }
     return { data, error: null };
   },
   fieldCreatedAt: 'created_at',
