@@ -52,6 +52,9 @@ function RootLayout() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
+    // Track which userId has already been fully initialized to skip duplicate work
+    let initializedUserId: string | null = null;
+
     const checkInitialSessionAndSync = async () => {
       try {
         // Create a promise for the initialization logic
@@ -110,6 +113,7 @@ function RootLayout() {
             await initializeUserSession(userId);
             // Re-check purchase status immediately after session restore to avoid stale "false" state
             await checkPurchaseStatus();
+            initializedUserId = userId;
           }
 
           setCurrentUserID(userId);
@@ -176,24 +180,39 @@ function RootLayout() {
       setCurrentUserID(userId);
 
       if (userId) {
+        // Skip if we already initialized this user in checkInitialSessionAndSync
+        if (initializedUserId === userId) {
+          console.log('[RootLayout] User already initialized in initial session check, skipping duplicate init');
+          setCurrentUserIDState(userId);
+          initializedUserId = null; // Reset so future auth changes are handled
+          return;
+        }
+
         // Reset onboarding state - user has logged in
         setShowOnboarding(false);
         setIsLoggingIn(true); // Show loading overlay
+
+        // Safety timeout — never show "Verifying Membership" for more than 8 seconds
+        const loginTimeout = setTimeout(() => {
+          console.warn('[RootLayout] Login verification timed out after 8s, proceeding');
+          setIsLoggingIn(false);
+        }, 8000);
 
         // CRITICAL FIX: Wait for session init (and "Paranoid Check") BEFORE updating UI state
         // This prevents the UI from seeing "Authenticated=true" + "isPro=false" (default)
         // and flashing the paywall before the check finishes.
         try {
-          await initializeUserSession(userId);
-          await forceSyncAll();
+          await Promise.race([initializeUserSession(userId), new Promise(r => setTimeout(r, 5000))]);
+          await Promise.race([forceSyncAll(), new Promise(r => setTimeout(r, 3000))]);
           // The "Proper Way": Manual sync followed by robust realtime
-          await syncFriends(userId);
+          await Promise.race([syncFriends(userId), new Promise(r => setTimeout(r, 3000))]);
           subscribeToFriendsRealtime(userId);
           // Re-check purchase status after login/sync
           await checkPurchaseStatus();
         } catch (e) {
           console.error('[RootLayout] Error initializing user session:', e);
         } finally {
+          clearTimeout(loginTimeout);
           setIsLoggingIn(false); // Hide loading overlay
         }
 
