@@ -38,3 +38,4 @@ yarn-error.*
 *.tsbuildinfo
 error.txt
 project-detail.txt
+env.download

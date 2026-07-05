@@ -10,7 +10,6 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import OfflineImageHandler from '@/components/OfflineImageHandler';
-import WikimediaImage from '@/components/WikimediaImage';
 import { useSyncedData } from '@/hooks/useSyncedData';
 import { fetchCreaturesForCategory, creatures$ } from '@/stores/syncedObservables'; // Import lazy sync helper
 import { useSelector } from '@legendapp/state/react';
@@ -107,20 +106,12 @@ export default function CategoryDetailScreen() {
       onPress={() => router.push(`/creatures/${item.id}`)}
     >
       <View style={styles.creatureImageContainer}>
-        {item.image_url && (item.image_url.includes('wikimedia.org') || item.image_url.includes('wikipedia.org')) ? (
-          <WikimediaImage
-            uri={item.image_url}
-            style={styles.creatureImage}
-            fallbackColor="#333"
-          />
-        ) : (
-          <OfflineImageHandler
-            uri={item.image_url}
-            style={styles.creatureImage}
-            fallbackColor="#333"
-            showOfflineIndicator={true}
-          />
-        )}
+        <OfflineImageHandler
+          uri={item.image_url}
+          style={styles.creatureImage}
+          fallbackColor="#333"
+          showOfflineIndicator={true}
+        />
       </View>
       <View style={styles.creatureInfo}>
         <Text style={styles.creatureName}>{item.name}</Text>
